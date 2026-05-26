@@ -146,13 +146,14 @@
           "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
         ];
 
+        // Updated reliable URLs for audio
         const MUSIC_TRACKS = [
-          { name: "Vampire's Keep", url: "https://ia800201.us.archive.org/34/items/Castlevania2SimonsQuestBloodyTears/Castlevania%202%20Simon%27s%20Quest%20-%20Bloody%20Tears.mp3" },
-          { name: "Dungeon Depths", url: "https://ia903204.us.archive.org/16/items/doom-midi/E1M1.mp3" },
-          { name: "Spooky 8-Bit", url: "https://ia600504.us.archive.org/33/items/TetrisThemeMusic/Tetris.mp3" }
+          { name: "Vampire's Keep", url: "https://archive.org/download/Castlevania2SimonsQuestBloodyTears/Castlevania%202%20Simon%27s%20Quest%20-%20Bloody%20Tears.mp3" },
+          { name: "Dungeon Depths", url: "https://archive.org/download/doom-midi/E1M1.mp3" },
+          { name: "Spooky 8-Bit", url: "https://archive.org/download/TetrisThemeMusic/Tetris.mp3" }
         ];
 
-        const LIGHTNING_SFX = "https://ia800405.us.archive.org/21/items/ThunderStrike_120/ThunderStrike.mp3";
+        const LIGHTNING_SFX = "https://archive.org/download/ThunderStrike_120/ThunderStrike.mp3";
 
         const CATEGORIES = {
           characters: [
@@ -317,19 +318,17 @@
             return () => clearInterval(imgInterval);
           }, [gameState]);
 
-          // Music Control
+          // Reliable Music Control
           useEffect(() => {
             if(bgmRef.current) {
               bgmRef.current.volume = musicVolume;
-              bgmRef.current.muted = isMuted;
+              if (isMuted) {
+                bgmRef.current.pause();
+              } else {
+                bgmRef.current.play().catch(e => console.log("Autoplay blocked by browser until user interacts.", e));
+              }
             }
-          }, [musicVolume, isMuted]);
-
-          useEffect(() => {
-            if(bgmRef.current && !isMuted) {
-              bgmRef.current.play().catch(e => console.log("Autoplay blocked by browser."));
-            }
-          }, [currentTrack, isMuted]);
+          }, [musicVolume, isMuted, currentTrack]);
 
           // Lightning Effect & SFX
           const triggerLightning = () => {
@@ -611,9 +610,9 @@
           // --- RENDERERS ---
 
           const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-8">
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8">
               
-              <div className="w-full max-w-lg h-48 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-4">
+              <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-2">
                  <img 
                    src={MENU_IMAGES[menuImgIndex]} 
                    className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" 
@@ -621,20 +620,21 @@
                    alt="Retro Castlevania Background"
                  />
                  <div className="absolute inset-0 bg-black/40"></div>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)]">
-                    <h1 className="font-pixel text-3xl md:text-5xl text-purple-500 tracking-widest drop-shadow-[0_0_15px_rgba(138,43,226,1)]">
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
+                    {/* Fixed Size scaling down across screen widths to ensure no cutoff */}
+                    <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-purple-500 tracking-wider drop-shadow-[0_0_15px_rgba(138,43,226,1)] w-full text-center break-words leading-tight">
                       ADVENTUREVANIA
                     </h1>
-                    <p className="font-terminal text-green-400 text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(74,222,128,1)]">A Grade 3 Reading Quest</p>
+                    <p className="font-terminal text-green-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(74,222,128,1)]">A Grade 3 Reading Quest</p>
                  </div>
               </div>
 
-              <div className="flex flex-col gap-6 w-full max-w-md relative z-10">
-                <button className="nes-btn animate-pulse" onClick={() => { if(isMuted) setIsMuted(false); setSetupStep(0); setGameState('setup'); }}>
+              <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
+                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { if(isMuted) setIsMuted(false); setSetupStep(0); setGameState('setup'); }}>
                   ▶️ Press Enter to Start
                 </button>
                 
-                <div className="pixel-border bg-gray-900 p-6 flex flex-col gap-4">
+                <div className="pixel-border bg-gray-900 p-4 md:p-6 flex flex-col gap-3 md:gap-4">
                   <p className="font-pixel text-[10px] text-gray-300">Resume Adventure</p>
                   <div className="flex gap-2">
                     <input 
@@ -870,8 +870,8 @@
                   {MUSIC_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
                 </select>
 
-                <audio ref={bgmRef} loop src={MUSIC_TRACKS[currentTrack].url} />
-                <audio ref={sfxRef} src={LIGHTNING_SFX} />
+                <audio ref={bgmRef} loop src={MUSIC_TRACKS[currentTrack].url} preload="auto" />
+                <audio ref={sfxRef} src={LIGHTNING_SFX} preload="auto" />
              </div>
           );
 
