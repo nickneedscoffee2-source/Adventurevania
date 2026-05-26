@@ -63,17 +63,17 @@
 
       @keyframes lightning {
         0% { background-color: rgba(255, 255, 255, 0); }
-        10% { background-color: rgba(255, 255, 255, 0.9); }
+        10% { background-color: rgba(255, 255, 255, 0.95); }
         20% { background-color: rgba(255, 255, 255, 0); }
-        30% { background-color: rgba(255, 255, 255, 0.6); }
-        40% { background-color: rgba(255, 255, 255, 0); }
+        35% { background-color: rgba(255, 255, 255, 0.7); }
+        45% { background-color: rgba(255, 255, 255, 0); }
         100% { background-color: rgba(255, 255, 255, 0); }
       }
 
       .lightning-overlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        pointer-events: none; z-index: 9999;
-        animation: lightning 0.5s ease-out;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 99;
+        animation: lightning 0.6s ease-out;
       }
 
       .nes-btn {
@@ -146,14 +146,45 @@
           "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
         ];
 
-        // Updated reliable URLs for audio
-        const MUSIC_TRACKS = [
-          { name: "Vampire's Keep", url: "https://archive.org/download/Castlevania2SimonsQuestBloodyTears/Castlevania%202%20Simon%27s%20Quest%20-%20Bloody%20Tears.mp3" },
-          { name: "Dungeon Depths", url: "https://archive.org/download/doom-midi/E1M1.mp3" },
-          { name: "Spooky 8-Bit", url: "https://archive.org/download/TetrisThemeMusic/Tetris.mp3" }
+        // Web Audio Synthesizer Presets Composition
+        const SYNTH_TRACKS = [
+          {
+            name: "Vampire's Keep",
+            tempo: 130,
+            melody: [
+              { note: "A4", dur: 2 }, { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 },
+              { note: "C5", dur: 4 }, { note: "B4", dur: 4 },
+              { note: "A4", dur: 2 }, { note: "G#4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 },
+              { note: "E5", dur: 8 }
+            ],
+            bass: ["A2", "E2", "F2", "E2"]
+          },
+          {
+            name: "Dungeon Depths",
+            tempo: 75,
+            melody: [
+              { note: "D4", dur: 4 }, { note: "D#4", dur: 4 }, { note: "F#4", dur: 4 }, { note: "G4", dur: 4 },
+              { note: "Ab4", dur: 4 }, { note: "G4", dur: 4 }, { note: "F#4", dur: 4 }, { note: "D4", dur: 4 }
+            ],
+            bass: ["D2", "D#2", "D2", "C#2"]
+          },
+          {
+            name: "Scooby Chase",
+            tempo: 160,
+            melody: [
+              { note: "E4", dur: 2 }, { note: "G4", dur: 2 }, { note: "A4", dur: 2 }, { note: "A#4", dur: 2 },
+              { note: "B4", dur: 4 }, { note: "G4", dur: 4 },
+              { note: "E4", dur: 2 }, { note: "D4", dur: 2 }, { note: "E4", dur: 4 }
+            ],
+            bass: ["E2", "G2", "A2", "B2"]
+          }
         ];
 
-        const LIGHTNING_SFX = "https://archive.org/download/ThunderStrike_120/ThunderStrike.mp3";
+        const NOTE_FREQ = {
+          "C2": 65.41, "C#2": 69.30, "D2": 73.42, "D#2": 77.78, "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
+          "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "A#4": 466.16, "B4": 493.88,
+          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30
+        };
 
         const CATEGORIES = {
           characters: [
@@ -254,6 +285,10 @@
           }
         };
 
+        // Global Synth variables to prevent garbage collection / redundant triggers
+        let synthCtx = null;
+        let melodyInterval = null;
+
         // --- MAIN COMPONENT ---
         function Adventurevania() {
           const [user, setUser] = useState(null);
@@ -262,6 +297,7 @@
           // Game Data State
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0 });
           const [setupStep, setSetupStep] = useState(0); 
+          const [setupFocusIndex, setSetupFocusIndex] = useState(0); // Focused element for Keyboard navigation
           const [storyHistory, setStoryHistory] = useState([]);
           const [currentNode, setCurrentNode] = useState(null);
           const [turnCount, setTurnCount] = useState(0);
@@ -274,13 +310,11 @@
           // Aesthetic & Nav State
           const [menuImgIndex, setMenuImgIndex] = useState(0);
           const [showLightning, setShowLightning] = useState(false);
-          const [musicVolume, setMusicVolume] = useState(0.4);
-          const [isMuted, setIsMuted] = useState(true); // Start muted to respect autoplay policies
+          const [musicVolume, setMusicVolume] = useState(0.3);
+          const [isMuted, setIsMuted] = useState(true); 
           const [currentTrack, setCurrentTrack] = useState(0);
           const [focusedChoice, setFocusedChoice] = useState(0);
           
-          const bgmRef = useRef(null);
-          const sfxRef = useRef(null);
           const endOfStoryRef = useRef(null);
 
           // Initialize Firebase Auth
@@ -318,26 +352,122 @@
             return () => clearInterval(imgInterval);
           }, [gameState]);
 
-          // Reliable Music Control
+          // --- 8-BIT SYNTH MUSIC CHIP ---
+          const playSynthNote = (freq, type, duration, volMod) => {
+            if (!synthCtx || isMuted || !freq) return;
+            try {
+              if (synthCtx.state === 'suspended') {
+                synthCtx.resume();
+              }
+              const osc = synthCtx.createOscillator();
+              const gainNode = synthCtx.createGain();
+              osc.type = type;
+              osc.frequency.setValueAtTime(freq, synthCtx.currentTime);
+              
+              gainNode.gain.setValueAtTime(0, synthCtx.currentTime);
+              gainNode.gain.linearRampToValueAtTime(musicVolume * volMod, synthCtx.currentTime + 0.01);
+              gainNode.gain.exponentialRampToValueAtTime(0.0001, synthCtx.currentTime + duration - 0.01);
+              
+              osc.connect(gainNode);
+              gainNode.connect(synthCtx.destination);
+              osc.start();
+              osc.stop(synthCtx.currentTime + duration);
+            } catch (e) {
+              console.warn("Synth error:", e);
+            }
+          };
+
+          const startSynthEngine = () => {
+            if (melodyInterval) clearInterval(melodyInterval);
+            if (!synthCtx) {
+              synthCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const track = SYNTH_TRACKS[currentTrack];
+            const stepDuration = 60 / track.tempo / 2; // eighth notes
+            let step = 0;
+
+            melodyInterval = setInterval(() => {
+              if (isMuted) return;
+
+              // Play Bassline
+              if (step % 4 === 0) {
+                const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
+                if (NOTE_FREQ[bassNote]) {
+                  playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
+                }
+              }
+
+              // Play Melody Sequence
+              let melodySum = 0;
+              let currentMelodyNote = null;
+              for (let i = 0; i < track.melody.length; i++) {
+                const item = track.melody[i];
+                if (step % 16 === melodySum) {
+                  currentMelodyNote = item;
+                  break;
+                }
+                melodySum += item.dur;
+              }
+
+              if (currentMelodyNote && NOTE_FREQ[currentMelodyNote.note]) {
+                playSynthNote(NOTE_FREQ[currentMelodyNote.note], "square", stepDuration * currentMelodyNote.dur * 0.9, 0.3);
+              }
+
+              step = (step + 1) % 16;
+            }, stepDuration * 1000);
+          };
+
+          // Thunder Noise Generator
+          const playThunderSynth = () => {
+            if (!synthCtx || isMuted) return;
+            try {
+              const bufferSize = synthCtx.sampleRate * 1.5;
+              const buffer = synthCtx.createBuffer(1, bufferSize, synthCtx.sampleRate);
+              const data = buffer.getChannelData(0);
+              for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+              }
+              const noiseNode = synthCtx.createBufferSource();
+              noiseNode.buffer = buffer;
+              
+              const filterNode = synthCtx.createBiquadFilter();
+              filterNode.type = 'lowpass';
+              filterNode.frequency.setValueAtTime(600, synthCtx.currentTime);
+              filterNode.frequency.exponentialRampToValueAtTime(30, synthCtx.currentTime + 1.2);
+              
+              const gainNode = synthCtx.createGain();
+              gainNode.gain.setValueAtTime(musicVolume * 1.2, synthCtx.currentTime);
+              gainNode.gain.exponentialRampToValueAtTime(0.0001, synthCtx.currentTime + 1.4);
+              
+              noiseNode.connect(filterNode);
+              filterNode.connect(gainNode);
+              gainNode.connect(synthCtx.destination);
+              noiseNode.start();
+            } catch(e) {
+              console.warn(e);
+            }
+          };
+
+          // Reliable track/mute toggle trigger
           useEffect(() => {
-            if(bgmRef.current) {
-              bgmRef.current.volume = musicVolume;
-              if (isMuted) {
-                bgmRef.current.pause();
-              } else {
-                bgmRef.current.play().catch(e => console.log("Autoplay blocked by browser until user interacts.", e));
+            if (!isMuted) {
+              startSynthEngine();
+            } else {
+              if (melodyInterval) {
+                clearInterval(melodyInterval);
+                melodyInterval = null;
               }
             }
-          }, [musicVolume, isMuted, currentTrack]);
+            return () => {
+              if (melodyInterval) clearInterval(melodyInterval);
+            };
+          }, [isMuted, currentTrack, musicVolume]);
 
           // Lightning Effect & SFX
           const triggerLightning = () => {
              setShowLightning(true);
-             if(sfxRef.current && !isMuted) {
-                sfxRef.current.volume = musicVolume + 0.2 > 1 ? 1 : musicVolume + 0.2;
-                sfxRef.current.currentTime = 0;
-                sfxRef.current.play().catch(e=>console.log("SFX blocked"));
-             }
+             playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
           };
 
@@ -348,27 +478,29 @@
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
 
-          // Keyboard Navigation
+          // Keyboard Navigation controls
           useEffect(() => {
             const handleKeyDown = (e) => {
-              // Ignore keyboard shortcuts if user is typing in load field
               if(document.activeElement.tagName === "INPUT" && document.activeElement.type === "text") return;
 
               if (gameState === 'setup') {
-                 const currentKey = Object.keys(setupData)[setupStep];
-                 const numOptions = CATEGORIES[currentKey].length;
-                 
                  if (e.key === 'ArrowRight') {
-                   setSetupData(prev => ({...prev, [currentKey]: Math.min(prev[currentKey] + 1, numOptions - 1)}));
+                   setSetupFocusIndex(prev => Math.min(prev + 1, 9));
                  } else if (e.key === 'ArrowLeft') {
-                   setSetupData(prev => ({...prev, [currentKey]: Math.max(prev[currentKey] - 1, 0)}));
+                   setSetupFocusIndex(prev => Math.max(prev - 1, 0));
                  } else if (e.key === 'ArrowDown') {
-                   setSetupData(prev => ({...prev, [currentKey]: Math.min(prev[currentKey] + 5, numOptions - 1)}));
+                   setSetupFocusIndex(prev => Math.min(prev + 5, 9));
                  } else if (e.key === 'ArrowUp') {
-                   setSetupData(prev => ({...prev, [currentKey]: Math.max(prev[currentKey] - 5, 0)}));
+                   setSetupFocusIndex(prev => Math.max(prev - 5, 0));
                  } else if (e.key === 'Enter') {
-                   if (setupStep < 4) setSetupStep(prev => prev + 1);
-                   else startGame();
+                   const currentKey = Object.keys(setupData)[setupStep];
+                   setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                   setSetupFocusIndex(0); // Reset for next screen
+                   if (setupStep < 4) {
+                     setSetupStep(prev => prev + 1);
+                   } else {
+                     startGame();
+                   }
                  }
               } else if (gameState === 'story' && currentNode?.choices?.length > 0 && !errorMsg) {
                  if (e.key === 'ArrowDown') {
@@ -380,8 +512,10 @@
                  }
               } else if (gameState === 'menu') {
                  if (e.key === 'Enter') {
-                    if(isMuted) setIsMuted(false); // Unmute on first interaction
-                    setSetupStep(0); setGameState('setup');
+                    if (isMuted) setIsMuted(false); 
+                    setSetupStep(0); 
+                    setSetupFocusIndex(0);
+                    setGameState('setup');
                  }
               } else if (gameState === 'gameover' || gameState === 'victory') {
                  if (e.key === 'Enter') setGameState('menu');
@@ -390,7 +524,7 @@
 
             window.addEventListener('keydown', handleKeyDown);
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, currentNode, focusedChoice, errorMsg, isMuted]);
+          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, focusedChoice, errorMsg, isMuted]);
 
           // --- ANALYTICS FUNCTION ---
           const recordEngagement = async (outcome) => {
@@ -429,7 +563,7 @@
 
           const generateStoryNode = async (actionText = null) => {
             setGameState('loading');
-            setFocusedChoice(0); // Reset choice selection position
+            setFocusedChoice(0); 
             setLoadingMsg("Summoning AI Game Master...");
             setErrorMsg("");
             
@@ -621,7 +755,6 @@
                  />
                  <div className="absolute inset-0 bg-black/40"></div>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
-                    {/* Fixed Size scaling down across screen widths to ensure no cutoff */}
                     <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-purple-500 tracking-wider drop-shadow-[0_0_15px_rgba(138,43,226,1)] w-full text-center break-words leading-tight">
                       ADVENTUREVANIA
                     </h1>
@@ -670,12 +803,16 @@
                 <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-8 pr-2">
                   {current.data.map((item, idx) => {
                     const isSelected = setupData[current.key] === idx;
+                    const isFocused = setupFocusIndex === idx;
                     return (
                       <div 
                         key={idx}
-                        onClick={() => setSetupData({...setupData, [current.key]: idx})}
-                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_20px_rgba(74,222,128,0.5)]' : 'bg-black hover:bg-gray-800'}`}
-                        style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : {}}
+                        onClick={() => {
+                          setSetupFocusIndex(idx);
+                          setSetupData({...setupData, [current.key]: idx});
+                        }}
+                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_25px_rgba(74,222,128,0.7)]' : isSelected ? 'bg-purple-950 border-purple-500' : 'bg-black hover:bg-gray-800'}`}
+                        style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #8E2DE2, 0 0 0 8px #000' } : {}}
                       >
                         <div className="text-4xl mb-2">{item.icon}</div>
                         <h3 className="font-pixel text-[10px] md:text-xs text-white mb-2 leading-tight h-8 flex items-center">{item.name}</h3>
@@ -690,7 +827,12 @@
                   <div className="flex gap-4">
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
                     {setupStep < 4 ? 
-                      <button className="nes-btn green" onClick={() => setSetupStep(setupStep + 1)}>Next</button> : 
+                      <button className="nes-btn green" onClick={() => {
+                        const currentKey = Object.keys(setupData)[setupStep];
+                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                        setSetupFocusIndex(0);
+                        setSetupStep(setupStep + 1);
+                      }}>Next</button> : 
                       <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
                     }
                   </div>
@@ -750,97 +892,111 @@
             );
           };
 
-          const renderGameArea = () => (
-            <div className="flex flex-col h-full relative">
-              <div className="flex justify-between items-center bg-gray-900 p-4 pixel-border mb-4 shrink-0 z-10">
-                <div className="font-pixel text-xs md:text-sm text-purple-400 flex items-center gap-2">
-                   🗺️ Turn: {turnCount}/10
-                </div>
-                <div className="flex gap-4 md:gap-6">
-                  {/* Made icons significantly larger here using text-xl / text-2xl */}
-                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={saveGame} disabled={gameState === 'gameover'}>
-                    <span className="text-xl md:text-2xl drop-shadow-md">💾</span> Save
-                  </button>
-                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
-                    <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> Quit
-                  </button>
-                </div>
-              </div>
+          const renderGameArea = () => {
+            if (!currentNode && !errorMsg) {
+              return renderLoading();
+            }
 
-              {saveCode && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-                  <div className="pixel-border bg-gray-900 p-8 text-center max-w-sm w-full">
-                    <h3 className="font-pixel text-green-400 mb-4">Adventure Saved!</h3>
-                    <p className="font-terminal text-2xl text-white mb-6">Write down this magic code to resume later:</p>
-                    <div className="text-6xl font-pixel text-yellow-400 bg-black p-6 pixel-border mb-8 inline-block tracking-widest">
-                      {saveCode}
-                    </div>
-                    <button className="nes-btn w-full" onClick={() => setSaveCode(null)}>Continue</button>
+            return (
+              <div className="flex flex-col h-full relative">
+                <div className="flex justify-between items-center bg-gray-900 p-4 pixel-border mb-4 shrink-0 z-10">
+                  <div className="font-pixel text-xs md:text-sm text-purple-400 flex items-center gap-2">
+                     🗺️ Turn: {turnCount}/10
+                  </div>
+                  <div className="flex gap-4 md:gap-6">
+                    <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={saveGame} disabled={gameState === 'gameover'}>
+                      <span className="text-xl md:text-2xl drop-shadow-md">💾</span> Save
+                    </button>
+                    <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
+                      <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> Quit
+                    </button>
                   </div>
                 </div>
-              )}
 
-              <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-32">
-                {storyHistory.map((hist, idx) => (
-                  <React.Fragment key={idx}>
-                    {renderStoryNode(hist.node, true, hist.chosenAction)}
-                  </React.Fragment>
-                ))}
-                
-                {renderStoryNode(currentNode, false)}
-
-                {errorMsg && (
-                  <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-2xl text-white text-center">
-                    {errorMsg}
-                    <br/>
-                    <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                {saveCode && (
+                  <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+                    <div className="pixel-border bg-gray-900 p-8 text-center max-w-sm w-full">
+                      <h3 className="font-pixel text-green-400 mb-4">Adventure Saved!</h3>
+                      <p className="font-terminal text-2xl text-white mb-6">Write down this magic code to resume later:</p>
+                      <div className="text-6xl font-pixel text-yellow-400 bg-black p-6 pixel-border mb-8 inline-block tracking-widest">
+                        {saveCode}
+                      </div>
+                      <button className="nes-btn w-full" onClick={() => setSaveCode(null)}>Continue</button>
+                    </div>
                   </div>
                 )}
 
-                <div ref={endOfStoryRef} />
-              </div>
+                <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-32">
+                  {storyHistory.map((hist, idx) => (
+                    <React.Fragment key={idx}>
+                      {renderStoryNode(hist.node, true, hist.chosenAction)}
+                    </React.Fragment>
+                  ))}
+                  
+                  {renderStoryNode(currentNode, false)}
 
-              {/* Active Choices Area - Buttons visually updated to show focus */}
-              {(gameState === 'story') && !errorMsg && currentNode?.choices && currentNode.choices.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-                  <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
-                  <div className="flex flex-col gap-2 max-w-4xl mx-auto">
-                    {currentNode.choices.map((choice, idx) => {
-                      const isFocused = focusedChoice === idx;
-                      return (
-                        <button 
-                          key={idx} 
-                          className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
-                          onClick={() => handleChoice(choice)}
-                          onMouseEnter={() => setFocusedChoice(idx)}
-                        >
-                          <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
-                          <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
-                        </button>
-                      );
-                    })}
+                  {errorMsg && (
+                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-2xl text-white text-center">
+                      {errorMsg}
+                      <br/>
+                      <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                    </div>
+                  )}
+
+                  <div ref={endOfStoryRef} />
+                </div>
+
+                {(gameState === 'story') && !errorMsg && currentNode?.choices && currentNode.choices.length > 0 && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+                    <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
+                    <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+                      {currentNode.choices.map((choice, idx) => {
+                        const isFocused = focusedChoice === idx;
+                        return (
+                          <button 
+                            key={idx} 
+                            className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
+                            onClick={() => handleChoice(choice)}
+                            onMouseEnter={() => setFocusedChoice(idx)}
+                          >
+                            <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
+                            <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {gameState === 'gameover' && (
-                <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-8 border-t-4 border-red-600 z-10 text-center">
-                   <h2 className="font-pixel text-3xl text-red-400 mb-6 flex items-center justify-center gap-4">
-                     💀 GAME OVER 💀
-                   </h2>
-                   <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
-                </div>
-              )}
+                {gameState === 'gameover' && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-8 border-t-4 border-red-600 z-10 text-center">
+                     <h2 className="font-pixel text-3xl text-red-400 mb-6 flex items-center justify-center gap-4">
+                       💀 GAME OVER 💀
+                     </h2>
+                     <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                  </div>
+                )}
 
-              {gameState === 'victory' && (
-                <div className="absolute bottom-0 left-0 right-0 bg-green-900/95 p-8 border-t-4 border-green-600 z-10 text-center">
-                   <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">
-                     🏆 VICTORY! 🏆
-                   </h2>
-                   <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                   <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
-                </div>
-              )}
+                {gameState === 'victory' && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-green-900/95 p-8 border-t-4 border-green-600 z-10 text-center">
+                     <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">
+                       🏆 VICTORY! 🏆
+                     </h2>
+                     <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
+                     <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          const renderLoading = () => (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 flex-grow py-12">
+              <div className="text-6xl animate-bounce">👻</div>
+              <h2 className="font-pixel text-xl text-purple-400 leading-relaxed">{loadingMsg || "Summoning Game Engine..."}</h2>
+              <div className="w-64 h-4 bg-gray-900 pixel-border mt-4 overflow-hidden relative mx-auto">
+                <div className="absolute top-0 left-0 h-full bg-green-500 animate-[loading_2s_ease-in-out_infinite]" style={{width: '50%'}}></div>
+              </div>
             </div>
           );
 
@@ -849,7 +1005,13 @@
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
                   <button 
-                    onClick={() => setIsMuted(!isMuted)} 
+                    onClick={() => {
+                      if(isMuted) {
+                        // Resume Web Audio Context on user event interaction to avoid policy block
+                        if (synthCtx && synthCtx.state === 'suspended') synthCtx.resume();
+                      }
+                      setIsMuted(!isMuted);
+                    }} 
                     className="text-xl hover:scale-110 transition-transform focus:outline-none"
                     title={isMuted ? "Unmute Music" : "Mute Music"}
                   >
@@ -867,11 +1029,8 @@
                   value={currentTrack} 
                   onChange={(e) => setCurrentTrack(parseInt(e.target.value))}
                 >
-                  {MUSIC_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
+                  {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
                 </select>
-
-                <audio ref={bgmRef} loop src={MUSIC_TRACKS[currentTrack].url} preload="auto" />
-                <audio ref={sfxRef} src={LIGHTNING_SFX} preload="auto" />
              </div>
           );
 
@@ -880,17 +1039,18 @@
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
               
-              {/* Lightning Full Screen Flash */}
               {showLightning && <div className="lightning-overlay"></div>}
               
               <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center relative">
-                <div className="w-full max-w-5xl h-[95vh] bg-black pixel-border relative overflow-hidden flex flex-col">
+                <div className="w-full max-w-5xl h-[95vh] bg-black pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
-                  {gameState === 'menu' && renderMenu()}
-                  {gameState === 'setup' && renderSetup()}
-                  {gameState === 'loading' && <div className="mt-16">{renderLoading()}</div>}
-                  {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
+                  <div className="flex-grow overflow-hidden relative">
+                    {gameState === 'menu' && renderMenu()}
+                    {gameState === 'setup' && renderSetup()}
+                    {gameState === 'loading' && renderLoading()}
+                    {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
+                  </div>
                 </div>
               </div>
             </React.Fragment>
