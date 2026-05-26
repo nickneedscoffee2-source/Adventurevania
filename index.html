@@ -23,7 +23,7 @@
         display: block;
         position: absolute;
         top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 255, 0, 0.06));
         z-index: 50;
         background-size: 100% 2px, 3px 100%;
         pointer-events: none;
@@ -76,41 +76,28 @@
         animation: lightning 0.6s ease-out;
       }
 
-      /* Animated Critters (High-Frequency Flapping Bats & Pausing Spiders) */
+      /* Flight path animations for Bats and Spiders */
       @keyframes batFlyRight {
         0%   { left: -15vw; transform: translateY(0); }
-        100% { left: 115vw; transform: translateY(-5vh); }
+        100% { left: 115vw; transform: translateY(-8vh); }
       }
       @keyframes batFlyLeft {
         0%   { left: 115vw; transform: translateY(0) scaleX(-1); }
-        100% { left: -15vw; transform: translateY(-5vh) scaleX(-1); }
+        100% { left: -15vw; transform: translateY(-8vh) scaleX(-1); }
       }
       @keyframes spiderCrawlRight {
         0%   { left: -20vw; }
         40%  { left: 45vw; }
-        60%  { left: 45vw; } /* Pause in place for ~2.4 seconds */
+        60%  { left: 45vw; } /* Pause in place */
         100% { left: 120vw; }
       }
       @keyframes spiderCrawlLeft {
         0%   { left: 120vw; transform: scaleX(-1); }
         40%  { left: 45vw; transform: scaleX(-1); }
-        60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place for ~2.4 seconds */
+        60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place */
         100% { left: -20vw; transform: scaleX(-1); }
       }
-
-      /* Rapid wing flutter keyframes */
-      @keyframes wingFlapLeft {
-        0% { transform: scaleY(1); }
-        100% { transform: scaleY(-0.4) translateY(2px); }
-      }
-      @keyframes wingFlapRight {
-        0% { transform: scaleY(1); }
-        100% { transform: scaleY(-0.4) translateY(2px); }
-      }
       
-      .wing-l { transform-origin: 16px 8px; animation: wingFlapLeft 0.08s infinite alternate ease-in-out; }
-      .wing-r { transform-origin: 16px 8px; animation: wingFlapRight 0.08s infinite alternate ease-in-out; }
-
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
@@ -175,7 +162,7 @@
 
         // --- CONFIGURATION & CONSTANTS ---
         const apiKey = ""; 
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=" + apiKey;
         
         // GOOGLE APPS SCRIPT WEB APP URL 
         const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
@@ -209,15 +196,14 @@
             bass: ["A2", "F2", "C2", "E2"]
           },
           {
-            name: "Vampire's Keep",
-            tempo: 130,
+            name: "Creepy Crawly",
+            tempo: 140,
             melody: [
-              { note: "A4", dur: 2 }, { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 },
-              { note: "C5", dur: 4 }, { note: "B4", dur: 4 },
-              { note: "A4", dur: 2 }, { note: "G#4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 },
-              { note: "E5", dur: 8 }
+              { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
+              { note: "G#4", dur: 4 }, { note: "E4", dur: 4 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, 
+              { note: "C5", dur: 4 }, { note: "D5", dur: 4 }, { note: "E5", dur: 8 }
             ],
-            bass: ["A2", "E2", "F2", "E2"]
+            bass: ["A2", "E2", "F2", "G2"]
           }
         ];
 
@@ -330,6 +316,61 @@
         let synthCtx = null;
         let melodyInterval = null;
 
+        // Interactive SVG Bat component that toggles wings natively in React state for reliable fluttering
+        function RetroBat({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
+
+          useEffect(() => {
+            const frameTimer = setInterval(() => {
+              setWingFrame(f => (f === 0 ? 1 : 0));
+            }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
+
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                {/* Bat Body */}
+                <rect x="14" y="5" width="4" height="6" fill="#151515" />
+                <rect x="15" y="3" width="2" height="2" fill="#151515" />
+                {/* Red Eyes */}
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                
+                {wingFrame === 0 ? (
+                  /* Wings Down Frame */
+                  <g>
+                    {/* Left Wing */}
+                    <rect x="10" y="5" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="6" y="6" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="2" y="8" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="0" y="10" width="2" height="3" fill="#2d2d2d" />
+                    {/* Right Wing */}
+                    <rect x="18" y="5" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="22" y="6" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="26" y="8" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="30" y="10" width="2" height="3" fill="#2d2d2d" />
+                  </g>
+                ) : (
+                  /* Wings Up Frame */
+                  <g>
+                    {/* Left Wing */}
+                    <rect x="10" y="4" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="6" y="2" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="2" y="0" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="0" y="0" width="2" height="2" fill="#2d2d2d" />
+                    {/* Right Wing */}
+                    <rect x="18" y="4" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="22" y="2" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="26" y="0" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="30" y="0" width="2" height="2" fill="#2d2d2d" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
+        }
+
         // --- MAIN COMPONENT ---
         function Adventurevania() {
           const [user, setUser] = useState(null);
@@ -413,34 +454,9 @@
               
               const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
               
-              let critterContent = null;
-              if (isBat) {
-                // High Quality Inline SVG Bat Flutter
-                critterContent = (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-16 h-8">
-                    <rect x="14" y="6" width="4" height="6" fill="#111111" />
-                    <rect x="15" y="4" width="2" height="2" fill="#111111" />
-                    <rect x="15" y="7" width="1" height="1" fill="#ff0000" />
-                    <rect x="17" y="7" width="1" height="1" fill="#ff0000" />
-                    <g className="wing-l">
-                      <rect x="6" y="4" width="8" height="4" fill="#333333" />
-                      <rect x="2" y="6" width="4" height="3" fill="#333333" />
-                      <rect x="0" y="8" width="2" height="2" fill="#333333" />
-                    </g>
-                    <g className="wing-r">
-                      <rect x="18" y="4" width="8" height="4" fill="#333333" />
-                      <rect x="26" y="6" width="4" height="3" fill="#333333" />
-                      <rect x="30" y="8" width="2" height="2" fill="#333333" />
-                    </g>
-                  </svg>
-                );
-              } else {
-                critterContent = <span style={{ fontSize: '5rem' }}>🕷️</span>;
-              }
-              
               const critterObj = {
                 id,
-                content: critterContent,
+                isBat,
                 style: {
                   top: `${top}vh`,
                   animation: animation,
@@ -601,7 +617,6 @@
               
               const now = synthCtx.currentTime;
               
-              // Combined square + sine oscillator for a rich, organic, vocalic wolf texture
               const voiceOsc = synthCtx.createOscillator();
               const subOsc = synthCtx.createOscillator();
               const finalGain = synthCtx.createGain();
@@ -610,7 +625,6 @@
               subOsc.type = 'sine';
 
               // Majestic soaring pitch envelope of a wild wolf howling at the moon
-              // Starts lower, sweeps into high resonant hold with beautiful natural glissando, then drops
               voiceOsc.frequency.setValueAtTime(160, now);
               voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
               voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
@@ -623,17 +637,15 @@
               subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
               subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
 
-              // Organic Wolf Vibrato LFO (simulates biological muscle tremor of the larynx)
               const vibratoLFO = synthCtx.createOscillator();
               const vibratoGain = synthCtx.createGain();
               vibratoLFO.type = 'sine';
-              vibratoLFO.frequency.setValueAtTime(5.8, now); // 5.8Hz natural tremor
-              vibratoGain.gain.setValueAtTime(12, now); // Vibrato depth
+              vibratoLFO.frequency.setValueAtTime(5.8, now); 
+              vibratoGain.gain.setValueAtTime(12, now); 
               vibratoLFO.connect(vibratoGain);
               vibratoGain.connect(voiceOsc.frequency);
               vibratoGain.connect(subOsc.frequency);
 
-              // Lowpass resonant filter sweeps to make the sound hollow, airy and wind-like
               const filter = synthCtx.createBiquadFilter();
               filter.type = 'bandpass';
               filter.Q.setValueAtTime(3.5, now);
@@ -641,19 +653,16 @@
               filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
               filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
 
-              // Smooth volume envelope for the howl
               finalGain.gain.setValueAtTime(0.0001, now);
               finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
               finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
               finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
 
-              // Connect nodes
               voiceOsc.connect(filter);
               subOsc.connect(filter);
               filter.connect(finalGain);
               finalGain.connect(synthCtx.destination);
 
-              // Start sound
               vibratoLFO.start(now);
               voiceOsc.start(now);
               subOsc.start(now);
@@ -686,7 +695,6 @@
              playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
              
-             // Half as frequent for the realistic moon wolf howl, otherwise use the classic ghost howl
              if (Math.random() > 0.5) {
                setTimeout(playRealisticWolfHowl, 1000);
              } else {
@@ -720,12 +728,11 @@
             window.speechSynthesis.speak(utterance);
           };
 
-          // Keyboard Navigation controls with browser event cancellation to prevent state-toggle interruptions
+          // Keyboard Navigation controls with browser event cancellation
           useEffect(() => {
             const handleKeyDown = (e) => {
               if(document.activeElement.tagName === "INPUT" && document.activeElement.type === "text") return;
 
-              // Prevent default browser reactions (page scrolling, focusing, button triggering)
               if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
                 e.preventDefault();
               }
@@ -859,6 +866,8 @@
 
             const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational.`;
 
+            const fullApiUrl = `${GEMINI_URL}`;
+
             const payload = {
               contents: [{ parts: [{ text: promptText }] }],
               systemInstruction: { parts: [{ text: systemInstruction }] },
@@ -889,7 +898,7 @@
             };
 
             try {
-              const response = await fetchWithRetry(GEMINI_URL, {
+              const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -902,7 +911,7 @@
 
               let jsonText = response.candidates[0].content.parts[0].text;
               
-              // Robust JSON cleanup
+              // Clean Markdown if exists
               jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
               
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
@@ -1209,15 +1218,12 @@
                   {renderStoryNode(currentNode, false)}
 
                   {errorMsg && (
-                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center">
-                      {errorMsg}
-                      <br/>
-                      {apiKey === "" && (
-                        <p className="text-xs text-yellow-300 font-pixel mt-2 leading-relaxed">
-                          ⚠️ Self-hosting on GitHub? Make sure to insert your Gemini API Key at the top of 'index.html'!
-                        </p>
-                      )}
-                      <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
+                      <div>
+                        {errorMsg}
+                      </div>
+                      
+                      <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
                     </div>
                   )}
 
@@ -1318,11 +1324,16 @@
               
               {/* Dynamic Animated Critters Layer */}
               <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                {critters.map(crit => (
-                  <div key={crit.id} className="critter" style={crit.style}>
-                    {crit.content}
-                  </div>
-                ))}
+                {critters.map(crit => {
+                  if (crit.isBat) {
+                    return <RetroBat key={crit.id} style={crit.style} />;
+                  }
+                  return (
+                    <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>
+                      {crit.content}
+                    </div>
+                  );
+                })}
               </div>
 
               {showLightning && <div className="lightning-overlay"></div>}
