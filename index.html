@@ -276,6 +276,86 @@
           ]
         };
 
+        // Local Procedural Story Engine Fallback
+        const generateLocalNode = (turn, setup) => {
+          const char = CATEGORIES.characters[setup.character];
+          const vill = CATEGORIES.villains[setup.villain];
+          const sett = CATEGORIES.settings[setup.setting];
+          const plot = CATEGORIES.plots[setup.plot];
+          const dil = CATEGORIES.dilemmas[setup.dilemma];
+
+          const mathQuestions = [
+            { q: "A glowing puzzle wall appears. Solve: What is 12 multiplied by 3?", a: "36", w1: "24", w2: "15", m1: "A phantom blast knocks you back!", m2: "The lock traps you in stone!" },
+            { q: "A scale needs to be balanced. Which fraction is equal to one-half (1/2)?", a: "2/4", w1: "1/3", w2: "3/5", m1: "The floor tips, dropping you into mud!", m2: "Acid rain pours down!" },
+            { q: "The final seal demands a code. Solve: What is 45 plus 37?", a: "82", w1: "72", w2: "81", m1: "Quicksand fills the chamber!", m2: "Spooky spirits drag you away!" }
+          ];
+
+          const laQuestions = [
+            { q: "To unlock the doorway, you must identify the correct spelling:", a: "Beautiful", w1: "Beautifull", w2: "Butiful", m1: "The stone steps crumble!", m2: "The gargoyles awaken!" },
+            { q: "The door demands you find the noun in this sentence: 'The swift bat flew high.'", a: "bat", w1: "swift", w2: "flew", m1: "Spikes shoot from the door!", m2: "You are pulled into darkness!" },
+            { q: "A voice whispers: Which word means 'very, very scary'?", a: "Terrifying", w1: "Friendly", w2: "Excited", m1: "The monster tricks you into a trap!", m2: "You stumble into a pit!" }
+          ];
+
+          const sciQuestions = [
+            { q: "A massive boulder blocks your path. Which simple machine will help you lift it easiest?", a: "A lever", w1: "A pulley", w2: "A wheel", m1: "The boulder rolls over you!", m2: "It slips, sealing you inside!" },
+            { q: "A frozen lock stops you. What state of matter is water when it freezes into ice?", a: "Solid", w1: "Liquid", w2: "Gas", m1: "The platform collapses!", m2: "Freezing steam locks you in place!" }
+          ];
+
+          const ssQuestions = [
+            { q: "Your compass shows North, but you are facing East. Which way should you turn?", a: "90 degrees to your left", w1: "90 degrees to your right", w2: "Turn around", m1: "You walk straight into a swamp!", m2: "Dracula's guards capture you!" },
+            { q: "An ancient tablet asks: Which helpers are responsible for fighting fires in our community?", a: "Firefighters", w1: "Police Officers", w2: "Librarians", m1: "You are locked in the crypt!", m2: "Whispering ghosts trap you!" }
+          ];
+
+          let qData;
+          if (turn === 0) qData = mathQuestions[0];
+          else if (turn === 1) qData = laQuestions[0];
+          else if (turn === 2) qData = sciQuestions[0];
+          else if (turn === 3) qData = ssQuestions[0];
+          else if (turn === 4) qData = mathQuestions[1];
+          else if (turn === 5) qData = laQuestions[1];
+          else if (turn === 6) qData = sciQuestions[1];
+          else if (turn === 7) qData = ssQuestions[1];
+          else if (turn === 8) qData = mathQuestions[2];
+          else if (turn === 9) qData = laQuestions[2];
+
+          let storyText = "";
+          if (turn === 0) {
+            storyText = `With a sudden crash of thunder, ${char.name} steps into the spooky, shadowed corridors of the ${sett.name}. Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name} already. \n\nSuddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, locking the path forward.`;
+          } else if (turn === 10) {
+            storyText = `AMAZING! After overcoming all of ${vill.name}'s treacherous curriculum traps, ${char.name} finally reaches the heart of the ${sett.name}. \n\nWith one final burst of clever thinking, you fully resolve the plot to ${plot.name}! The spooky shadows melt away, and a bright morning sun rises. You have conquered Adventurevania!`;
+            return {
+              storyText,
+              imagePrompt: "Dracula castle in beautiful morning sunlight pixel art",
+              choices: [],
+              isVictory: true
+            };
+          } else {
+            const transitions = [
+              `Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`,
+              `With a sudden flash of lightning, the walls of the ${sett.name} rattle around you.`,
+              `You can hear the cackling laughter of ${vill.name} echoing from the high ceilings.`,
+              `A cold breeze blows through. You are still dealing with being ${dil.name}.`,
+              `You climb a winding stone staircase, staying alert for traps.`,
+              `A shadow flutters past! You must react quickly as another barrier blocks your path.`,
+              `You hear spooky howling nearby. Your quest to ${plot.name} hangs in the balance!`,
+              `You reach a giant wooden door decorated with ancient glyphs.`,
+              `The final chamber is just ahead, but the air grows freezing cold.`
+            ];
+            storyText = transitions[turn - 1] + `\n\n${vill.name} has laid a new curriculum trap to stop you!`;
+          }
+
+          return {
+            storyText,
+            imagePrompt: `Spooky scene in ${sett.name} with ${char.name} facing ${vill.name} pixel art`,
+            question: qData.q,
+            choices: [
+              { text: qData.a, isCorrect: true, isGameOver: false },
+              { text: qData.w1, isCorrect: false, isGameOver: true, gameOverMessage: qData.m1 },
+              { text: qData.w2, isCorrect: false, isGameOver: true, gameOverMessage: qData.m2 }
+            ].sort(() => Math.random() - 0.5)
+          };
+        };
+
         // --- FIREBASE SETUP ---
         let app, auth, db, appId;
         try {
@@ -897,7 +977,13 @@
               }
             };
 
+            // Seamless Dual-Engine Fallback Execution
             try {
+              // Ensure we don't even call empty keys to avoid browser cross-origin preflight noise
+              if (!apiKey || apiKey === "") {
+                throw new Error("No primary Google Gemini API Key configured.");
+              }
+
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -905,13 +991,10 @@
               });
 
               if (!response.candidates || response.candidates.length === 0) {
-                 console.error("Safety Filter or Empty Response:", response);
                  throw new Error("Empty Response from AI");
               }
 
               let jsonText = response.candidates[0].content.parts[0].text;
-              
-              // Clean Markdown if exists
               jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
               
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
@@ -931,9 +1014,18 @@
                 setGameState('story');
               }
             } catch (err) {
-              console.error("Story Generation Error:", err);
-              setErrorMsg("The magical connection was lost. Ensure your prompt doesn't violate safety guidelines or try again!");
-              setGameState('story');
+              console.warn("API Error (Safe local story generator activated):", err.message);
+              
+              // SEAMLESS FALLBACK: Trigger local procedural curriculum story segment immediately!
+              const localNode = generateLocalNode(turnCount, setupData);
+              setCurrentNode(localNode);
+              
+              if (localNode.isVictory) {
+                setGameState('victory');
+                recordEngagement('Victory');
+              } else {
+                setGameState('story');
+              }
             }
           };
 
@@ -1218,7 +1310,7 @@
                   {renderStoryNode(currentNode, false)}
 
                   {errorMsg && (
-                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
+                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xs text-white text-center flex flex-col gap-4">
                       <div>
                         {errorMsg}
                       </div>
@@ -1330,7 +1422,7 @@
                   }
                   return (
                     <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>
-                      {crit.content}
+                      🕷️
                     </div>
                   );
                 })}
