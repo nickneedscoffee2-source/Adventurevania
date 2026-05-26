@@ -49,7 +49,7 @@
         width: 100%;
         height: 100px;
         z-index: 49;
-        position: absolute;
+        position: fixed;
         pointer-events: none;
         background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(138,43,226,0.2) 50%, rgba(0,0,0,0) 100%);
         opacity: 0.1;
@@ -71,9 +71,41 @@
       }
 
       .lightning-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: 99;
         animation: lightning 0.6s ease-out;
+      }
+
+      /* Animated Critters (Bats & Spiders) */
+      @keyframes batFlyRight {
+        0% { transform: translate(-100px, var(--start-y)) scale(1); }
+        25% { transform: translate(25vw, calc(var(--start-y) - 5vh)) scale(1.2); }
+        50% { transform: translate(50vw, calc(var(--start-y) + 5vh)) scale(1); }
+        75% { transform: translate(75vw, calc(var(--start-y) - 2vh)) scale(1.1); }
+        100% { transform: translate(110vw, var(--start-y)) scale(1); }
+      }
+      @keyframes batFlyLeft {
+        0% { transform: translate(110vw, var(--start-y)) scaleX(-1) scale(1); }
+        25% { transform: translate(75vw, calc(var(--start-y) - 5vh)) scaleX(-1) scale(1.2); }
+        50% { transform: translate(50vw, calc(var(--start-y) + 5vh)) scaleX(-1) scale(1); }
+        75% { transform: translate(25vw, calc(var(--start-y) - 2vh)) scaleX(-1) scale(1.1); }
+        100% { transform: translate(-100px, var(--start-y)) scaleX(-1) scale(1); }
+      }
+      @keyframes spiderCrawlRight {
+        0% { transform: translate(-100px, var(--start-y)); }
+        40% { transform: translate(40vw, var(--start-y)); }
+        60% { transform: translate(40vw, var(--start-y)); } /* Pause in place */
+        100% { transform: translate(110vw, var(--start-y)); }
+      }
+      @keyframes spiderCrawlLeft {
+        0% { transform: translate(110vw, var(--start-y)) scaleX(-1); }
+        40% { transform: translate(60vw, var(--start-y)) scaleX(-1); }
+        60% { transform: translate(60vw, var(--start-y)) scaleX(-1); } /* Pause in place */
+        100% { transform: translate(-100px, var(--start-y)) scaleX(-1); }
+      }
+      .critter {
+        position: fixed; pointer-events: none; z-index: 80; 
+        filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
       }
 
       .nes-btn {
@@ -193,7 +225,7 @@
             { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
             { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
             { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
-            { name: "Beast Tamer", icon: "🦁", desc: "Understands all animal life." },
+            { name: "Great Lakes Explorer", icon: "🌊", desc: "Expert navigator of the Great Lakes." },
             { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
             { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
             { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
@@ -314,7 +346,11 @@
           const [isMuted, setIsMuted] = useState(true); 
           const [currentTrack, setCurrentTrack] = useState(0);
           const [focusedChoice, setFocusedChoice] = useState(0);
+          const [critters, setCritters] = useState([]); // Array of flying bats and spiders
           
+          // Audio TTS State
+          const [isSpeaking, setIsSpeaking] = useState(false);
+
           const endOfStoryRef = useRef(null);
 
           // Initialize Firebase Auth
@@ -334,6 +370,10 @@
               const unsubscribe = onAuthStateChanged(auth, setUser);
               return () => unsubscribe();
             }
+            // Cleanup TTS on unmount
+            return () => {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            }
           }, []);
 
           // Scroll to bottom
@@ -351,6 +391,44 @@
             }, 3000);
             return () => clearInterval(imgInterval);
           }, [gameState]);
+
+          // Critter Spawner (Bats & Spiders)
+          useEffect(() => {
+            let timeoutId;
+            const spawnCritter = () => {
+              const id = Date.now();
+              const isBat = Math.random() > 0.5;
+              const direction = Math.random() > 0.5 ? 'Right' : 'Left';
+              // Bats fly higher up, spiders crawl lower near the bottom
+              const top = isBat ? Math.floor(Math.random() * 40) + 5 : Math.floor(Math.random() * 30) + 60; 
+              
+              const animation = isBat ? `batFly${direction} 8s linear forwards` : `spiderCrawl${direction} 12s linear forwards`;
+              const icon = isBat ? '🦇' : '🕷️';
+              
+              const critterObj = {
+                id, icon,
+                style: {
+                  '--start-y': `${top}vh`,
+                  animation: animation,
+                  fontSize: isBat ? '2rem' : '1.5rem'
+                }
+              };
+
+              setCritters(prev => [...prev, critterObj]);
+
+              // Remove critter from DOM after animation completes
+              setTimeout(() => {
+                setCritters(prev => prev.filter(c => c.id !== id));
+              }, 12500);
+
+              // Schedule next critter (Between 30 to 45 seconds)
+              timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
+            };
+
+            // Spawn first critter quickly
+            timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
+            return () => clearTimeout(timeoutId);
+          }, []);
 
           // --- 8-BIT SYNTH MUSIC CHIP ---
           const playSynthNote = (freq, type, duration, volMod) => {
@@ -449,6 +527,47 @@
             }
           };
 
+          // Spooky Wolf Howl Synth
+          const playWolfHowl = () => {
+            if (!synthCtx || isMuted) return;
+            try {
+              const osc = synthCtx.createOscillator();
+              const gain = synthCtx.createGain();
+              osc.type = 'sine';
+
+              const now = synthCtx.currentTime;
+              
+              // Frequency envelope (howl glissando)
+              osc.frequency.setValueAtTime(250, now);
+              osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
+              
+              // Add slight vibrato (LFO)
+              const lfo = synthCtx.createOscillator();
+              lfo.type = 'sine';
+              lfo.frequency.setValueAtTime(5, now);
+              const lfoGain = synthCtx.createGain();
+              lfoGain.gain.setValueAtTime(10, now);
+              lfo.connect(lfoGain);
+              lfoGain.connect(osc.frequency);
+              lfo.start(now + 1.0);
+              lfo.stop(now + 4.0);
+              
+              osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
+
+              // Amplitude envelope
+              gain.gain.setValueAtTime(0.0001, now);
+              gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
+              gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+
+              osc.connect(gain);
+              gain.connect(synthCtx.destination);
+              osc.start(now);
+              osc.stop(now + 4.0);
+            } catch(e) { 
+              console.warn(e); 
+            }
+          };
+
           // Reliable track/mute toggle trigger
           useEffect(() => {
             if (!isMuted) {
@@ -469,14 +588,38 @@
              setShowLightning(true);
              playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
+             
+             // Wolf howl follows the thunder
+             setTimeout(playWolfHowl, 800);
           };
 
+          // Lightning happens at random intervals universally throughout the app
           useEffect(() => {
             const lightningInterval = setInterval(() => {
               if (Math.random() > 0.6) triggerLightning();
             }, 8000);
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
+
+          // --- TTS FUNCTIONALITY ---
+          const handleReadAloud = (text) => {
+            if (!window.speechSynthesis) return;
+            
+            // If currently speaking, stop it.
+            if (isSpeaking) {
+              window.speechSynthesis.cancel();
+              setIsSpeaking(false);
+              return;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Slightly slower for younger readers
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            
+            setIsSpeaking(true);
+            window.speechSynthesis.speak(utterance);
+          };
 
           // Keyboard Navigation controls
           useEffect(() => {
@@ -562,6 +705,10 @@
           const [errorMsg, setErrorMsg] = useState("");
 
           const generateStoryNode = async (actionText = null) => {
+            // Stop any ongoing reading when moving to next screen
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+
             setGameState('loading');
             setFocusedChoice(0); 
             setLoadingMsg("Summoning AI Game Master...");
@@ -872,13 +1019,25 @@
                     <p className="font-terminal text-2xl md:text-3xl text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
                       {node.storyText}
                     </p>
-                    
+                  </div>
+
+                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                     {node.question && !isHistory && (
-                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 mt-4 break-inside-avoid">
+                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
                         <p className="font-pixel text-[11px] text-green-300 leading-loose">
                           <span className="text-yellow-400">CHALLENGE:</span> {node.question}
                         </p>
                       </div>
+                    )}
+                    
+                    {/* TTS Read Aloud Button */}
+                    {!isHistory && (
+                      <button 
+                        onClick={() => handleReadAloud(node.storyText + (node.question ? ". The challenge is: " + node.question : ""))} 
+                        className="nes-btn shrink-0"
+                      >
+                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1007,7 +1166,6 @@
                   <button 
                     onClick={() => {
                       if(isMuted) {
-                        // Resume Web Audio Context on user event interaction to avoid policy block
                         if (synthCtx && synthCtx.state === 'suspended') synthCtx.resume();
                       }
                       setIsMuted(!isMuted);
@@ -1039,6 +1197,15 @@
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
               
+              {/* Dynamic Animated Critters Layer */}
+              <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                {critters.map(crit => (
+                  <div key={crit.id} className="critter" style={crit.style}>
+                    {crit.icon}
+                  </div>
+                ))}
+              </div>
+
               {showLightning && <div className="lightning-overlay"></div>}
               
               <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center relative">
