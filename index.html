@@ -295,86 +295,59 @@
           ]
         };
 
-        // Local Procedural Story Engine Fallback - More Varied Now
+        // Local Procedural Story Engine Fallback - Now uses Pagination
         const generateLocalNode = (turn, setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
           const sett = CATEGORIES.settings[setup.setting];
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
 
           const mathQuestions = [
-            { q: "A glowing puzzle wall appears. Solve: What is 12 multiplied by 3?", a: "36", w1: "24", w2: "15", m1: "A phantom blast knocks you back!", m2: "The lock traps you in stone!" },
-            { q: "A scale needs to be balanced. Which fraction is equal to one-half (1/2)?", a: "2/4", w1: "1/3", w2: "3/5", m1: "The floor tips, dropping you into mud!", m2: "Acid rain pours down!" },
-            { q: "The final seal demands a code. Solve: What is 45 plus 37?", a: "82", w1: "72", w2: "81", m1: "Quicksand fills the chamber!", m2: "Spooky spirits drag you away!" }
+            { q: "You must solve this puzzle to open the door: What is 12 multiplied by 3?", a: "36", w1: "24", w2: "15", m1: "A phantom blast knocks you back!", m2: "The lock traps you in stone!" }
           ];
 
-          const laQuestions = [
-            { q: "To unlock the doorway, you must identify the correct spelling:", a: "Beautiful", w1: "Beautifull", w2: "Butiful", m1: "The stone steps crumble!", m2: "The gargoyles awaken!" },
-            { q: "The door demands you find the noun in this sentence: 'The swift bat flew high.'", a: "bat", w1: "swift", w2: "flew", m1: "Spikes shoot from the door!", m2: "You are pulled into darkness!" },
-            { q: "A voice whispers: Which word means 'very, very scary'?", a: "Terrifying", w1: "Friendly", w2: "Excited", m1: "The monster tricks you into a trap!", m2: "You stumble into a pit!" }
-          ];
+          let qData = mathQuestions[0]; // Simplified for fallback example
 
-          const sciQuestions = [
-            { q: "A massive boulder blocks your path. Which simple machine will help you lift it easiest?", a: "A lever", w1: "A pulley", w2: "A wheel", m1: "The boulder rolls over you!", m2: "It slips, sealing you inside!" },
-            { q: "A frozen lock stops you. What state of matter is water when it freezes into ice?", a: "Solid", w1: "Liquid", w2: "Gas", m1: "The platform collapses!", m2: "Freezing steam locks you in place!" }
-          ];
-
-          const ssQuestions = [
-            { q: "Your compass shows North, but you are facing East. Which way should you turn?", a: "90 degrees to your left", w1: "90 degrees to your right", w2: "Turn around", m1: "You walk straight into a swamp!", m2: "Dracula's guards capture you!" },
-            { q: "An ancient tablet asks: Which helpers are responsible for fighting fires in our community?", a: "Firefighters", w1: "Police Officers", w2: "Librarians", m1: "You are locked in the crypt!", m2: "Whispering ghosts trap you!" }
-          ];
-
-          // Mix up the arrays so they aren't totally static if fallback hits
-          const rIndex = Math.floor(Math.random() * 2);
-          let qData;
-          if (turn === 0) qData = mathQuestions[0];
-          else if (turn === 1) qData = laQuestions[0];
-          else if (turn === 2) qData = sciQuestions[rIndex];
-          else if (turn === 3) qData = ssQuestions[0];
-          else if (turn === 4) qData = mathQuestions[1];
-          else if (turn === 5) qData = laQuestions[1];
-          else if (turn === 6) qData = sciQuestions[1];
-          else if (turn === 7) qData = ssQuestions[1];
-          else if (turn === 8) qData = mathQuestions[2];
-          else if (turn === 9) qData = laQuestions[2];
-
-          let storyText = "";
+          let pages = [];
           if (turn === 0) {
-            storyText = `With a sudden crash of thunder, ${char.name} steps into the spooky, shadowed corridors of the ${sett.name}. Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name} already. \n\nSuddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, locking the path forward.`;
+            pages = [
+              `With a sudden crash of thunder, ${char.name} steps into the spooky, shadowed corridors of the ${sett.name}.`,
+              `Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name} already.`,
+              `The flickering torches cast long, strange shadows against the ancient stone walls, making every corner look like a lurking monster.`,
+              `Suddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, weaving a curriculum trap into the very architecture of the room.`
+            ];
           } else if (turn === 10) {
-            storyText = `AMAZING! After overcoming all of ${vill.name}'s treacherous curriculum traps, ${char.name} finally reaches the heart of the ${sett.name}. \n\nWith one final burst of clever thinking, you fully resolve the plot to ${plot.name}! The spooky shadows melt away, and a bright morning sun rises. You have conquered Adventurevania!`;
+            pages = [
+              `AMAZING! After overcoming all of ${vill.name}'s treacherous curriculum traps, ${char.name} finally reaches the heart of the ${sett.name}.`,
+              `With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!`,
+              `The spooky shadows melt away, and a bright morning sun rises over the horizon.`,
+              `You have conquered Adventurevania!`
+            ];
             return {
-              storyText,
+              pages,
               imagePrompt: "Dracula castle in beautiful morning sunlight pixel art",
               choices: [],
               isVictory: true
             };
           } else {
-            const transitions = [
+            pages = [
               `Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`,
-              `With a sudden flash of lightning, the walls of the ${sett.name} rattle around you.`,
-              `You can hear the cackling laughter of ${vill.name} echoing from the high ceilings.`,
-              `A cold breeze blows through. You are still dealing with being ${dil.name}.`,
-              `You climb a winding stone staircase, staying alert for traps.`,
-              `A shadow flutters past! You must react quickly as another barrier blocks your path.`,
-              `You hear spooky howling nearby. Your quest to ${plot.name} hangs in the balance!`,
-              `You reach a giant wooden door decorated with ancient glyphs.`,
-              `The final chamber is just ahead, but the air grows freezing cold.`
+              `With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.`,
+              `You climb a winding stone staircase, staying alert for traps as a shadow flutters past!`,
+              `You reach a giant wooden door. ${vill.name} has laid a new curriculum trap to stop you!`
             ];
-            storyText = transitions[turn - 1] + `\n\n${vill.name} has laid a new curriculum trap to stop you!`;
           }
 
           return {
-            storyText,
+            pages,
             imagePrompt: `Spooky scene in ${sett.name} with ${char.name} facing ${vill.name} pixel art`,
             question: qData.q,
             choices: [
               { text: qData.a, isCorrect: true, isGameOver: false },
               { text: qData.w1, isCorrect: false, isGameOver: true, gameOverMessage: qData.m1 },
               { text: qData.w2, isCorrect: false, isGameOver: true, gameOverMessage: qData.m2 }
-            ].sort(() => Math.random() - 0.5)
+            ]
           };
         };
 
@@ -517,6 +490,7 @@
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
           const [storyHistory, setStoryHistory] = useState([]);
           const [currentNode, setCurrentNode] = useState(null);
+          const [currentPageIndex, setCurrentPageIndex] = useState(0);
           const [turnCount, setTurnCount] = useState(0);
           
           // Analytics & Tracking State
@@ -566,7 +540,7 @@
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
-          }, [currentNode, gameState]);
+          }, [currentNode, currentPageIndex, gameState]);
 
           // Rotating Menu Backgrounds
           useEffect(() => {
@@ -898,13 +872,21 @@
                      startGame();
                    }
                  }
-              } else if (gameState === 'story' && currentNode?.choices?.length > 0 && !errorMsg) {
-                 if (e.key === 'ArrowDown') {
-                   setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
-                 } else if (e.key === 'ArrowUp') {
-                   setFocusedChoice(prev => Math.max(prev - 1, 0));
-                 } else if (e.key === 'Enter') {
-                   handleChoice(currentNode.choices[focusedChoice]);
+              } else if (gameState === 'story' && !errorMsg) {
+                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+                 
+                 if (!isAtLastPage && e.key === 'Enter') {
+                   setCurrentPageIndex(p => p + 1);
+                   if (window.speechSynthesis) window.speechSynthesis.cancel();
+                   setIsSpeaking(false);
+                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
+                   if (e.key === 'ArrowDown') {
+                     setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
+                   } else if (e.key === 'ArrowUp') {
+                     setFocusedChoice(prev => Math.max(prev - 1, 0));
+                   } else if (e.key === 'Enter') {
+                     handleChoice(currentNode.choices[focusedChoice]);
+                   }
                  }
               } else if (gameState === 'menu') {
                  if (e.key === 'Enter') {
@@ -920,7 +902,7 @@
 
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, focusedChoice, errorMsg, isMuted]);
+          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted]);
 
           // --- ANALYTICS FUNCTION ---
           const recordEngagement = async (outcome) => {
@@ -963,6 +945,7 @@
 
             setGameState('loading');
             setFocusedChoice(0); 
+            setCurrentPageIndex(0);
             setLoadingMsg("Summoning AI Game Master...");
             setErrorMsg("");
             
@@ -976,15 +959,16 @@
             const currentSubject = subjects[turnCount % subjects.length];
 
             const levelInstructions = [
-              "Difficulty: Grades 1-2 (Early Primary). Use short sentences. Math: basic addition/subtraction. Language: sight words, simple spelling. Science/Social: basic community/nature facts.",
-              "Difficulty: Grades 3-4 (Primary). Use engaging sentences. Math: multiplication/division. Language: nouns, verbs, reading comprehension. Science/Social: habitats, states of matter, simple maps.",
-              "Difficulty: Grades 5-6 (Junior). Use descriptive paragraphs. Math: fractions, decimals, basic geometry. Language: complex grammar, inferences. Science/Social: ecosystems, history, simple physics.",
-              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric paragraphs. Math: algebra, advanced fractions. Language: advanced vocabulary, literary devices. Science/Social: biology, world history, complex mechanics."
+              "Difficulty: Grades 1-2 (Early Primary). Use simple sentences and basic vocabulary. Math: basic addition/subtraction. Language: sight words, simple spelling. Science/Social: basic community/nature facts.",
+              "Difficulty: Grades 3-4 (Primary). Use engaging standard sentences. Math: multiplication/division. Language: nouns, verbs, reading comprehension. Science/Social: habitats, states of matter, simple maps.",
+              "Difficulty: Grades 5-6 (Junior). Use descriptive language. Math: fractions, decimals, basic geometry. Language: complex grammar, inferences. Science/Social: ecosystems, history, simple physics.",
+              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric narrative with deep descriptions and advanced vocabulary. Math: algebra, advanced fractions. Language: advanced vocabulary, literary devices. Science/Social: biology, world history, complex mechanics."
             ];
 
             let historyContext = "";
             if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Turn ${i + 1}: Challenge was "${h.node.question}". Player chose "${h.chosenAction}".`).join('\n');
+              // Give AI context so it doesn't repeat past puzzles or scenarios
+              historyContext = storyHistory.map((h, i) => `Turn ${i + 1}: Player faced plot puzzle "${h.node.question}". Player chose "${h.chosenAction}".`).join('\n');
             }
 
             let promptText = `
@@ -1002,7 +986,7 @@
             if (turnCount === 0) {
               promptText += "\nThis is the BEGINNING of the story. Introduce the character, the setting, the villain's plot, and the central dilemma. Set the spooky but kid-friendly tone.";
             } else {
-              promptText += `\nPast History:\n${historyContext}\n\nDO NOT repeat any previous challenges, concepts, or questions. Create something entirely new.\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
+              promptText += `\nPast History:\n${historyContext}\n\nDO NOT repeat any previous challenges, concepts, or questions. Create an entirely new obstacle.\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
             }
 
             if (turnCount >= 10) {
@@ -1010,12 +994,12 @@
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
-              1. Write a highly descriptive story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style. Scale the length and vocabulary strictly to the Reading Level constraints provided.
-              2. Incorporate a UNIQUE, NEVER-BEFORE-SEEN educational challenge based on: ${currentSubject}. The challenge should naturally fit the story and strictly match the grade-level difficulty.
-              3. State the question or challenge clearly in the "question" field.
-              4. Provide 2 or 3 "choices" for the player.
-                 - At least one choice MUST be the correct educational answer (set 'isCorrect' to true).
-                 - At least one choice MUST be incorrect (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
+              1. Write the story segment divided into an array of at least 4 distinct "pages" (strings). Each string represents a separate page of reading that advances the plot. Scale the length and vocabulary strictly to the Reading Level constraints provided.
+              2. Weave an educational challenge based on: ${currentSubject} deeply into the plot (like the show Odd Squad). The characters must use this curriculum concept to solve a practical problem to advance (e.g., using multiplication to configure a machine, or understanding ecosystems to pacify a creature). DO NOT just insert a random quiz; make it a narrative puzzle.
+              3. State the question or puzzle clearly in the "question" field.
+              4. Provide 2 or 3 "choices" representing attempts to solve the problem.
+                 - At least one choice MUST be the correct educational application (set 'isCorrect' to true).
+                 - At least one choice MUST be an incorrect application (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
               5. Provide an "imagePrompt" field containing a short visual description of the scene to generate an 8-bit image.
               `;
             }
@@ -1032,7 +1016,11 @@
                 responseSchema: {
                   type: "OBJECT",
                   properties: {
-                    storyText: { type: "STRING" },
+                    pages: {
+                      type: "ARRAY",
+                      description: "Array of strings representing pages of story text. Must have at least 4 elements.",
+                      items: { type: "STRING" }
+                    },
                     imagePrompt: { type: "STRING" },
                     question: { type: "STRING" },
                     choices: {
@@ -1053,13 +1041,7 @@
               }
             };
 
-            // Seamless Dual-Engine Fallback Execution
             try {
-              // Ensure we don't even call empty keys to avoid browser cross-origin preflight noise
-              if (!apiKey || apiKey === "") {
-                throw new Error("No primary Google Gemini API Key configured.");
-              }
-
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1081,7 +1063,14 @@
               }
               
               const nodeData = JSON.parse(jsonText);
+              
+              // Fallback protection just in case AI returns storyText instead of pages array
+              if (!nodeData.pages && nodeData.storyText) {
+                 nodeData.pages = [nodeData.storyText];
+              }
+              
               setCurrentNode(nodeData);
+              setCurrentPageIndex(0); // Reset to first page
               
               if (nodeData.isVictory) {
                 setGameState('victory');
@@ -1095,6 +1084,7 @@
               // SEAMLESS FALLBACK: Trigger local procedural curriculum story segment immediately!
               const localNode = generateLocalNode(turnCount, setupData);
               setCurrentNode(localNode);
+              setCurrentPageIndex(0);
               
               if (localNode.isVictory) {
                 setGameState('victory');
@@ -1117,9 +1107,10 @@
             if (choice.isGameOver) {
               setCurrentNode({
                 ...currentNode,
-                storyText: currentNode.storyText + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!"),
+                pages: [currentNode.pages[currentNode.pages.length - 1] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
                 choices: []
               });
+              setCurrentPageIndex(0);
               setGameState('gameover');
               recordEngagement('GameOver');
             } else {
@@ -1171,6 +1162,7 @@
                 const data = docSnap.data();
                 setSetupData(data.setupData); setStoryHistory(data.storyHistory);
                 setCurrentNode(data.currentNode); setTurnCount(data.turnCount);
+                setCurrentPageIndex(0);
                 setGameState(data.gameState === 'gameover' ? 'gameover' : (data.gameState === 'victory' ? 'victory' : 'story'));
                 setSaveCode(null); setSessionStartTime(Date.now()); 
               } else {
@@ -1234,12 +1226,12 @@
 
             return (
               <div className="flex flex-col h-full p-4 md:p-8">
-                <div className="flex justify-between items-center mb-6 border-b-4 border-purple-900 pb-4">
+                <div className="flex justify-between items-center mb-6 border-b-4 border-purple-900 pb-4 shrink-0">
                   <h2 className="font-pixel text-xl md:text-2xl text-green-400">{current.title}</h2>
                   <span className="font-pixel text-xs text-gray-500">Step {setupStep + 1}/6</span>
                 </div>
 
-                <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-8 pr-2">
+                <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-24 pr-2">
                   {current.data.map((item, idx) => {
                     const isSelected = setupData[current.key] === idx;
                     const isFocused = setupFocusIndex === idx;
@@ -1261,7 +1253,7 @@
                   })}
                 </div>
 
-                <div className="flex justify-between mt-6 pt-4 items-center">
+                <div className="flex justify-between mt-6 pt-4 items-center shrink-0">
                   <div className="font-pixel text-[8px] text-gray-500 hidden md:block">Use Arrow Keys & Enter</div>
                   <div className="flex gap-4">
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
@@ -1281,7 +1273,12 @@
           };
 
           const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node) return null;
+            if (!node || !node.pages) return null;
+            
+            const isAtLastPage = currentPageIndex === node.pages.length - 1;
+            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
+            const showChallenge = isHistory || isAtLastPage;
+
             return (
               <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
                 <div className="pixel-border bg-black p-4 md:p-6 relative">
@@ -1294,12 +1291,12 @@
 
                   <div className="w-full">
                     <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap mb-4" style={{ fontSize: `${textSize}px` }}>
-                      {node.storyText}
+                      {textToDisplay}
                     </p>
                   </div>
 
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {node.question && !isHistory && (
+                    {showChallenge && node.question && (
                       <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
                         <p className="font-pixel text-[11px] text-green-300 leading-loose">
                           <span className="text-yellow-400">CHALLENGE:</span> {node.question}
@@ -1310,7 +1307,7 @@
                     {/* TTS Read Aloud Button */}
                     {!isHistory && (
                       <button 
-                        onClick={() => handleReadAloud(node.storyText + (node.question ? ". The challenge is: " + node.question : ""))} 
+                        onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} 
                         className="nes-btn shrink-0"
                       >
                         {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
@@ -1332,6 +1329,8 @@
             if (!currentNode && !errorMsg) {
               return renderLoading();
             }
+            
+            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
 
             return (
               <div className="flex flex-col md:flex-row h-full w-full bg-[#050505] relative overflow-hidden">
@@ -1377,7 +1376,7 @@
                     </div>
                   )}
 
-                  <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-32 pt-4">
+                  <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
                     {storyHistory.map((hist, idx) => (
                       <React.Fragment key={idx}>
                         {renderStoryNode(hist.node, true, hist.chosenAction)}
@@ -1398,25 +1397,41 @@
                     <div ref={endOfStoryRef} />
                   </div>
 
-                  {(gameState === 'story') && !errorMsg && currentNode?.choices && currentNode.choices.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-                      <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
-                      <div className="flex flex-col gap-2 max-w-4xl mx-auto">
-                        {currentNode.choices.map((choice, idx) => {
-                          const isFocused = focusedChoice === idx;
-                          return (
-                            <button 
-                              key={idx} 
-                              className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
-                              onClick={() => handleChoice(choice)}
-                              onMouseEnter={() => setFocusedChoice(idx)}
-                            >
-                              <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
-                              <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                  {/* Active Page Control / Choices Area */}
+                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
+                      {!isAtLastPage ? (
+                        <button 
+                           className="nes-btn green w-full max-w-md py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)]"
+                           onClick={() => {
+                             setCurrentPageIndex(p => p + 1);
+                             if (window.speechSynthesis) window.speechSynthesis.cancel();
+                             setIsSpeaking(false);
+                           }}
+                        >
+                           Next Page 📖 (Press Enter)
+                        </button>
+                      ) : (
+                        <>
+                          <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
+                          <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
+                            {currentNode?.choices?.map((choice, idx) => {
+                              const isFocused = focusedChoice === idx;
+                              return (
+                                <button 
+                                  key={idx} 
+                                  className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
+                                  onClick={() => handleChoice(choice)}
+                                  onMouseEnter={() => setFocusedChoice(idx)}
+                                >
+                                  <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
+                                  <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -1512,8 +1527,8 @@
 
               {showLightning && <div className="lightning-overlay"></div>}
               
-              <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center relative">
-                <div className="w-full max-w-6xl h-[95vh] bg-black pixel-border relative overflow-hidden flex flex-col justify-between">
+              <div className="h-[100dvh] bg-[#050505] md:p-6 flex items-center justify-center relative">
+                <div className="w-full max-w-6xl h-full md:h-[95vh] bg-black md:pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
                   <div className="flex-grow overflow-hidden relative">
