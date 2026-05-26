@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
     <!-- Tailwind CSS -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
-    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
-    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <!-- Babel for JSX -->
-    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-      @import url('[https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap](https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap)');
+      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
       
       .font-pixel { font-family: 'Press Start 2P', cursive; }
       .font-terminal { font-family: 'VT323', monospace; }
@@ -167,9 +167,9 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import { initializeApp } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)';
-        import { getFirestore, doc, setDoc, getDoc } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         const { useState, useEffect, useRef } = React;
 
@@ -178,48 +178,18 @@
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
         // GOOGLE APPS SCRIPT WEB APP URL 
-        const SPREADSHEET_WEB_APP_URL = "[https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec](https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec)"; 
+        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
 
         const MENU_IMAGES = [
-          "[https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1](https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1)",
-          "[https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2](https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2)",
-          "[https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3](https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3)"
+          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
+          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
+          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
         ];
 
-        // Web Audio Synthesizer Presets Composition - Expanded and Upgraded Quality
+        // Web Audio Synthesizer Presets Composition - 3 High-Quality Spooky Tracks
         const SYNTH_TRACKS = [
           {
-            name: "Vampire's Keep",
-            tempo: 130,
-            melody: [
-              { note: "A4", dur: 2 }, { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 },
-              { note: "C5", dur: 4 }, { note: "B4", dur: 4 },
-              { note: "A4", dur: 2 }, { note: "G#4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 },
-              { note: "E5", dur: 8 }
-            ],
-            bass: ["A2", "E2", "F2", "E2"]
-          },
-          {
-            name: "Dungeon Depths",
-            tempo: 75,
-            melody: [
-              { note: "D4", dur: 4 }, { note: "D#4", dur: 4 }, { note: "F#4", dur: 4 }, { note: "G4", dur: 4 },
-              { note: "Ab4", dur: 4 }, { note: "G4", dur: 4 }, { note: "F#4", dur: 4 }, { note: "D4", dur: 4 }
-            ],
-            bass: ["D2", "D#2", "D2", "C#2"]
-          },
-          {
-            name: "Scooby Chase",
-            tempo: 160,
-            melody: [
-              { note: "E4", dur: 2 }, { note: "G4", dur: 2 }, { note: "A4", dur: 2 }, { note: "A#4", dur: 2 },
-              { note: "B4", dur: 4 }, { note: "G4", dur: 4 },
-              { note: "E4", dur: 2 }, { note: "D4", dur: 2 }, { note: "E4", dur: 4 }
-            ],
-            bass: ["E2", "G2", "A2", "B2"]
-          },
-          {
-            name: "Simon's Quest",
+            name: "Simon's Theme",
             tempo: 145,
             melody: [
               { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 }, { note: "B4", dur: 2 },
@@ -230,13 +200,24 @@
             bass: ["A2", "C2", "D2", "E2"]
           },
           {
-            name: "Gothic Sonata",
+            name: "Moonlight Sonata",
             tempo: 85,
             melody: [
               { note: "A4", dur: 4 }, { note: "C5", dur: 4 }, { note: "E5", dur: 4 }, { note: "A5", dur: 4 },
               { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
             ],
             bass: ["A2", "F2", "C2", "E2"]
+          },
+          {
+            name: "Vampire's Keep",
+            tempo: 130,
+            melody: [
+              { note: "A4", dur: 2 }, { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 },
+              { note: "C5", dur: 4 }, { note: "B4", dur: 4 },
+              { note: "A4", dur: 2 }, { note: "G#4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 },
+              { note: "E5", dur: 8 }
+            ],
+            bass: ["A2", "E2", "F2", "E2"]
           }
         ];
 
@@ -436,7 +417,7 @@
               if (isBat) {
                 // High Quality Inline SVG Bat Flutter
                 critterContent = (
-                  <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 32 16" className="w-16 h-8">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-16 h-8">
                     <rect x="14" y="6" width="4" height="6" fill="#111111" />
                     <rect x="15" y="4" width="2" height="2" fill="#111111" />
                     <rect x="15" y="7" width="1" height="1" fill="#ff0000" />
