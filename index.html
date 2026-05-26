@@ -36,6 +36,14 @@
           0 0 0 4px #4A00E0,
           0 0 0 8px #000;
       }
+
+      .music-border {
+        box-shadow: 
+          inset -2px -2px 0px 0px rgba(0,0,0,0.5),
+          inset 2px 2px 0px 0px rgba(255,255,255,0.2),
+          0 0 0 2px #4ade80,
+          0 0 0 4px #000;
+      }
       
       .scanline {
         width: 100%;
@@ -51,6 +59,21 @@
       @keyframes scanline {
         0% { top: -100px; }
         100% { top: 100%; }
+      }
+
+      @keyframes lightning {
+        0% { background-color: rgba(255, 255, 255, 0); }
+        10% { background-color: rgba(255, 255, 255, 0.9); }
+        20% { background-color: rgba(255, 255, 255, 0); }
+        30% { background-color: rgba(255, 255, 255, 0.6); }
+        40% { background-color: rgba(255, 255, 255, 0); }
+        100% { background-color: rgba(255, 255, 255, 0); }
+      }
+
+      .lightning-overlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        pointer-events: none; z-index: 9999;
+        animation: lightning 0.5s ease-out;
       }
 
       .nes-btn {
@@ -95,6 +118,9 @@
           column-rule: 2px dashed #4A00E0;
         }
       }
+      
+      /* Music Slider styling */
+      input[type=range] { accent-color: #8E2DE2; }
     </style>
 </head>
 <body>
@@ -113,6 +139,20 @@
         
         // GOOGLE APPS SCRIPT WEB APP URL 
         const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
+
+        const MENU_IMAGES = [
+          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
+          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
+          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
+        ];
+
+        const MUSIC_TRACKS = [
+          { name: "Vampire's Keep", url: "https://ia800201.us.archive.org/34/items/Castlevania2SimonsQuestBloodyTears/Castlevania%202%20Simon%27s%20Quest%20-%20Bloody%20Tears.mp3" },
+          { name: "Dungeon Depths", url: "https://ia903204.us.archive.org/16/items/doom-midi/E1M1.mp3" },
+          { name: "Spooky 8-Bit", url: "https://ia600504.us.archive.org/33/items/TetrisThemeMusic/Tetris.mp3" }
+        ];
+
+        const LIGHTNING_SFX = "https://ia800405.us.archive.org/21/items/ThunderStrike_120/ThunderStrike.mp3";
 
         const CATEGORIES = {
           characters: [
@@ -181,7 +221,6 @@
         let app, auth, db, appId;
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          // Only init if config exists, allows local testing without Firebase crashing
           if (Object.keys(firebaseConfig).length > 0) {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
@@ -202,7 +241,6 @@
               const response = await fetch(url, options);
               if (!response.ok) {
                 const errText = await response.text();
-                console.error("API Error Response:", errText);
                 if (response.status === 400) throw new Error("Bad Request: " + errText);
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
@@ -232,12 +270,16 @@
           const [correctAnswers, setCorrectAnswers] = useState(0);
           const [totalQuestions, setTotalQuestions] = useState(0);
 
-          // UI State
-          const [loadingMsg, setLoadingMsg] = useState("");
-          const [loadCodeInput, setLoadCodeInput] = useState("");
-          const [saveCode, setSaveCode] = useState(null);
-          const [errorMsg, setErrorMsg] = useState("");
-
+          // Aesthetic & Nav State
+          const [menuImgIndex, setMenuImgIndex] = useState(0);
+          const [showLightning, setShowLightning] = useState(false);
+          const [musicVolume, setMusicVolume] = useState(0.4);
+          const [isMuted, setIsMuted] = useState(true); // Start muted to respect autoplay policies
+          const [currentTrack, setCurrentTrack] = useState(0);
+          const [focusedChoice, setFocusedChoice] = useState(0);
+          
+          const bgmRef = useRef(null);
+          const sfxRef = useRef(null);
           const endOfStoryRef = useRef(null);
 
           // Initialize Firebase Auth
@@ -250,27 +292,110 @@
                 } else {
                   await signInAnonymously(auth);
                 }
-              } catch (err) {
-                console.error("Auth Error", err);
-              }
+              } catch (err) { console.error("Auth Error", err); }
             };
             initAuth();
-            
             if (auth) {
               const unsubscribe = onAuthStateChanged(auth, setUser);
               return () => unsubscribe();
             }
           }, []);
 
+          // Scroll to bottom
           useEffect(() => {
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
           }, [currentNode, gameState]);
 
+          // Rotating Menu Backgrounds
+          useEffect(() => {
+            if(gameState !== 'menu') return;
+            const imgInterval = setInterval(() => {
+              setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length);
+            }, 3000);
+            return () => clearInterval(imgInterval);
+          }, [gameState]);
+
+          // Music Control
+          useEffect(() => {
+            if(bgmRef.current) {
+              bgmRef.current.volume = musicVolume;
+              bgmRef.current.muted = isMuted;
+            }
+          }, [musicVolume, isMuted]);
+
+          useEffect(() => {
+            if(bgmRef.current && !isMuted) {
+              bgmRef.current.play().catch(e => console.log("Autoplay blocked by browser."));
+            }
+          }, [currentTrack, isMuted]);
+
+          // Lightning Effect & SFX
+          const triggerLightning = () => {
+             setShowLightning(true);
+             if(sfxRef.current && !isMuted) {
+                sfxRef.current.volume = musicVolume + 0.2 > 1 ? 1 : musicVolume + 0.2;
+                sfxRef.current.currentTime = 0;
+                sfxRef.current.play().catch(e=>console.log("SFX blocked"));
+             }
+             setTimeout(() => setShowLightning(false), 500);
+          };
+
+          useEffect(() => {
+            const lightningInterval = setInterval(() => {
+              if (Math.random() > 0.6) triggerLightning();
+            }, 8000);
+            return () => clearInterval(lightningInterval);
+          }, [isMuted, musicVolume]);
+
+          // Keyboard Navigation
+          useEffect(() => {
+            const handleKeyDown = (e) => {
+              // Ignore keyboard shortcuts if user is typing in load field
+              if(document.activeElement.tagName === "INPUT" && document.activeElement.type === "text") return;
+
+              if (gameState === 'setup') {
+                 const currentKey = Object.keys(setupData)[setupStep];
+                 const numOptions = CATEGORIES[currentKey].length;
+                 
+                 if (e.key === 'ArrowRight') {
+                   setSetupData(prev => ({...prev, [currentKey]: Math.min(prev[currentKey] + 1, numOptions - 1)}));
+                 } else if (e.key === 'ArrowLeft') {
+                   setSetupData(prev => ({...prev, [currentKey]: Math.max(prev[currentKey] - 1, 0)}));
+                 } else if (e.key === 'ArrowDown') {
+                   setSetupData(prev => ({...prev, [currentKey]: Math.min(prev[currentKey] + 5, numOptions - 1)}));
+                 } else if (e.key === 'ArrowUp') {
+                   setSetupData(prev => ({...prev, [currentKey]: Math.max(prev[currentKey] - 5, 0)}));
+                 } else if (e.key === 'Enter') {
+                   if (setupStep < 4) setSetupStep(prev => prev + 1);
+                   else startGame();
+                 }
+              } else if (gameState === 'story' && currentNode?.choices?.length > 0 && !errorMsg) {
+                 if (e.key === 'ArrowDown') {
+                   setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
+                 } else if (e.key === 'ArrowUp') {
+                   setFocusedChoice(prev => Math.max(prev - 1, 0));
+                 } else if (e.key === 'Enter') {
+                   handleChoice(currentNode.choices[focusedChoice]);
+                 }
+              } else if (gameState === 'menu') {
+                 if (e.key === 'Enter') {
+                    if(isMuted) setIsMuted(false); // Unmute on first interaction
+                    setSetupStep(0); setGameState('setup');
+                 }
+              } else if (gameState === 'gameover' || gameState === 'victory') {
+                 if (e.key === 'Enter') setGameState('menu');
+              }
+            };
+
+            window.addEventListener('keydown', handleKeyDown);
+            return () => window.removeEventListener('keydown', handleKeyDown);
+          }, [gameState, setupStep, setupData, currentNode, focusedChoice, errorMsg, isMuted]);
+
           // --- ANALYTICS FUNCTION ---
           const recordEngagement = async (outcome) => {
-            if (!SPREADSHEET_WEB_APP_URL) return; // Skip if URL not provided
+            if (!SPREADSHEET_WEB_APP_URL) return; 
             
             const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
             const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
@@ -294,15 +419,18 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(trackingData)
               });
-              console.log("Analytics sent successfully.");
-            } catch (err) {
-              console.error("Error sending analytics:", err);
-            }
+            } catch (err) { console.error("Error sending analytics:", err); }
           };
 
           // --- API LOGIC ---
+          const [loadingMsg, setLoadingMsg] = useState("");
+          const [loadCodeInput, setLoadCodeInput] = useState("");
+          const [saveCode, setSaveCode] = useState(null);
+          const [errorMsg, setErrorMsg] = useState("");
+
           const generateStoryNode = async (actionText = null) => {
             setGameState('loading');
+            setFocusedChoice(0); // Reset choice selection position
             setLoadingMsg("Summoning AI Game Master...");
             setErrorMsg("");
             
@@ -312,7 +440,7 @@
             const plot = CATEGORIES.plots[setupData.plot];
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
-            const subjects = ["Math", "Language Arts (Spelling, Grammar, Vocabulary)", "Science (Habitats, States of Matter, Simple Machines)", "Social Studies (Communities, Maps, History)"];
+            const subjects = ["Math", "Language Arts", "Science", "Social Studies"];
             const currentSubject = subjects[turnCount % subjects.length];
 
             let promptText = `
@@ -337,7 +465,7 @@
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
               1. Write a 100-150 word engaging story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style.
-              2. Incorporate a Grade 3 educational challenge based on: ${currentSubject}. The challenge should naturally fit the story (e.g., a locked door needing a math answer).
+              2. Incorporate a Grade 3 educational challenge based on: ${currentSubject}. The challenge should naturally fit the story.
               3. State the question or challenge clearly in the "question" field.
               4. Provide 2 or 3 "choices" for the player.
                  - At least one choice MUST be the correct educational answer (set 'isCorrect' to true).
@@ -384,20 +512,13 @@
                 body: JSON.stringify(payload)
               });
 
-              if (!response.candidates || response.candidates.length === 0) {
-                throw new Error("AI response was blocked by safety filters or came back empty.");
-              }
+              if (!response.candidates || response.candidates.length === 0) throw new Error("Empty Response");
 
               let jsonText = response.candidates[0].content.parts[0].text;
-              
-              // Extract JSON object to avoid markdown backticks parsing issues
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                jsonText = jsonMatch[0];
-              }
+              if (jsonMatch) jsonText = jsonMatch[0];
               
               const nodeData = JSON.parse(jsonText);
-              
               setCurrentNode(nodeData);
               
               if (nodeData.isVictory) {
@@ -406,7 +527,6 @@
               } else {
                 setGameState('story');
               }
-
             } catch (err) {
               console.error("Story Generation Error:", err);
               setErrorMsg("The magical connection was lost. Try again!");
@@ -415,7 +535,6 @@
           };
 
           const handleChoice = (choice) => {
-            // Track Analytics logic
             if (currentNode.question) {
               setTotalQuestions(prev => prev + 1);
               if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
@@ -448,12 +567,8 @@
 
           // --- SAVING & LOADING (FIRESTORE) ---
           const saveGame = async () => {
-            if (!user || !db) {
-              setErrorMsg("Must be connected to magical servers to save.");
-              return;
-            }
+            if (!user || !db) return setErrorMsg("Must be connected to magical servers to save.");
             setLoadingMsg("Saving to the Crypt...");
-            
             try {
               let code;
               let isUnique = false;
@@ -466,80 +581,64 @@
 
               const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
               await setDoc(docRef, {
-                setupData,
-                storyHistory,
-                currentNode,
-                turnCount,
-                gameState,
-                timestamp: new Date().toISOString()
+                setupData, storyHistory, currentNode, turnCount, gameState, timestamp: new Date().toISOString()
               });
-              
               setSaveCode(code);
             } catch (e) {
-              console.error(e);
               setErrorMsg("Failed to save your progress!");
             }
           };
 
           const loadGame = async () => {
             if (!user || !db) return;
-            if (loadCodeInput.length !== 4) {
-              setErrorMsg("Code must be 4 digits.");
-              return;
-            }
-
-            setGameState('loading');
-            setLoadingMsg("Searching the Archives...");
-            setErrorMsg("");
-
+            if (loadCodeInput.length !== 4) return setErrorMsg("Code must be 4 digits.");
+            setGameState('loading'); setLoadingMsg("Searching the Archives..."); setErrorMsg("");
             try {
               const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', loadCodeInput);
               const docSnap = await getDoc(docRef);
-
               if (docSnap.exists()) {
                 const data = docSnap.data();
-                setSetupData(data.setupData);
-                setStoryHistory(data.storyHistory);
-                setCurrentNode(data.currentNode);
-                setTurnCount(data.turnCount);
+                setSetupData(data.setupData); setStoryHistory(data.storyHistory);
+                setCurrentNode(data.currentNode); setTurnCount(data.turnCount);
                 setGameState(data.gameState === 'gameover' ? 'gameover' : (data.gameState === 'victory' ? 'victory' : 'story'));
-                setSaveCode(null);
-                setSessionStartTime(Date.now()); // Restarting session timer for resume
+                setSaveCode(null); setSessionStartTime(Date.now()); 
               } else {
-                setErrorMsg("No adventure found with that code.");
-                setGameState('menu');
+                setErrorMsg("No adventure found with that code."); setGameState('menu');
               }
-            } catch (e) {
-              console.error(e);
-              setErrorMsg("Error accessing the archives.");
-              setGameState('menu');
-            }
+            } catch (e) { setErrorMsg("Error accessing the archives."); setGameState('menu'); }
           };
 
           // --- RENDERERS ---
 
           const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-12">
-              <div className="animate-pulse">
-                <h1 className="font-pixel text-4xl md:text-6xl text-purple-600 tracking-widest drop-shadow-[0_0_15px_rgba(138,43,226,0.8)]">
-                  ADVENTUREVANIA
-                </h1>
-                <p className="font-terminal text-green-400 text-2xl mt-4">A Grade 3 Reading Quest</p>
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-8">
+              
+              <div className="w-full max-w-lg h-48 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-4">
+                 <img 
+                   src={MENU_IMAGES[menuImgIndex]} 
+                   className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" 
+                   style={{ imageRendering: 'pixelated' }}
+                   alt="Retro Castlevania Background"
+                 />
+                 <div className="absolute inset-0 bg-black/40"></div>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,1)]">
+                    <h1 className="font-pixel text-3xl md:text-5xl text-purple-500 tracking-widest drop-shadow-[0_0_15px_rgba(138,43,226,1)]">
+                      ADVENTUREVANIA
+                    </h1>
+                    <p className="font-terminal text-green-400 text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(74,222,128,1)]">A Grade 3 Reading Quest</p>
+                 </div>
               </div>
 
-              <div className="flex flex-col gap-6 w-full max-w-md">
-                <button className="nes-btn" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
-                  ▶️ New Adventure
+              <div className="flex flex-col gap-6 w-full max-w-md relative z-10">
+                <button className="nes-btn animate-pulse" onClick={() => { if(isMuted) setIsMuted(false); setSetupStep(0); setGameState('setup'); }}>
+                  ▶️ Press Enter to Start
                 </button>
                 
                 <div className="pixel-border bg-gray-900 p-6 flex flex-col gap-4">
-                  <p className="font-pixel text-xs text-gray-300">Resume Adventure</p>
+                  <p className="font-pixel text-[10px] text-gray-300">Resume Adventure</p>
                   <div className="flex gap-2">
                     <input 
-                      type="text" 
-                      maxLength="4"
-                      placeholder="0000"
-                      value={loadCodeInput}
+                      type="text" maxLength="4" placeholder="0000" value={loadCodeInput}
                       onChange={(e) => setLoadCodeInput(e.target.value.replace(/\D/g, ''))}
                       className="w-full bg-black border-2 border-purple-800 text-green-400 font-pixel text-center p-2 outline-none focus:border-green-400"
                     />
@@ -559,7 +658,6 @@
               { title: "Select the Plot", key: "plot", data: CATEGORIES.plots },
               { title: "Choose a Dilemma", key: "dilemma", data: CATEGORIES.dilemmas }
             ];
-
             const current = steps[setupStep];
 
             return (
@@ -576,7 +674,7 @@
                       <div 
                         key={idx}
                         onClick={() => setSetupData({...setupData, [current.key]: idx})}
-                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-purple-900 border-green-400 scale-105' : 'bg-black hover:bg-gray-800'}`}
+                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_20px_rgba(74,222,128,0.5)]' : 'bg-black hover:bg-gray-800'}`}
                         style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : {}}
                       >
                         <div className="text-4xl mb-2">{item.icon}</div>
@@ -587,36 +685,19 @@
                   })}
                 </div>
 
-                <div className="flex justify-between mt-6 pt-4">
-                  {setupStep > 0 ? (
-                    <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>
-                       Back
-                    </button>
-                  ) : <div></div>}
-                  
-                  {setupStep < 4 ? (
-                    <button className="nes-btn green" onClick={() => setSetupStep(setupStep + 1)}>
-                      Next 
-                    </button>
-                  ) : (
-                    <button className="nes-btn green animate-pulse" onClick={startGame}>
-                      Start Quest
-                    </button>
-                  )}
+                <div className="flex justify-between mt-6 pt-4 items-center">
+                  <div className="font-pixel text-[8px] text-gray-500 hidden md:block">Use Arrow Keys & Enter</div>
+                  <div className="flex gap-4">
+                    {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
+                    {setupStep < 4 ? 
+                      <button className="nes-btn green" onClick={() => setSetupStep(setupStep + 1)}>Next</button> : 
+                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
+                    }
+                  </div>
                 </div>
               </div>
             );
           };
-
-          const renderLoading = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-              <div className="text-6xl animate-bounce">👻</div>
-              <h2 className="font-pixel text-xl text-purple-400 leading-relaxed">{loadingMsg}</h2>
-              <div className="w-64 h-4 bg-gray-900 pixel-border mt-4 overflow-hidden relative">
-                <div className="absolute top-0 left-0 h-full bg-green-500 animate-[loading_2s_ease-in-out_infinite]" style={{width: '50%'}}></div>
-              </div>
-            </div>
-          );
 
           const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
             if (!node) return null;
@@ -645,7 +726,6 @@
                     </div>
                   )}
 
-                  {/* Two Column Layout for text content */}
                   <div className="story-columns">
                     <p className="font-terminal text-2xl md:text-3xl text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
                       {node.storyText}
@@ -672,22 +752,21 @@
 
           const renderGameArea = () => (
             <div className="flex flex-col h-full relative">
-              {/* Header Bar */}
               <div className="flex justify-between items-center bg-gray-900 p-4 pixel-border mb-4 shrink-0 z-10">
                 <div className="font-pixel text-xs md:text-sm text-purple-400 flex items-center gap-2">
                    🗺️ Turn: {turnCount}/10
                 </div>
-                <div className="flex gap-4">
-                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-[10px]" onClick={saveGame} disabled={gameState === 'gameover'}>
-                    💾 Save
+                <div className="flex gap-4 md:gap-6">
+                  {/* Made icons significantly larger here using text-xl / text-2xl */}
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={saveGame} disabled={gameState === 'gameover'}>
+                    <span className="text-xl md:text-2xl drop-shadow-md">💾</span> Save
                   </button>
-                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-[10px]" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
-                    🔄 Quit
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
+                    <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> Quit
                   </button>
                 </div>
               </div>
 
-              {/* Save Code Modal */}
               {saveCode && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                   <div className="pixel-border bg-gray-900 p-8 text-center max-w-sm w-full">
@@ -701,7 +780,6 @@
                 </div>
               )}
 
-              {/* Main Story Scroll Area */}
               <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-32">
                 {storyHistory.map((hist, idx) => (
                   <React.Fragment key={idx}>
@@ -711,7 +789,6 @@
                 
                 {renderStoryNode(currentNode, false)}
 
-                {/* Error message handling inline */}
                 {errorMsg && (
                   <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-2xl text-white text-center">
                     {errorMsg}
@@ -723,21 +800,25 @@
                 <div ref={endOfStoryRef} />
               </div>
 
-              {/* Active Choices Area - Buttons Shrunk down */}
+              {/* Active Choices Area - Buttons visually updated to show focus */}
               {(gameState === 'story') && !errorMsg && currentNode?.choices && currentNode.choices.length > 0 && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-                  <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next?</p>
+                  <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
                   <div className="flex flex-col gap-2 max-w-4xl mx-auto">
-                    {currentNode.choices.map((choice, idx) => (
-                      <button 
-                        key={idx} 
-                        className="nes-btn text-left hover:bg-purple-800 focus:bg-purple-800 flex justify-between items-center group py-2"
-                        onClick={() => handleChoice(choice)}
-                      >
-                        <span className="text-[10px] md:text-[11px] leading-relaxed pr-4">{choice.text}</span>
-                        <span className="opacity-0 group-hover:opacity-100 shrink-0">▶</span>
-                      </button>
-                    ))}
+                    {currentNode.choices.map((choice, idx) => {
+                      const isFocused = focusedChoice === idx;
+                      return (
+                        <button 
+                          key={idx} 
+                          className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
+                          onClick={() => handleChoice(choice)}
+                          onMouseEnter={() => setFocusedChoice(idx)}
+                        >
+                          <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
+                          <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -763,16 +844,52 @@
             </div>
           );
 
+          // Audio Player Overlay UI
+          const renderAudioPlayer = () => (
+             <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-3 justify-between">
+                  <button 
+                    onClick={() => setIsMuted(!isMuted)} 
+                    className="text-xl hover:scale-110 transition-transform focus:outline-none"
+                    title={isMuted ? "Unmute Music" : "Mute Music"}
+                  >
+                    {isMuted ? '🔇' : '🔊'}
+                  </button>
+                  <input 
+                    type="range" min="0" max="1" step="0.05" 
+                    value={musicVolume} 
+                    onChange={(e) => setMusicVolume(parseFloat(e.target.value))} 
+                    className="w-20 md:w-24 cursor-pointer"
+                  />
+                </div>
+                <select 
+                  className="bg-gray-900 text-green-400 font-pixel text-[8px] p-1 border border-purple-800 outline-none cursor-pointer" 
+                  value={currentTrack} 
+                  onChange={(e) => setCurrentTrack(parseInt(e.target.value))}
+                >
+                  {MUSIC_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
+                </select>
+
+                <audio ref={bgmRef} loop src={MUSIC_TRACKS[currentTrack].url} />
+                <audio ref={sfxRef} src={LIGHTNING_SFX} />
+             </div>
+          );
+
           return (
             <React.Fragment>
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
               
-              <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center">
+              {/* Lightning Full Screen Flash */}
+              {showLightning && <div className="lightning-overlay"></div>}
+              
+              <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center relative">
                 <div className="w-full max-w-5xl h-[95vh] bg-black pixel-border relative overflow-hidden flex flex-col">
+                  {renderAudioPlayer()}
+
                   {gameState === 'menu' && renderMenu()}
                   {gameState === 'setup' && renderSetup()}
-                  {gameState === 'loading' && renderLoading()}
+                  {gameState === 'loading' && <div className="mt-16">{renderLoading()}</div>}
                   {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
                 </div>
               </div>
