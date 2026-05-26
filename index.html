@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
+    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
     <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
 
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+      @import url('[https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap](https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap)');
       
       .font-pixel { font-family: 'Press Start 2P', cursive; }
       .font-terminal { font-family: 'VT323', monospace; }
@@ -78,47 +78,42 @@
 
       /* Animated Critters (High-Frequency Flapping Bats & Pausing Spiders) */
       @keyframes batFlyRight {
-        0%   { left: -15vw; transform: translateY(0) scaleY(1); }
-        10%  { transform: translateY(-4vh) scaleY(0.3); }
-        20%  { transform: translateY(2vh) scaleY(1); }
-        30%  { transform: translateY(-4vh) scaleY(0.3); }
-        40%  { transform: translateY(2vh) scaleY(1); }
-        50%  { left: 50vw; transform: translateY(-4vh) scaleY(0.3); }
-        60%  { transform: translateY(2vh) scaleY(1); }
-        70%  { transform: translateY(-4vh) scaleY(0.3); }
-        80%  { transform: translateY(2vh) scaleY(1); }
-        90%  { transform: translateY(-4vh) scaleY(0.3); }
-        100% { left: 115vw; transform: translateY(0) scaleY(1); }
+        0%   { left: -15vw; transform: translateY(0); }
+        100% { left: 115vw; transform: translateY(-5vh); }
       }
       @keyframes batFlyLeft {
-        0%   { left: 115vw; transform: translateY(0) scaleX(-1) scaleY(1); }
-        10%  { transform: translateY(-4vh) scaleX(-1) scaleY(0.3); }
-        20%  { transform: translateY(2vh) scaleX(-1) scaleY(1); }
-        30%  { transform: translateY(-4vh) scaleX(-1) scaleY(0.3); }
-        40%  { transform: translateY(2vh) scaleX(-1) scaleY(1); }
-        50%  { left: 50vw; transform: translateY(-4vh) scaleX(-1) scaleY(0.3); }
-        60%  { transform: translateY(2vh) scaleX(-1) scaleY(1); }
-        70%  { transform: translateY(-4vh) scaleX(-1) scaleY(0.3); }
-        80%  { transform: translateY(2vh) scaleX(-1) scaleY(1); }
-        90%  { transform: translateY(-4vh) scaleX(-1) scaleY(0.3); }
-        100% { left: -15vw; transform: translateY(0) scaleX(-1) scaleY(1); }
+        0%   { left: 115vw; transform: translateY(0) scaleX(-1); }
+        100% { left: -15vw; transform: translateY(-5vh) scaleX(-1); }
       }
       @keyframes spiderCrawlRight {
         0%   { left: -20vw; }
-        40%  { left: 40vw; }
-        60%  { left: 40vw; } /* Pause in place for ~2.4 seconds */
+        40%  { left: 45vw; }
+        60%  { left: 45vw; } /* Pause in place for ~2.4 seconds */
         100% { left: 120vw; }
       }
       @keyframes spiderCrawlLeft {
         0%   { left: 120vw; transform: scaleX(-1); }
-        40%  { left: 50vw; transform: scaleX(-1); }
-        60%  { left: 50vw; transform: scaleX(-1); } /* Pause in place for ~2.4 seconds */
+        40%  { left: 45vw; transform: scaleX(-1); }
+        60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place for ~2.4 seconds */
         100% { left: -20vw; transform: scaleX(-1); }
       }
+
+      /* Rapid wing flutter keyframes */
+      @keyframes wingFlapLeft {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
+      @keyframes wingFlapRight {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
       
+      .wing-l { transform-origin: 16px 8px; animation: wingFlapLeft 0.08s infinite alternate ease-in-out; }
+      .wing-r { transform-origin: 16px 8px; animation: wingFlapRight 0.08s infinite alternate ease-in-out; }
+
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
-        filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
       }
 
       .nes-btn {
@@ -172,9 +167,9 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { initializeApp } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)';
+        import { getFirestore, doc, setDoc, getDoc } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)';
 
         const { useState, useEffect, useRef } = React;
 
@@ -183,15 +178,15 @@
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
         // GOOGLE APPS SCRIPT WEB APP URL 
-        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
+        const SPREADSHEET_WEB_APP_URL = "[https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec](https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec)"; 
 
         const MENU_IMAGES = [
-          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
-          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
-          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
+          "[https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1](https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1)",
+          "[https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2](https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2)",
+          "[https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3](https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3)"
         ];
 
-        // Web Audio Synthesizer Presets Composition
+        // Web Audio Synthesizer Presets Composition - Expanded and Upgraded Quality
         const SYNTH_TRACKS = [
           {
             name: "Vampire's Keep",
@@ -222,13 +217,33 @@
               { note: "E4", dur: 2 }, { note: "D4", dur: 2 }, { note: "E4", dur: 4 }
             ],
             bass: ["E2", "G2", "A2", "B2"]
+          },
+          {
+            name: "Simon's Quest",
+            tempo: 145,
+            melody: [
+              { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 }, { note: "B4", dur: 2 },
+              { note: "A4", dur: 4 }, { note: "E4", dur: 4 },
+              { note: "F4", dur: 2 }, { note: "A4", dur: 2 }, { note: "D5", dur: 2 }, { note: "C5", dur: 2 },
+              { note: "B4", dur: 8 }
+            ],
+            bass: ["A2", "C2", "D2", "E2"]
+          },
+          {
+            name: "Gothic Sonata",
+            tempo: 85,
+            melody: [
+              { note: "A4", dur: 4 }, { note: "C5", dur: 4 }, { note: "E5", dur: 4 }, { note: "A5", dur: 4 },
+              { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
+            ],
+            bass: ["A2", "F2", "C2", "E2"]
           }
         ];
 
         const NOTE_FREQ = {
           "C2": 65.41, "C#2": 69.30, "D2": 73.42, "D#2": 77.78, "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
           "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "A#4": 466.16, "B4": 493.88,
-          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30
+          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30, "A5": 880.00, "G5": 783.99, "F5": 698.46
         };
 
         const CATEGORIES = {
@@ -416,15 +431,38 @@
               const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
               
               const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
-              const icon = isBat ? '🦇' : '🕷️';
               
-              // Spiders are very large (5rem), bats are quite large (4rem)
+              let critterContent = null;
+              if (isBat) {
+                // High Quality Inline SVG Bat Flutter
+                critterContent = (
+                  <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 32 16" className="w-16 h-8">
+                    <rect x="14" y="6" width="4" height="6" fill="#111111" />
+                    <rect x="15" y="4" width="2" height="2" fill="#111111" />
+                    <rect x="15" y="7" width="1" height="1" fill="#ff0000" />
+                    <rect x="17" y="7" width="1" height="1" fill="#ff0000" />
+                    <g className="wing-l">
+                      <rect x="6" y="4" width="8" height="4" fill="#333333" />
+                      <rect x="2" y="6" width="4" height="3" fill="#333333" />
+                      <rect x="0" y="8" width="2" height="2" fill="#333333" />
+                    </g>
+                    <g className="wing-r">
+                      <rect x="18" y="4" width="8" height="4" fill="#333333" />
+                      <rect x="26" y="6" width="4" height="3" fill="#333333" />
+                      <rect x="30" y="8" width="2" height="2" fill="#333333" />
+                    </g>
+                  </svg>
+                );
+              } else {
+                critterContent = <span style={{ fontSize: '5rem' }}>🕷️</span>;
+              }
+              
               const critterObj = {
-                id, icon,
+                id,
+                content: critterContent,
                 style: {
                   top: `${top}vh`,
                   animation: animation,
-                  fontSize: isBat ? '4rem' : '5rem'
                 }
               };
 
@@ -824,7 +862,7 @@
             }
 
             if (turnCount >= 10) {
-              promptText += "\nThis is the FINAL TURN. The player has survived long enough. Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
+              promptText += "\nThis is the FINAL TURN. Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
@@ -838,7 +876,6 @@
               `;
             }
 
-            // Fixed: systemInstruction format without invalid role payload parameters
             const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational.`;
 
             const payload = {
@@ -888,7 +925,11 @@
               jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
               
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-              if (jsonMatch) jsonText = jsonMatch[0];
+              if (jsonMatch) {
+                jsonText = jsonMatch[0];
+              } else {
+                throw new Error("Invalid format returned by Game Engine");
+              }
               
               const nodeData = JSON.parse(jsonText);
               setCurrentNode(nodeData);
@@ -1190,6 +1231,11 @@
                     <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center">
                       {errorMsg}
                       <br/>
+                      {apiKey === "" && (
+                        <p className="text-xs text-yellow-300 font-pixel mt-2 leading-relaxed">
+                          ⚠️ Self-hosting on GitHub? Make sure to insert your Gemini API Key at the top of 'index.html'!
+                        </p>
+                      )}
                       <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
                     </div>
                   )}
@@ -1293,7 +1339,7 @@
               <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                 {critters.map(crit => (
                   <div key={crit.id} className="critter" style={crit.style}>
-                    {crit.icon}
+                    {crit.content}
                   </div>
                 ))}
               </div>
