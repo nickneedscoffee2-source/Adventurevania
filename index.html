@@ -295,13 +295,14 @@
           ]
         };
 
-        // Local Procedural Story Engine Fallback
+        // Local Procedural Story Engine Fallback - More Varied Now
         const generateLocalNode = (turn, setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
           const sett = CATEGORIES.settings[setup.setting];
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
+          const level = setup.readingLevel;
 
           const mathQuestions = [
             { q: "A glowing puzzle wall appears. Solve: What is 12 multiplied by 3?", a: "36", w1: "24", w2: "15", m1: "A phantom blast knocks you back!", m2: "The lock traps you in stone!" },
@@ -325,10 +326,12 @@
             { q: "An ancient tablet asks: Which helpers are responsible for fighting fires in our community?", a: "Firefighters", w1: "Police Officers", w2: "Librarians", m1: "You are locked in the crypt!", m2: "Whispering ghosts trap you!" }
           ];
 
+          // Mix up the arrays so they aren't totally static if fallback hits
+          const rIndex = Math.floor(Math.random() * 2);
           let qData;
           if (turn === 0) qData = mathQuestions[0];
           else if (turn === 1) qData = laQuestions[0];
-          else if (turn === 2) qData = sciQuestions[0];
+          else if (turn === 2) qData = sciQuestions[rIndex];
           else if (turn === 3) qData = ssQuestions[0];
           else if (turn === 4) qData = mathQuestions[1];
           else if (turn === 5) qData = laQuestions[1];
@@ -871,8 +874,11 @@
               }
 
               if (gameState === 'setup') {
-                 const currentKey = Object.keys(setupData)[setupStep];
-                 const numOptions = CATEGORIES[currentKey].length;
+                 const setupKeysList = ['characters', 'villains', 'settings', 'plots', 'dilemmas', 'readingLevels'];
+                 const stateKeysList = ['character', 'villain', 'setting', 'plot', 'dilemma', 'readingLevel'];
+                 
+                 const currentDataKey = setupKeysList[setupStep];
+                 const numOptions = CATEGORIES[currentDataKey].length;
 
                  if (e.key === 'ArrowRight') {
                    setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
@@ -883,6 +889,7 @@
                  } else if (e.key === 'ArrowUp') {
                    setSetupFocusIndex(prev => Math.max(prev - 5, 0));
                  } else if (e.key === 'Enter') {
+                   const currentKey = stateKeysList[setupStep];
                    setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
                    setSetupFocusIndex(0); 
                    if (setupStep < 5) {
@@ -969,11 +976,16 @@
             const currentSubject = subjects[turnCount % subjects.length];
 
             const levelInstructions = [
-              "Write at least 2 full paragraphs. Use simple sentences suitable for Early Primary (K-1).",
-              "Write at least 3 full paragraphs with rich detail. Use engaging, standard sentences suitable for Primary (Grades 2-3).",
-              "Write at least 4 long paragraphs with atmospheric descriptions. Use varied sentences suitable for Junior (Grades 4-6).",
-              "Write at least 4 extensive paragraphs with deep narrative detail and complex vocabulary suitable for Intermediate (Grades 7-8)."
+              "Difficulty: Grades 1-2 (Early Primary). Use short sentences. Math: basic addition/subtraction. Language: sight words, simple spelling. Science/Social: basic community/nature facts.",
+              "Difficulty: Grades 3-4 (Primary). Use engaging sentences. Math: multiplication/division. Language: nouns, verbs, reading comprehension. Science/Social: habitats, states of matter, simple maps.",
+              "Difficulty: Grades 5-6 (Junior). Use descriptive paragraphs. Math: fractions, decimals, basic geometry. Language: complex grammar, inferences. Science/Social: ecosystems, history, simple physics.",
+              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric paragraphs. Math: algebra, advanced fractions. Language: advanced vocabulary, literary devices. Science/Social: biology, world history, complex mechanics."
             ];
+
+            let historyContext = "";
+            if (storyHistory.length > 0) {
+              historyContext = storyHistory.map((h, i) => `Turn ${i + 1}: Challenge was "${h.node.question}". Player chose "${h.chosenAction}".`).join('\n');
+            }
 
             let promptText = `
               Current Game State:
@@ -983,14 +995,14 @@
               - Main Plot: ${plot.name}
               - Central Dilemma: ${dil.name}
               - Turn Count: ${turnCount} out of 10.
-              - Reading Level constraints: ${levelInstructions[setupData.readingLevel]}
-              - Randomizer Seed: ${Math.random()} (Ensure this specific turn is completely unique, with unexpected events and deep narrative.)
+              - Reading & Curriculum Level: ${levelInstructions[setupData.readingLevel]}
+              - Randomizer Seed: ${Math.random()} (Ensure maximum uniqueness)
             `;
 
             if (turnCount === 0) {
               promptText += "\nThis is the BEGINNING of the story. Introduce the character, the setting, the villain's plot, and the central dilemma. Set the spooky but kid-friendly tone.";
             } else {
-              promptText += `\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
+              promptText += `\nPast History:\n${historyContext}\n\nDO NOT repeat any previous challenges, concepts, or questions. Create something entirely new.\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
             }
 
             if (turnCount >= 10) {
@@ -998,8 +1010,8 @@
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
-              1. Write a lengthy, highly descriptive story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style. Ensure it meets the paragraph count specified in the Reading Level constraints.
-              2. Incorporate an educational challenge based on: ${currentSubject}. The challenge should naturally fit the story.
+              1. Write a highly descriptive story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style. Scale the length and vocabulary strictly to the Reading Level constraints provided.
+              2. Incorporate a UNIQUE, NEVER-BEFORE-SEEN educational challenge based on: ${currentSubject}. The challenge should naturally fit the story and strictly match the grade-level difficulty.
               3. State the question or challenge clearly in the "question" field.
               4. Provide 2 or 3 "choices" for the player.
                  - At least one choice MUST be the correct educational answer (set 'isCorrect' to true).
@@ -1043,6 +1055,11 @@
 
             // Seamless Dual-Engine Fallback Execution
             try {
+              // Ensure we don't even call empty keys to avoid browser cross-origin preflight noise
+              if (!apiKey || apiKey === "") {
+                throw new Error("No primary Google Gemini API Key configured.");
+              }
+
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
