@@ -97,7 +97,20 @@
         60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place */
         100% { left: -20vw; transform: scaleX(-1); }
       }
+
+      /* Rapid wing flutter keyframes */
+      @keyframes wingFlapLeft {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
+      @keyframes wingFlapRight {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
       
+      .wing-l { transform-origin: 16px 8px; animation: wingFlapLeft 0.08s infinite alternate ease-in-out; }
+      .wing-r { transform-origin: 16px 8px; animation: wingFlapRight 0.08s infinite alternate ease-in-out; }
+
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
@@ -133,6 +146,18 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
+
+      /* Story Book Columns */
+      .story-columns {
+        column-count: 1;
+        column-gap: 2rem;
+      }
+      @media (min-width: 768px) {
+        .story-columns {
+          column-count: 2;
+          column-rule: 2px dashed #4A00E0;
+        }
+      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -504,7 +529,7 @@
           const [currentTrack, setCurrentTrack] = useState(0);
           const [focusedChoice, setFocusedChoice] = useState(0);
           const [critters, setCritters] = useState([]); 
-          const [textSize, setTextSize] = useState(22); // Default text size for reading
+          const [textSize, setTextSize] = useState(18); // Default text size for reading
 
           // Audio TTS State
           const [isSpeaking, setIsSpeaking] = useState(false);
@@ -732,6 +757,7 @@
               voiceOsc.type = 'triangle';
               subOsc.type = 'sine';
 
+              // Majestic soaring pitch envelope of a wild wolf howling at the moon
               voiceOsc.frequency.setValueAtTime(160, now);
               voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
               voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
@@ -943,10 +969,10 @@
             const currentSubject = subjects[turnCount % subjects.length];
 
             const levelInstructions = [
-              "Use very short, simple sentences suitable for Early Primary (K-1). Word count ~50 words.",
-              "Use engaging, standard sentences suitable for Primary (Grades 2-3). Word count ~100 words.",
-              "Use descriptive, varied sentences suitable for Junior (Grades 4-6). Word count ~150 words.",
-              "Use complex vocabulary and detailed storytelling suitable for Intermediate (Grades 7-8). Word count ~200 words."
+              "Write at least 2 full paragraphs. Use simple sentences suitable for Early Primary (K-1).",
+              "Write at least 3 full paragraphs with rich detail. Use engaging, standard sentences suitable for Primary (Grades 2-3).",
+              "Write at least 4 long paragraphs with atmospheric descriptions. Use varied sentences suitable for Junior (Grades 4-6).",
+              "Write at least 4 extensive paragraphs with deep narrative detail and complex vocabulary suitable for Intermediate (Grades 7-8)."
             ];
 
             let promptText = `
@@ -958,6 +984,7 @@
               - Central Dilemma: ${dil.name}
               - Turn Count: ${turnCount} out of 10.
               - Reading Level constraints: ${levelInstructions[setupData.readingLevel]}
+              - Randomizer Seed: ${Math.random()} (Ensure this specific turn is completely unique, with unexpected events and deep narrative.)
             `;
 
             if (turnCount === 0) {
@@ -971,7 +998,7 @@
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
-              1. Write a engaging story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style conforming to the reading level word count length.
+              1. Write a lengthy, highly descriptive story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style. Ensure it meets the paragraph count specified in the Reading Level constraints.
               2. Incorporate an educational challenge based on: ${currentSubject}. The challenge should naturally fit the story.
               3. State the question or challenge clearly in the "question" field.
               4. Provide 2 or 3 "choices" for the player.
@@ -1016,11 +1043,6 @@
 
             // Seamless Dual-Engine Fallback Execution
             try {
-              // Ensure we don't even call empty keys to avoid browser cross-origin preflight noise
-              if (!apiKey || apiKey === "") {
-                throw new Error("No primary Google Gemini API Key configured.");
-              }
-
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1308,7 +1330,7 @@
                       <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
                         <span className="font-pixel text-[8px] text-gray-400">A</span>
                         <input 
-                          type="range" min="14" max="36" 
+                          type="range" min="14" max="24" 
                           value={textSize} 
                           onChange={(e) => setTextSize(parseInt(e.target.value))} 
                           className="w-16 md:w-20 cursor-pointer"
