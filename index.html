@@ -78,31 +78,32 @@
 
       /* Animated Critters (Bats & Spiders) */
       @keyframes batFlyRight {
-        0% { transform: translate(-100px, var(--start-y)) scale(1); }
-        25% { transform: translate(25vw, calc(var(--start-y) - 5vh)) scale(1.2); }
-        50% { transform: translate(50vw, calc(var(--start-y) + 5vh)) scale(1); }
-        75% { transform: translate(75vw, calc(var(--start-y) - 2vh)) scale(1.1); }
-        100% { transform: translate(110vw, var(--start-y)) scale(1); }
+        0%   { left: -15vw; transform: translateY(0) scale(1); }
+        25%  { left: 25vw;  transform: translateY(-8vh) scale(1.1); }
+        50%  { left: 50vw;  transform: translateY(4vh) scale(1); }
+        75%  { left: 75vw;  transform: translateY(-4vh) scale(1.1); }
+        100% { left: 115vw; transform: translateY(0) scale(1); }
       }
       @keyframes batFlyLeft {
-        0% { transform: translate(110vw, var(--start-y)) scaleX(-1) scale(1); }
-        25% { transform: translate(75vw, calc(var(--start-y) - 5vh)) scaleX(-1) scale(1.2); }
-        50% { transform: translate(50vw, calc(var(--start-y) + 5vh)) scaleX(-1) scale(1); }
-        75% { transform: translate(25vw, calc(var(--start-y) - 2vh)) scaleX(-1) scale(1.1); }
-        100% { transform: translate(-100px, var(--start-y)) scaleX(-1) scale(1); }
+        0%   { left: 115vw; transform: translateY(0) scaleX(-1) scale(1); }
+        25%  { left: 75vw;  transform: translateY(-8vh) scaleX(-1) scale(1.1); }
+        50%  { left: 50vw;  transform: translateY(4vh) scaleX(-1) scale(1); }
+        75%  { left: 25vw;  transform: translateY(-4vh) scaleX(-1) scale(1.1); }
+        100% { left: -15vw; transform: translateY(0) scaleX(-1) scale(1); }
       }
       @keyframes spiderCrawlRight {
-        0% { transform: translate(-100px, var(--start-y)); }
-        40% { transform: translate(40vw, var(--start-y)); }
-        60% { transform: translate(40vw, var(--start-y)); } /* Pause in place */
-        100% { transform: translate(110vw, var(--start-y)); }
+        0%   { left: -20vw; }
+        40%  { left: 40vw; }
+        60%  { left: 40vw; } /* Pause in place for ~2.4 seconds */
+        100% { left: 120vw; }
       }
       @keyframes spiderCrawlLeft {
-        0% { transform: translate(110vw, var(--start-y)) scaleX(-1); }
-        40% { transform: translate(60vw, var(--start-y)) scaleX(-1); }
-        60% { transform: translate(60vw, var(--start-y)) scaleX(-1); } /* Pause in place */
-        100% { transform: translate(-100px, var(--start-y)) scaleX(-1); }
+        0%   { left: 120vw; transform: scaleX(-1); }
+        40%  { left: 50vw; transform: scaleX(-1); }
+        60%  { left: 50vw; transform: scaleX(-1); } /* Pause in place for ~2.4 seconds */
+        100% { left: -20vw; transform: scaleX(-1); }
       }
+      
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
@@ -329,7 +330,7 @@
           // Game Data State
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0 });
           const [setupStep, setSetupStep] = useState(0); 
-          const [setupFocusIndex, setSetupFocusIndex] = useState(0); // Focused element for Keyboard navigation
+          const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
           const [storyHistory, setStoryHistory] = useState([]);
           const [currentNode, setCurrentNode] = useState(null);
           const [turnCount, setTurnCount] = useState(0);
@@ -346,12 +347,13 @@
           const [isMuted, setIsMuted] = useState(true); 
           const [currentTrack, setCurrentTrack] = useState(0);
           const [focusedChoice, setFocusedChoice] = useState(0);
-          const [critters, setCritters] = useState([]); // Array of flying bats and spiders
+          const [critters, setCritters] = useState([]); 
           
           // Audio TTS State
           const [isSpeaking, setIsSpeaking] = useState(false);
 
           const endOfStoryRef = useRef(null);
+          const realWolfRef = useRef(null); // Reference for the realistic wolf howl
 
           // Initialize Firebase Auth
           useEffect(() => {
@@ -370,7 +372,6 @@
               const unsubscribe = onAuthStateChanged(auth, setUser);
               return () => unsubscribe();
             }
-            // Cleanup TTS on unmount
             return () => {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
             }
@@ -399,33 +400,32 @@
               const id = Date.now();
               const isBat = Math.random() > 0.5;
               const direction = Math.random() > 0.5 ? 'Right' : 'Left';
-              // Bats fly higher up, spiders crawl lower near the bottom
-              const top = isBat ? Math.floor(Math.random() * 40) + 5 : Math.floor(Math.random() * 30) + 60; 
               
-              const animation = isBat ? `batFly${direction} 8s linear forwards` : `spiderCrawl${direction} 12s linear forwards`;
+              // Spiders stay lower, Bats stay higher
+              const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
+              
+              const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
               const icon = isBat ? '🦇' : '🕷️';
               
+              // Spiders are very large (5rem), bats are quite large (4rem)
               const critterObj = {
                 id, icon,
                 style: {
-                  '--start-y': `${top}vh`,
+                  top: `${top}vh`,
                   animation: animation,
-                  fontSize: isBat ? '2rem' : '1.5rem'
+                  fontSize: isBat ? '4rem' : '5rem'
                 }
               };
 
               setCritters(prev => [...prev, critterObj]);
 
-              // Remove critter from DOM after animation completes
               setTimeout(() => {
                 setCritters(prev => prev.filter(c => c.id !== id));
               }, 12500);
 
-              // Schedule next critter (Between 30 to 45 seconds)
               timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
             };
 
-            // Spawn first critter quickly
             timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
             return () => clearTimeout(timeoutId);
           }, []);
@@ -434,9 +434,8 @@
           const playSynthNote = (freq, type, duration, volMod) => {
             if (!synthCtx || isMuted || !freq) return;
             try {
-              if (synthCtx.state === 'suspended') {
-                synthCtx.resume();
-              }
+              if (synthCtx.state === 'suspended') synthCtx.resume();
+              
               const osc = synthCtx.createOscillator();
               const gainNode = synthCtx.createGain();
               osc.type = type;
@@ -496,7 +495,6 @@
             }, stepDuration * 1000);
           };
 
-          // Thunder Noise Generator
           const playThunderSynth = () => {
             if (!synthCtx || isMuted) return;
             try {
@@ -527,8 +525,8 @@
             }
           };
 
-          // Spooky Wolf Howl Synth
-          const playWolfHowl = () => {
+          // Ghostly Synth Howl
+          const playGhostHowl = () => {
             if (!synthCtx || isMuted) return;
             try {
               const osc = synthCtx.createOscillator();
@@ -537,11 +535,9 @@
 
               const now = synthCtx.currentTime;
               
-              // Frequency envelope (howl glissando)
               osc.frequency.setValueAtTime(250, now);
               osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
               
-              // Add slight vibrato (LFO)
               const lfo = synthCtx.createOscillator();
               lfo.type = 'sine';
               lfo.frequency.setValueAtTime(5, now);
@@ -554,7 +550,6 @@
               
               osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
 
-              // Amplitude envelope
               gain.gain.setValueAtTime(0.0001, now);
               gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
               gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
@@ -568,7 +563,15 @@
             }
           };
 
-          // Reliable track/mute toggle trigger
+          // Realistic Wolf Howl
+          const playRealisticWolfHowl = () => {
+            if (realWolfRef.current && !isMuted) {
+              realWolfRef.current.volume = musicVolume;
+              realWolfRef.current.currentTime = 0;
+              realWolfRef.current.play().catch(e => console.warn("Realistic wolf blocked by browser"));
+            }
+          };
+
           useEffect(() => {
             if (!isMuted) {
               startSynthEngine();
@@ -583,17 +586,20 @@
             };
           }, [isMuted, currentTrack, musicVolume]);
 
-          // Lightning Effect & SFX
+          // Lightning Effect & Mixed Howls
           const triggerLightning = () => {
              setShowLightning(true);
              playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
              
-             // Wolf howl follows the thunder
-             setTimeout(playWolfHowl, 800);
+             // Half as frequent for the realistic wolf, otherwise use the ghost howl
+             if (Math.random() > 0.5) {
+               setTimeout(playRealisticWolfHowl, 1000);
+             } else {
+               setTimeout(playGhostHowl, 800);
+             }
           };
 
-          // Lightning happens at random intervals universally throughout the app
           useEffect(() => {
             const lightningInterval = setInterval(() => {
               if (Math.random() > 0.6) triggerLightning();
@@ -605,7 +611,6 @@
           const handleReadAloud = (text) => {
             if (!window.speechSynthesis) return;
             
-            // If currently speaking, stop it.
             if (isSpeaking) {
               window.speechSynthesis.cancel();
               setIsSpeaking(false);
@@ -613,7 +618,7 @@
             }
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; // Slightly slower for younger readers
+            utterance.rate = 0.9; 
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
             
@@ -638,7 +643,7 @@
                  } else if (e.key === 'Enter') {
                    const currentKey = Object.keys(setupData)[setupStep];
                    setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                   setSetupFocusIndex(0); // Reset for next screen
+                   setSetupFocusIndex(0); 
                    if (setupStep < 4) {
                      setSetupStep(prev => prev + 1);
                    } else {
@@ -705,7 +710,6 @@
           const [errorMsg, setErrorMsg] = useState("");
 
           const generateStoryNode = async (actionText = null) => {
-            // Stop any ongoing reading when moving to next screen
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
 
@@ -742,6 +746,7 @@
             if (turnCount >= 10) {
               promptText += "\nThis is the FINAL TURN. The player has survived long enough. Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
             } else {
+              // Safety filter adjustments: avoiding the word "death"
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
               1. Write a 100-150 word engaging story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style.
@@ -749,12 +754,12 @@
               3. State the question or challenge clearly in the "question" field.
               4. Provide 2 or 3 "choices" for the player.
                  - At least one choice MUST be the correct educational answer (set 'isCorrect' to true).
-                 - At least one choice MUST be incorrect (set 'isCorrect' to false). If it causes a Game Over, set 'isGameOver' to true and write a funny 'deathMessage'.
+                 - At least one choice MUST be incorrect (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
               5. Provide an "imagePrompt" field containing a short visual description of the scene to generate an 8-bit image.
               `;
             }
 
-            const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You output strict JSON. Tone: Spooky, funny, 80s retro, educational.`;
+            const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational.`;
 
             const payload = {
               contents: [{ role: "user", parts: [{ text: promptText }] }],
@@ -775,7 +780,7 @@
                           text: { type: "STRING" },
                           isCorrect: { type: "BOOLEAN" },
                           isGameOver: { type: "BOOLEAN" },
-                          deathMessage: { type: "STRING" }
+                          gameOverMessage: { type: "STRING" }
                         }
                       }
                     },
@@ -792,9 +797,16 @@
                 body: JSON.stringify(payload)
               });
 
-              if (!response.candidates || response.candidates.length === 0) throw new Error("Empty Response");
+              if (!response.candidates || response.candidates.length === 0) {
+                 console.error("Safety Filter or Empty Response:", response);
+                 throw new Error("Empty Response from AI");
+              }
 
               let jsonText = response.candidates[0].content.parts[0].text;
+              
+              // Robust JSON cleanup in case AI ignores formatting instructions
+              jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+              
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
               if (jsonMatch) jsonText = jsonMatch[0];
               
@@ -809,7 +821,7 @@
               }
             } catch (err) {
               console.error("Story Generation Error:", err);
-              setErrorMsg("The magical connection was lost. Try again!");
+              setErrorMsg("The magical connection was lost. Ensure your prompt doesn't violate safety guidelines or try again!");
               setGameState('story');
             }
           };
@@ -826,7 +838,7 @@
             if (choice.isGameOver) {
               setCurrentNode({
                 ...currentNode,
-                storyText: currentNode.storyText + "\n\n" + (choice.deathMessage || "You made a grave mistake!"),
+                storyText: currentNode.storyText + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!"),
                 choices: []
               });
               setGameState('gameover');
@@ -1095,7 +1107,7 @@
                   {renderStoryNode(currentNode, false)}
 
                   {errorMsg && (
-                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-2xl text-white text-center">
+                    <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center">
                       {errorMsg}
                       <br/>
                       <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
@@ -1189,6 +1201,9 @@
                 >
                   {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
                 </select>
+                
+                {/* Audio reference for realistic wolf howl */}
+                <audio ref={realWolfRef} src="https://actions.google.com/sounds/v1/animals/wolf_howl.ogg" preload="auto"></audio>
              </div>
           );
 
