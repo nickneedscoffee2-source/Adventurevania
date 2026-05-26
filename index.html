@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventurevania - Choose Your Own Adventure</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+      
+      .font-pixel { font-family: 'Press Start 2P', cursive; }
+      .font-terminal { font-family: 'VT323', monospace; }
+      
+      .crt::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 50;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+      
+      .pixel-border {
+        box-shadow: 
+          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.2),
+          0 0 0 4px #4A00E0,
+          0 0 0 8px #000;
+      }
+      
+      .scanline {
+        width: 100%;
+        height: 100px;
+        z-index: 49;
+        position: absolute;
+        pointer-events: none;
+        background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(138,43,226,0.2) 50%, rgba(0,0,0,0) 100%);
+        opacity: 0.1;
+        animation: scanline 8s linear infinite;
+      }
+      
+      @keyframes scanline {
+        0% { top: -100px; }
+        100% { top: 100%; }
+      }
+
+      .nes-btn {
+        position: relative;
+        display: inline-block;
+        background-color: #8E2DE2;
+        color: white;
+        padding: 8px 16px;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 10px;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 
+          inset -4px -4px 0px 0px rgba(0,0,0,0.4),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.3);
+        transition: transform 0.1s;
+      }
+      .nes-btn:active {
+        transform: scale(0.95);
+        box-shadow: 
+          inset 4px 4px 0px 0px rgba(0,0,0,0.4),
+          inset -4px -4px 0px 0px rgba(255,255,255,0.3);
+      }
+      .nes-btn.green { background-color: #4ade80; color: #064e3b; }
+      .nes-btn.red { background-color: #ef4444; color: #450a0a; }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 12px; }
+      ::-webkit-scrollbar-track { background: #000; border-left: 2px solid #4A00E0; }
+      ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
+      
+      body { background-color: #050505; margin: 0; overflow-x: hidden; }
+
+      /* Story Book Columns */
+      .story-columns {
+        column-count: 1;
+        column-gap: 2rem;
+      }
+      @media (min-width: 768px) {
+        .story-columns {
+          column-count: 2;
+          column-rule: 2px dashed #4A00E0;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const { useState, useEffect, useRef } = React;
+
+        // --- CONFIGURATION & CONSTANTS ---
+        const apiKey = ""; 
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        // GOOGLE APPS SCRIPT WEB APP URL 
+        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
+
+        const CATEGORIES = {
+          characters: [
+            { name: "The Mathlete", icon: "⚡", desc: "Calculates at the speed of light!" },
+            { name: "Word Weaver", icon: "📖", desc: "Casts spells using vocabulary." },
+            { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
+            { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
+            { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
+            { name: "Beast Tamer", icon: "🦁", desc: "Understands all animal life." },
+            { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
+            { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
+            { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
+            { name: "Codebreaker", icon: "🔍", desc: "Solves logic puzzles and ciphers." }
+          ],
+          villains: [
+            { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
+            { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
+            { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
+            { name: "Time Lich", icon: "💀", desc: "Erases important history." },
+            { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
+            { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
+            { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
+            { name: "Map-Mangler", icon: "🌪️", desc: "Scrambles the continents." },
+            { name: "Multiplication Mummy", icon: "🧻", desc: "Traps you in tangles of times tables." },
+            { name: "Punc. Poltergeist", icon: "🎭", desc: "Ends sentences prematurely!" }
+          ],
+          settings: [
+            { name: "Haunted Library", icon: "🏛️", desc: "Books fly off the shelves here." },
+            { name: "Castle of Calculus", icon: "🏰", desc: "A fortress built on math." },
+            { name: "Primeval Forest", icon: "🌲", desc: "Dark woods full of science." },
+            { name: "Ancient Pyramids", icon: "🏜️", desc: "Social studies in the sand." },
+            { name: "Abandoned Lab", icon: "🏭", desc: "Where chemistry went wrong." },
+            { name: "Spooky Swamp", icon: "🐊", desc: "Murky and full of biology." },
+            { name: "Ghost Town", icon: "🏚️", desc: "An empty historical settlement." },
+            { name: "Clockwork Tower", icon: "🕰️", desc: "A giant machine of gears." },
+            { name: "Forgotten Museum", icon: "🖼️", desc: "Artifacts come alive at night." },
+            { name: "Creepy Carnival", icon: "🎪", desc: "Rollercoasters of physics." }
+          ],
+          plots: [
+            { name: "Find the Lost Artifact", icon: "💎", desc: "Recover the ancient treasure." },
+            { name: "Rescue the Mayor", icon: "👑", desc: "The town leader is kidnapped!" },
+            { name: "Stop the Machine", icon: "💣", desc: "Halt the villain's contraption." },
+            { name: "Solve the Mystery", icon: "🧩", desc: "Find out who is haunting town." },
+            { name: "Escape the Maze", icon: "🌀", desc: "Find your way out of the labyrinth." },
+            { name: "Restore the Timeline", icon: "🕰️", desc: "Fix history before it's gone." },
+            { name: "Cure the Curse", icon: "💊", desc: "Heal the townsfolk's ailments." },
+            { name: "Find Hidden Treasure", icon: "💰", desc: "Follow the clues to the gold." },
+            { name: "Defend the Castle", icon: "🛡️", desc: "Hold off the monster invasion." },
+            { name: "Expose the Monster", icon: "🔦", desc: "Pull off the villain's mask!" }
+          ],
+          dilemmas: [
+            { name: "Running Out of Time", icon: "⏰", desc: "The clock is ticking down fast." },
+            { name: "Hopelessly Lost", icon: "🧭", desc: "You have no idea where you are." },
+            { name: "Ignored Warning", icon: "⚠️", desc: "You shouldn't have opened that door." },
+            { name: "Lost Magic Tool", icon: "🚫", desc: "Your primary weapon is gone." },
+            { name: "Betrayed by Friend", icon: "🐍", desc: "Someone wasn't who they seemed." },
+            { name: "Trapped in Room", icon: "🚪", desc: "The walls are closing in." },
+            { name: "Sudden Storm", icon: "🌩️", desc: "Extreme weather strikes." },
+            { name: "Weakness Revealed", icon: "👁️", desc: "The villain knows how to beat you." },
+            { name: "Missing Pieces", icon: "🧩", desc: "You don't have all the clues." },
+            { name: "Accused of Crime", icon: "⚖️", desc: "The town thinks YOU did it!" }
+          ]
+        };
+
+        // --- FIREBASE SETUP ---
+        let app, auth, db, appId;
+        try {
+          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+          // Only init if config exists, allows local testing without Firebase crashing
+          if (Object.keys(firebaseConfig).length > 0) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+          }
+        } catch (e) {
+          console.error("Firebase init failed:", e);
+        }
+
+        // --- UTILITIES ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const fetchWithRetry = async (url, options, retries = 5) => {
+          let delay = 1000;
+          for (let i = 0; i < retries; i++) {
+            try {
+              const response = await fetch(url, options);
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+              return await response.json();
+            } catch (e) {
+              if (i === retries - 1) throw e;
+              await sleep(delay);
+              delay *= 2;
+            }
+          }
+        };
+
+        // --- MAIN COMPONENT ---
+        function Adventurevania() {
+          const [user, setUser] = useState(null);
+          const [gameState, setGameState] = useState('menu'); 
+          
+          // Game Data State
+          const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0 });
+          const [setupStep, setSetupStep] = useState(0); 
+          const [storyHistory, setStoryHistory] = useState([]);
+          const [currentNode, setCurrentNode] = useState(null);
+          const [turnCount, setTurnCount] = useState(0);
+          
+          // Analytics & Tracking State
+          const [sessionStartTime, setSessionStartTime] = useState(null);
+          const [correctAnswers, setCorrectAnswers] = useState(0);
+          const [totalQuestions, setTotalQuestions] = useState(0);
+
+          // UI State
+          const [loadingMsg, setLoadingMsg] = useState("");
+          const [loadCodeInput, setLoadCodeInput] = useState("");
+          const [saveCode, setSaveCode] = useState(null);
+          const [errorMsg, setErrorMsg] = useState("");
+
+          const endOfStoryRef = useRef(null);
+
+          // Initialize Firebase Auth
+          useEffect(() => {
+            const initAuth = async () => {
+              if(!auth) return;
+              try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                  await signInWithCustomToken(auth, window.__initial_auth_token);
+                } else {
+                  await signInAnonymously(auth);
+                }
+              } catch (err) {
+                console.error("Auth Error", err);
+              }
+            };
+            initAuth();
+            
+            if (auth) {
+              const unsubscribe = onAuthStateChanged(auth, setUser);
+              return () => unsubscribe();
+            }
+          }, []);
+
+          useEffect(() => {
+            if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
+              endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, [currentNode, gameState]);
+
+          // --- ANALYTICS FUNCTION ---
+          const recordEngagement = async (outcome) => {
+            if (!SPREADSHEET_WEB_APP_URL) return; // Skip if URL not provided
+            
+            const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
+            const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
+
+            const trackingData = {
+              timestamp: new Date().toISOString(),
+              character: CATEGORIES.characters[setupData.character].name,
+              villain: CATEGORIES.villains[setupData.villain].name,
+              outcome: outcome,
+              turnsSurvived: turnCount,
+              totalQuestionsAttempted: totalQuestions,
+              correctAnswers: correctAnswers,
+              comprehensionScore: compScore + "%",
+              timeSpentSeconds: timeSpentSecs
+            };
+
+            try {
+              await fetch(SPREADSHEET_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(trackingData)
+              });
+              console.log("Analytics sent successfully.");
+            } catch (err) {
+              console.error("Error sending analytics:", err);
+            }
+          };
+
+          // --- API LOGIC ---
+          const generateStoryNode = async (actionText = null) => {
+            setGameState('loading');
+            setLoadingMsg("Summoning AI Game Master...");
+            setErrorMsg("");
+            
+            const char = CATEGORIES.characters[setupData.character];
+            const vill = CATEGORIES.villains[setupData.villain];
+            const sett = CATEGORIES.settings[setupData.setting];
+            const plot = CATEGORIES.plots[setupData.plot];
+            const dil = CATEGORIES.dilemmas[setupData.dilemma];
+
+            const subjects = ["Math", "Language Arts (Spelling, Grammar, Vocabulary)", "Science (Habitats, States of Matter, Simple Machines)", "Social Studies (Communities, Maps, History)"];
+            const currentSubject = subjects[turnCount % subjects.length];
+
+            let promptText = `
+              Current Game State:
+              - Player Character: ${char.name} (${char.desc})
+              - Villain: ${vill.name} (${vill.desc})
+              - Setting: ${sett.name} (${sett.desc})
+              - Main Plot: ${plot.name}
+              - Central Dilemma: ${dil.name}
+              - Turn Count: ${turnCount} out of 10.
+            `;
+
+            if (turnCount === 0) {
+              promptText += "\nThis is the BEGINNING of the story. Introduce the character, the setting, the villain's plot, and the central dilemma. Set the spooky but kid-friendly tone.";
+            } else {
+              promptText += `\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
+            }
+
+            if (turnCount >= 10) {
+              promptText += "\nThis is the FINAL TURN. The player has survived long enough. Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
+            } else {
+              promptText += `
+              \nREQUIREMENTS FOR THIS TURN:
+              1. Write a 100-150 word engaging story segment in a spooky, Scooby-Doo mixed with 80s Castlevania style.
+              2. Incorporate a Grade 3 educational challenge based on: ${currentSubject}. The challenge should naturally fit the story (e.g., a locked door needing a math answer).
+              3. State the question or challenge clearly in the "question" field.
+              4. Provide 2 or 3 "choices" for the player.
+                 - At least one choice MUST be the correct educational answer (set 'isCorrect' to true).
+                 - At least one choice MUST be incorrect (set 'isCorrect' to false). If it causes a Game Over, set 'isGameOver' to true and write a funny 'deathMessage'.
+              5. Provide an "imagePrompt" field containing a short visual description of the scene to generate an 8-bit image.
+              `;
+            }
+
+            const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You output strict JSON. Tone: Spooky, funny, 80s retro, educational.`;
+
+            const payload = {
+              contents: [{ parts: [{ text: promptText }] }],
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: {
+                    storyText: { type: "STRING" },
+                    imagePrompt: { type: "STRING" },
+                    question: { type: "STRING" },
+                    choices: {
+                      type: "ARRAY",
+                      items: {
+                        type: "OBJECT",
+                        properties: {
+                          text: { type: "STRING" },
+                          isCorrect: { type: "BOOLEAN" },
+                          isGameOver: { type: "BOOLEAN" },
+                          deathMessage: { type: "STRING" }
+                        }
+                      }
+                    },
+                    isVictory: { type: "BOOLEAN" }
+                  }
+                }
+              }
+            };
+
+            try {
+              const response = await fetchWithRetry(GEMINI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              const jsonText = response.candidates[0].content.parts[0].text;
+              const nodeData = JSON.parse(jsonText);
+              
+              setCurrentNode(nodeData);
+              
+              if (nodeData.isVictory) {
+                setGameState('victory');
+                recordEngagement('Victory');
+              } else {
+                setGameState('story');
+              }
+
+            } catch (err) {
+              console.error(err);
+              setErrorMsg("The magical connection was lost. Try again!");
+              setGameState('story');
+            }
+          };
+
+          const handleChoice = (choice) => {
+            // Track Analytics logic
+            if (currentNode.question) {
+              setTotalQuestions(prev => prev + 1);
+              if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
+            }
+
+            setStoryHistory([...storyHistory, { node: currentNode, chosenAction: choice.text }]);
+            setTurnCount(turnCount + 1);
+
+            if (choice.isGameOver) {
+              setCurrentNode({
+                ...currentNode,
+                storyText: currentNode.storyText + "\n\n" + (choice.deathMessage || "You made a grave mistake!"),
+                choices: []
+              });
+              setGameState('gameover');
+              recordEngagement('GameOver');
+            } else {
+              generateStoryNode(choice.text);
+            }
+          };
+
+          const startGame = () => {
+            setTurnCount(0);
+            setStoryHistory([]);
+            setSessionStartTime(Date.now());
+            setCorrectAnswers(0);
+            setTotalQuestions(0);
+            generateStoryNode();
+          };
+
+          // --- SAVING & LOADING (FIRESTORE) ---
+          const saveGame = async () => {
+            if (!user || !db) {
+              setErrorMsg("Must be connected to magical servers to save.");
+              return;
+            }
+            setLoadingMsg("Saving to the Crypt...");
+            
+            try {
+              let code;
+              let isUnique = false;
+              while(!isUnique) {
+                code = Math.floor(1000 + Math.random() * 9000).toString();
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
+                const docSnap = await getDoc(docRef);
+                if(!docSnap.exists()) isUnique = true;
+              }
+
+              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
+              await setDoc(docRef, {
+                setupData,
+                storyHistory,
+                currentNode,
+                turnCount,
+                gameState,
+                timestamp: new Date().toISOString()
+              });
+              
+              setSaveCode(code);
+            } catch (e) {
+              console.error(e);
+              setErrorMsg("Failed to save your progress!");
+            }
+          };
+
+          const loadGame = async () => {
+            if (!user || !db) return;
+            if (loadCodeInput.length !== 4) {
+              setErrorMsg("Code must be 4 digits.");
+              return;
+            }
+
+            setGameState('loading');
+            setLoadingMsg("Searching the Archives...");
+            setErrorMsg("");
+
+            try {
+              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', loadCodeInput);
+              const docSnap = await getDoc(docRef);
+
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setSetupData(data.setupData);
+                setStoryHistory(data.storyHistory);
+                setCurrentNode(data.currentNode);
+                setTurnCount(data.turnCount);
+                setGameState(data.gameState === 'gameover' ? 'gameover' : (data.gameState === 'victory' ? 'victory' : 'story'));
+                setSaveCode(null);
+                setSessionStartTime(Date.now()); // Restarting session timer for resume
+              } else {
+                setErrorMsg("No adventure found with that code.");
+                setGameState('menu');
+              }
+            } catch (e) {
+              console.error(e);
+              setErrorMsg("Error accessing the archives.");
+              setGameState('menu');
+            }
+          };
+
+          // --- RENDERERS ---
+
+          const renderMenu = () => (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-12">
+              <div className="animate-pulse">
+                <h1 className="font-pixel text-4xl md:text-6xl text-purple-600 tracking-widest drop-shadow-[0_0_15px_rgba(138,43,226,0.8)]">
+                  ADVENTUREVANIA
+                </h1>
+                <p className="font-terminal text-green-400 text-2xl mt-4">A Grade 3 Reading Quest</p>
+              </div>
+
+              <div className="flex flex-col gap-6 w-full max-w-md">
+                <button className="nes-btn" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
+                  ▶️ New Adventure
+                </button>
+                
+                <div className="pixel-border bg-gray-900 p-6 flex flex-col gap-4">
+                  <p className="font-pixel text-xs text-gray-300">Resume Adventure</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      maxLength="4"
+                      placeholder="0000"
+                      value={loadCodeInput}
+                      onChange={(e) => setLoadCodeInput(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-black border-2 border-purple-800 text-green-400 font-pixel text-center p-2 outline-none focus:border-green-400"
+                    />
+                    <button className="nes-btn green" onClick={loadGame}>Load</button>
+                  </div>
+                  {errorMsg && <p className="font-terminal text-red-500 text-xl">{errorMsg}</p>}
+                </div>
+              </div>
+            </div>
+          );
+
+          const renderSetup = () => {
+            const steps = [
+              { title: "Select Your Hero", key: "character", data: CATEGORIES.characters },
+              { title: "Choose the Villain", key: "villain", data: CATEGORIES.villains },
+              { title: "Pick a Setting", key: "setting", data: CATEGORIES.settings },
+              { title: "Select the Plot", key: "plot", data: CATEGORIES.plots },
+              { title: "Choose a Dilemma", key: "dilemma", data: CATEGORIES.dilemmas }
+            ];
+
+            const current = steps[setupStep];
+
+            return (
+              <div className="flex flex-col h-full p-4 md:p-8">
+                <div className="flex justify-between items-center mb-6 border-b-4 border-purple-900 pb-4">
+                  <h2 className="font-pixel text-xl md:text-2xl text-green-400">{current.title}</h2>
+                  <span className="font-pixel text-xs text-gray-500">Step {setupStep + 1}/5</span>
+                </div>
+
+                <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-8 pr-2">
+                  {current.data.map((item, idx) => {
+                    const isSelected = setupData[current.key] === idx;
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => setSetupData({...setupData, [current.key]: idx})}
+                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-purple-900 border-green-400 scale-105' : 'bg-black hover:bg-gray-800'}`}
+                        style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : {}}
+                      >
+                        <div className="text-4xl mb-2">{item.icon}</div>
+                        <h3 className="font-pixel text-[10px] md:text-xs text-white mb-2 leading-tight h-8 flex items-center">{item.name}</h3>
+                        <p className="font-terminal text-gray-400 text-sm md:text-lg leading-tight hidden md:block">{item.desc}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-between mt-6 pt-4">
+                  {setupStep > 0 ? (
+                    <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>
+                       Back
+                    </button>
+                  ) : <div></div>}
+                  
+                  {setupStep < 4 ? (
+                    <button className="nes-btn green" onClick={() => setSetupStep(setupStep + 1)}>
+                      Next 
+                    </button>
+                  ) : (
+                    <button className="nes-btn green animate-pulse" onClick={startGame}>
+                      Start Quest
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          };
+
+          const renderLoading = () => (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+              <div className="text-6xl animate-bounce">👻</div>
+              <h2 className="font-pixel text-xl text-purple-400 leading-relaxed">{loadingMsg}</h2>
+              <div className="w-64 h-4 bg-gray-900 pixel-border mt-4 overflow-hidden relative">
+                <div className="absolute top-0 left-0 h-full bg-green-500 animate-[loading_2s_ease-in-out_infinite]" style={{width: '50%'}}></div>
+              </div>
+            </div>
+          );
+
+          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
+            if (!node) return null;
+            return (
+              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
+                <div className="pixel-border bg-black p-4 md:p-6 relative">
+                  
+                  {/* Decorative Corners */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+                  
+                  {node.imagePrompt && (
+                    <div className="w-full h-32 md:h-48 mb-6 border-4 border-[#4A00E0] bg-gray-900 overflow-hidden relative">
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-pixel text-[10px] animate-pulse">
+                        Generating 8-Bit Scene...
+                      </div>
+                      <img 
+                        src={`https://image.pollinations.ai/prompt/${encodeURIComponent(node.imagePrompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=300&nologo=true&seed=${turnCount}`} 
+                        alt="Scene illustration" 
+                        className="w-full h-full object-cover relative z-10"
+                        style={{ imageRendering: 'pixelated' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Two Column Layout for text content */}
+                  <div className="story-columns">
+                    <p className="font-terminal text-2xl md:text-3xl text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
+                      {node.storyText}
+                    </p>
+                    
+                    {node.question && !isHistory && (
+                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 mt-4 break-inside-avoid">
+                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isHistory && chosenAction && (
+                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
+                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          const renderGameArea = () => (
+            <div className="flex flex-col h-full relative">
+              {/* Header Bar */}
+              <div className="flex justify-between items-center bg-gray-900 p-4 pixel-border mb-4 shrink-0 z-10">
+                <div className="font-pixel text-xs md:text-sm text-purple-400 flex items-center gap-2">
+                   🗺️ Turn: {turnCount}/10
+                </div>
+                <div className="flex gap-4">
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-[10px]" onClick={saveGame} disabled={gameState === 'gameover'}>
+                    💾 Save
+                  </button>
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-[10px]" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
+                    🔄 Quit
+                  </button>
+                </div>
+              </div>
+
+              {/* Save Code Modal */}
+              {saveCode && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+                  <div className="pixel-border bg-gray-900 p-8 text-center max-w-sm w-full">
+                    <h3 className="font-pixel text-green-400 mb-4">Adventure Saved!</h3>
+                    <p className="font-terminal text-2xl text-white mb-6">Write down this magic code to resume later:</p>
+                    <div className="text-6xl font-pixel text-yellow-400 bg-black p-6 pixel-border mb-8 inline-block tracking-widest">
+                      {saveCode}
+                    </div>
+                    <button className="nes-btn w-full" onClick={() => setSaveCode(null)}>Continue</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Main Story Scroll Area */}
+              <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-32">
+                {storyHistory.map((hist, idx) => (
+                  <React.Fragment key={idx}>
+                    {renderStoryNode(hist.node, true, hist.chosenAction)}
+                  </React.Fragment>
+                ))}
+                
+                {renderStoryNode(currentNode, false)}
+
+                {/* Error message handling inline */}
+                {errorMsg && (
+                  <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-2xl text-white text-center">
+                    {errorMsg}
+                    <br/>
+                    <button className="nes-btn mt-4" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                  </div>
+                )}
+
+                <div ref={endOfStoryRef} />
+              </div>
+
+              {/* Active Choices Area - Buttons Shrunk down */}
+              {(gameState === 'story') && !errorMsg && currentNode?.choices && currentNode.choices.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+                  <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next?</p>
+                  <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+                    {currentNode.choices.map((choice, idx) => (
+                      <button 
+                        key={idx} 
+                        className="nes-btn text-left hover:bg-purple-800 focus:bg-purple-800 flex justify-between items-center group py-2"
+                        onClick={() => handleChoice(choice)}
+                      >
+                        <span className="text-[10px] md:text-[11px] leading-relaxed pr-4">{choice.text}</span>
+                        <span className="opacity-0 group-hover:opacity-100 shrink-0">▶</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {gameState === 'gameover' && (
+                <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-8 border-t-4 border-red-600 z-10 text-center">
+                   <h2 className="font-pixel text-3xl text-red-400 mb-6 flex items-center justify-center gap-4">
+                     💀 GAME OVER 💀
+                   </h2>
+                   <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                </div>
+              )}
+
+              {gameState === 'victory' && (
+                <div className="absolute bottom-0 left-0 right-0 bg-green-900/95 p-8 border-t-4 border-green-600 z-10 text-center">
+                   <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">
+                     🏆 VICTORY! 🏆
+                   </h2>
+                   <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
+                   <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                </div>
+              )}
+            </div>
+          );
+
+          return (
+            <React.Fragment>
+              <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
+              <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
+              
+              <div className="min-h-screen bg-[#050505] p-2 md:p-6 flex items-center justify-center">
+                <div className="w-full max-w-5xl h-[95vh] bg-black pixel-border relative overflow-hidden flex flex-col">
+                  {gameState === 'menu' && renderMenu()}
+                  {gameState === 'setup' && renderSetup()}
+                  {gameState === 'loading' && renderLoading()}
+                  {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Adventurevania />);
+    </script>
+</body>
+</html>
