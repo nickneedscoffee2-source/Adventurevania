@@ -200,10 +200,15 @@
           for (let i = 0; i < retries; i++) {
             try {
               const response = await fetch(url, options);
-              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+              if (!response.ok) {
+                const errText = await response.text();
+                console.error("API Error Response:", errText);
+                if (response.status === 400) throw new Error("Bad Request: " + errText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
               return await response.json();
             } catch (e) {
-              if (i === retries - 1) throw e;
+              if (e.message.includes("Bad Request") || i === retries - 1) throw e;
               await sleep(delay);
               delay *= 2;
             }
@@ -344,8 +349,8 @@
             const systemInstruction = `You are the dynamic AI game engine for 'Adventurevania', a CYOA game for 3rd graders. You output strict JSON. Tone: Spooky, funny, 80s retro, educational.`;
 
             const payload = {
-              contents: [{ parts: [{ text: promptText }] }],
-              systemInstruction: { parts: [{ text: systemInstruction }] },
+              contents: [{ role: "user", parts: [{ text: promptText }] }],
+              systemInstruction: { role: "system", parts: [{ text: systemInstruction }] },
               generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -379,7 +384,18 @@
                 body: JSON.stringify(payload)
               });
 
-              const jsonText = response.candidates[0].content.parts[0].text;
+              if (!response.candidates || response.candidates.length === 0) {
+                throw new Error("AI response was blocked by safety filters or came back empty.");
+              }
+
+              let jsonText = response.candidates[0].content.parts[0].text;
+              
+              // Extract JSON object to avoid markdown backticks parsing issues
+              const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                jsonText = jsonMatch[0];
+              }
+              
               const nodeData = JSON.parse(jsonText);
               
               setCurrentNode(nodeData);
@@ -392,7 +408,7 @@
               }
 
             } catch (err) {
-              console.error(err);
+              console.error("Story Generation Error:", err);
               setErrorMsg("The magical connection was lost. Try again!");
               setGameState('story');
             }
