@@ -146,18 +146,6 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
-
-      /* Story Book Columns */
-      .story-columns {
-        column-count: 1;
-        column-gap: 2rem;
-      }
-      @media (min-width: 768px) {
-        .story-columns {
-          column-count: 2;
-          column-rule: 2px dashed #4A00E0;
-        }
-      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -293,82 +281,6 @@
             { name: "Junior", icon: "📚", desc: "Grade 5-6 reading level." },
             { name: "Intermediate", icon: "🎓", desc: "Grade 7-8 reading level." }
           ]
-        };
-
-        // Text padder to aggressively ensure the local fallback reaches 100-120 words per page depending on level
-        const padText = (baseText, char, sett, vill, level) => {
-          let filler = "";
-          if (level === 0) {
-             filler = ` The big room is cold. ${char.name} looks around. You see dark shapes on the wall. They look like big bugs. You must stop ${vill.name} today. You think about your friends. You want to save them. You walk slow and try to be quiet. A cold wind blows by your face. The scary place makes you sad, but you are brave. You will not give up. You look for a clue.`;
-          } else if (level === 1) {
-             filler = ` The air in the ${sett.name} feels remarkably heavy, carrying the scent of ancient dust. ${char.name} looks around cautiously, every shadow seeming to dance in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. You know that ${vill.name} is watching, waiting for a single mistake.`;
-          } else if (level === 2) {
-             filler = ` Despite the overwhelming odds, you refuse to back down. The architecture is mind-boggling, with twisted corridors and impossible geometry that defies logic. You think about the people relying on you, the stakes of the mission, and the terrifying consequences of failure. A strange, eerie glow illuminates the path ahead, casting long, distorted silhouettes across the stone. You steel your nerves against the impending danger lurking just beyond sight.`;
-          } else {
-             filler = ` A deafening cacophony reverberates through the macabre architecture of the ancient structure. The paramount objective weighs heavily upon your psyche, a relentless burden of responsibility. Sputtering torches project grotesque, elongated silhouettes against the deteriorating masonry, transforming mere alcoves into lurking monstrosities. You navigate the treacherous environment with calculated precision, acutely aware that the malevolent antagonist anticipates your arrival. The oppressive atmosphere threatens to suffocate your remaining resolve.`;
-          }
-          return baseText + filler;
-        };
-
-        // Local Procedural Story Engine Fallback - Tuned to reading levels
-        const generateLocalNode = (turn, setup) => {
-          const char = CATEGORIES.characters[setup.character];
-          const vill = CATEGORIES.villains[setup.villain];
-          const sett = CATEGORIES.settings[setup.setting];
-          const plot = CATEGORIES.plots[setup.plot];
-          const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
-
-          // Reading Comp questions based on the filler text added
-          const compQuestions = [
-            { q: `What kind of shapes did ${char.name} see on the wall?`, a: "Big bugs", w1: "Small birds", w2: "Tall trees", m1: "The shapes surround you!", m2: "You slip and lose your way!" },
-            { q: `What does the air in the ${sett.name} smell like?`, a: "Ancient dust", w1: "Fresh flowers", w2: "Salty ocean", m1: "You jump at the wrong smell!", m2: "The dust chokes you!" },
-            { q: `What kind of geometry did the architecture have?`, a: "Impossible", w1: "Basic", w2: "Circular", m1: "You walk in an endless circle!", m2: "The walls close in!" },
-            { q: `What projects grotesque, elongated silhouettes?`, a: "Sputtering torches", w1: "Bright sunbeams", w2: "Glowing mushrooms", m1: "The darkness consumes you!", m2: "A trapdoor opens beneath you!" }
-          ];
-
-          let qData = compQuestions[level]; // Adjust question to level 
-
-          let pages = [];
-          if (turn === 0) {
-            pages = [
-              padText(`With a sudden crash of thunder, ${char.name} steps into the spooky corridors of the ${sett.name}.`, char, sett, vill, level),
-              padText(`Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name}.`, char, sett, vill, level),
-              padText(`The flickering lights cast long, strange shadows against the ancient walls, making every corner look like a monster.`, char, sett, vill, level),
-              padText(`Suddenly, the terrifying ${vill.name} appears in a puff of smoke! "You'll never succeed!" they cackle.`, char, sett, vill, level)
-            ];
-          } else if (turn === 10) {
-            pages = [
-              padText(`AMAZING! After overcoming all of ${vill.name}'s treacherous traps, ${char.name} reaches the heart of the ${sett.name}.`, char, sett, vill, level),
-              padText(`With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!`, char, sett, vill, level),
-              padText(`The spooky shadows melt away, and a bright morning sun rises over the horizon.`, char, sett, vill, level),
-              padText(`You have conquered Adventurevania! The realm is safe once more thanks to your heroic efforts and sharp mind.`, char, sett, vill, level)
-            ];
-            return {
-              pages,
-              imagePrompt: "Dracula castle in beautiful morning sunlight pixel art",
-              choices: [],
-              isVictory: true
-            };
-          } else {
-            pages = [
-              padText(`Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`, char, sett, vill, level),
-              padText(`With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.`, char, sett, vill, level),
-              padText(`You climb a winding stone staircase, staying alert for traps as a shadow flutters past!`, char, sett, vill, level),
-              padText(`You reach a giant wooden door. ${vill.name} has laid a new trap to stop you!`, char, sett, vill, level)
-            ];
-          }
-
-          return {
-            pages,
-            imagePrompt: `Spooky scene in ${sett.name} with ${char.name} facing ${vill.name} pixel art`,
-            question: qData.q,
-            choices: [
-              { text: qData.a, isCorrect: true, isGameOver: false },
-              { text: qData.w1, isCorrect: false, isGameOver: true, gameOverMessage: qData.m1 },
-              { text: qData.w2, isCorrect: false, isGameOver: true, gameOverMessage: qData.m2 }
-            ]
-          };
         };
 
         // --- FIREBASE SETUP ---
@@ -994,7 +906,11 @@
               } else if (gameState === 'story' && !errorMsg) {
                  const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
                  
-                 if (!isAtLastPage && e.key === 'Enter') {
+                 if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
+                     setCurrentPageIndex(p => p - 1);
+                     if (window.speechSynthesis) window.speechSynthesis.cancel();
+                     setIsSpeaking(false);
+                 } else if (!isAtLastPage && (e.key === 'Enter' || e.key === 'ArrowRight')) {
                    setCurrentPageIndex(p => p + 1);
                    if (window.speechSynthesis) window.speechSynthesis.cancel();
                    setIsSpeaking(false);
@@ -1074,11 +990,18 @@
             const plot = CATEGORIES.plots[setupData.plot];
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
+            const wordCounts = [
+              "40 to 50 words per page",
+              "75 to 100 words per page",
+              "100 to 120 words per page",
+              "130 to 150 words per page"
+            ];
+
             const levelInstructions = [
-              "Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words (e.g., big, run, dark, sad). Sentences must be very short and phonetic. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.",
-              "Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary (e.g., spooky, shadows, suddenly). Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.",
-              "Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language, varied sentence structures, and more complex words (e.g., treacherous, echoing, architecture). Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.",
-              "Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary (e.g., cacophony, malevolent, macabre, reverberate). Reading Comprehension: Ask a complex analytical question about themes or subtle clues."
+              `Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words (e.g., big, run, dark, sad). Sentences must be very short and phonetic. Length: ${wordCounts[0]}. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.`,
+              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary (e.g., spooky, shadows, suddenly). Length: ${wordCounts[1]}. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.`,
+              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language, varied sentence structures, and more complex words (e.g., treacherous, echoing, architecture). Length: ${wordCounts[2]}. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.`,
+              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary (e.g., cacophony, malevolent, macabre, reverberate). Length: ${wordCounts[3]}. Reading Comprehension: Ask a complex analytical question about themes or subtle clues.`
             ];
 
             let historyContext = "";
@@ -1110,8 +1033,8 @@
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
               1. Write a continuous story segment that progresses the plot forward.
-              2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). Each page MUST contain different text. Page 1 continues into Page 2, Page 2 continues into Page 3, and Page 3 continues into Page 4. DO NOT repeat the same text.
-              3. EACH individual page MUST be between 100 and 120 words long. Use pacing and descriptions to reach this.
+              2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). CRITICAL: Each page MUST contain different text. Do NOT repeat paragraphs. Page 1 should setup the situation. Page 2 should escalate the tension. Page 3 should introduce a specific obstacle. Page 4 should present the educational puzzle.
+              3. EACH individual page MUST be exactly ${wordCounts[setupData.readingLevel]}. Use pacing and descriptions to strictly reach this count.
               4. Create a reading comprehension question based STRICTLY on the story you just wrote on the FINAL page. The question's difficulty must match the Reading Level constraint. DO NOT ask external math or science questions; it must be about the text.
               5. State the question or puzzle clearly in the "question" field.
               6. Provide 2 or 3 "choices" representing answers to the reading comprehension question.
@@ -1135,7 +1058,7 @@
                   properties: {
                     pages: {
                       type: "ARRAY",
-                      description: "Array of exactly 4 strings representing sequential pages of story text. Each string MUST be 100-120 words and distinct from the others.",
+                      description: `Array of exactly 4 strings representing sequential pages of story text. Each string MUST be distinct and follow length rules.`,
                       items: { type: "STRING" }
                     },
                     imagePrompt: { type: "STRING" },
@@ -1159,10 +1082,6 @@
             };
 
             try {
-              if (!apiKey || apiKey === "") {
-                throw new Error("No primary Google Gemini API Key configured.");
-              }
-
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1200,19 +1119,9 @@
                 setGameState('story');
               }
             } catch (err) {
-              console.warn("API Error (Safe local story generator activated):", err.message);
-              
-              const localNode = generateLocalNode(turnCount, setupData);
-              setCurrentNode(localNode);
-              if (turnCount === 0) setSessionInitialNode(localNode);
-              setCurrentPageIndex(0);
-              
-              if (localNode.isVictory) {
-                setGameState('victory');
-                recordEngagement('Victory');
-              } else {
-                setGameState('story');
-              }
+              console.warn("API Error:", err.message);
+              setErrorMsg("The magical connection was lost. " + err.message);
+              setGameState('story');
             }
           };
 
@@ -1554,18 +1463,44 @@
                   {(gameState === 'story') && !errorMsg && currentNode?.pages && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
                       {!isAtLastPage ? (
-                        <button 
-                           className="nes-btn green w-full max-w-md py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)]"
-                           onClick={() => {
-                             setCurrentPageIndex(p => p + 1);
-                             if (window.speechSynthesis) window.speechSynthesis.cancel();
-                             setIsSpeaking(false);
-                           }}
-                        >
-                           Next Page 📖 (Press Enter)
-                        </button>
+                        <div className="flex w-full max-w-md gap-4">
+                          {currentPageIndex > 0 && (
+                            <button 
+                               className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                               onClick={() => {
+                                 setCurrentPageIndex(p => p - 1);
+                                 if (window.speechSynthesis) window.speechSynthesis.cancel();
+                                 setIsSpeaking(false);
+                               }}
+                            >
+                               ⬅️ Back
+                            </button>
+                          )}
+                          <button 
+                             className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`}
+                             onClick={() => {
+                               setCurrentPageIndex(p => p + 1);
+                               if (window.speechSynthesis) window.speechSynthesis.cancel();
+                               setIsSpeaking(false);
+                             }}
+                          >
+                             Next 📖 (Enter)
+                          </button>
+                        </div>
                       ) : (
                         <>
+                          <div className="flex w-full max-w-4xl justify-start mb-2">
+                             <button 
+                               className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-gray-700 !px-2 !py-1 text-[8px]"
+                               onClick={() => {
+                                 setCurrentPageIndex(p => p - 1);
+                                 if (window.speechSynthesis) window.speechSynthesis.cancel();
+                                 setIsSpeaking(false);
+                               }}
+                             >
+                               ⬅️ Back to Page {currentPageIndex}
+                             </button>
+                          </div>
                           <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
                           <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
                             {currentNode?.choices?.map((choice, idx) => {
