@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
     <!-- Tailwind CSS -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
-    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
-    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <!-- Babel for JSX -->
-    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-      @import url('[https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap](https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap)');
+      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
       
       .font-pixel { font-family: 'Press Start 2P', cursive; }
       .font-terminal { font-family: 'VT323', monospace; }
@@ -154,24 +154,20 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)';
-        import { getFirestore, doc, setDoc, getDoc } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)';
-
+    <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
         // We use Pollinations Text API. It is 100% keyless, free, and unrestricted!
-        const POLLINATIONS_TEXT_URL = "[https://text.pollinations.ai/](https://text.pollinations.ai/)";
+        const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
         
         // GOOGLE APPS SCRIPT WEB APP URL (Writes session logs & total books read)
-        const SPREADSHEET_WEB_APP_URL = "[https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec](https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec)"; 
+        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
 
         const MENU_IMAGES = [
-          "[https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1](https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1)",
-          "[https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2](https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2)",
-          "[https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3](https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3)"
+          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
+          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
+          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
         ];
 
         // Web Audio Synthesizer Presets Composition - 3 High-Quality Spooky Tracks
@@ -283,99 +279,206 @@
           ]
         };
 
-        // Text padder to aggressively ensure the local fallback reaches 100-120 words per page depending on level
-        const padText = (baseText, char, sett, vill, level) => {
-          let filler = "";
-          if (level === 0) {
-             filler = ` The big room is cold. ${char.name} looks around. You see dark shapes on the wall. They look like big bugs. You must stop ${vill.name} today. You think about your friends. You want to save them. You walk slow and try to be quiet. A cold wind blows by your face. The scary place makes you sad, but you are brave. You will not give up. You look for a clue.`;
-          } else if (level === 1) {
-             filler = ` The air in the ${sett.name} feels remarkably heavy, carrying the scent of ancient dust. ${char.name} looks around cautiously, every shadow seeming to dance in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. You know that ${vill.name} is watching, waiting for a single mistake.`;
-          } else if (level === 2) {
-             filler = ` Despite the overwhelming odds, you refuse to back down. The architecture is mind-boggling, with twisted corridors and impossible geometry that defies logic. You think about the people relying on you, the stakes of the mission, and the terrifying consequences of failure. A strange, eerie glow illuminates the path ahead, casting long, distorted silhouettes across the stone. You steel your nerves against the impending danger lurking just beyond sight.`;
-          } else {
-             filler = ` A deafening cacophony reverberates through the macabre architecture of the ancient structure. The paramount objective weighs heavily upon your psyche, a relentless burden of responsibility. Sputtering torches project grotesque, elongated silhouettes against the deteriorating masonry, transforming mere alcoves into lurking monstrosities. You navigate the treacherous environment with calculated precision, acutely aware that the malevolent antagonist anticipates your arrival. The oppressive atmosphere threatens to suffocate your remaining resolve.`;
-          }
-          return baseText + filler;
-        };
+        // --- UTILITIES ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // Local Procedural Story Engine Fallback - Tuned to reading levels
-        const generateLocalNode = (turn, setup) => {
-          const char = CATEGORIES.characters[setup.character];
-          const vill = CATEGORIES.villains[setup.villain];
-          const sett = CATEGORIES.settings[setup.setting];
-          const plot = CATEGORIES.plots[setup.plot];
-          const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
+        // Global Synth variables
+        let synthCtx = null;
+        let melodyInterval = null;
 
-          // Reading Comp questions based on the filler text added
-          const compQuestions = [
-            { q: `What kind of shapes did ${char.name} see on the wall?`, a: "Big bugs", w1: "Small birds", w2: "Tall trees", m1: "The shapes surround you!", m2: "You slip and lose your way!" },
-            { q: `What does the air in the ${sett.name} smell like?`, a: "Ancient dust", w1: "Fresh flowers", w2: "Salty ocean", m1: "You jump at the wrong smell!", m2: "The dust chokes you!" },
-            { q: `What kind of geometry did the architecture have?`, a: "Impossible", w1: "Basic", w2: "Circular", m1: "You walk in an endless circle!", m2: "The walls close in!" }
-          ];
+        // Interactive SVG Bat component that toggles wings natively in React state for reliable fluttering
+        function RetroBat({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
 
-          // SAFE INDEX MODULO: Prevents undefined crashes if the level is out-of-bounds (e.g. index 3 for Intermediate)
-          let qData = compQuestions[level % compQuestions.length]; 
+          useEffect(() => {
+            const frameTimer = setInterval(() => {
+              setWingFrame(f => (f === 0 ? 1 : 0));
+            }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
 
-          let pages = [];
-          if (turn === 0) {
-            pages = [
-              padText(`With a sudden crash of thunder, ${char.name} steps into the spooky corridors of the ${sett.name}.`, char, sett, vill, level),
-              padText(`Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name}.`, char, sett, vill, level),
-              padText(`The flickering lights cast long, strange shadows against the ancient walls, making every corner look like a monster.`, char, sett, vill, level),
-              padText(`Suddenly, the terrifying ${vill.name} appears in a puff of smoke! "You'll never succeed!" they cackle.`, char, sett, vill, level)
-            ];
-          } else if (turn === 10) {
-            pages = [
-              padText(`AMAZING! After overcoming all of ${vill.name}'s treacherous traps, ${char.name} reaches the heart of the ${sett.name}.`, char, sett, vill, level),
-              padText(`With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!`, char, sett, vill, level),
-              padText(`The spooky shadows melt away, and a bright morning sun rises over the horizon.`, char, sett, vill, level),
-              padText(`You have conquered Adventurevania! The realm is safe once more thanks to your heroic efforts and sharp mind.`, char, sett, vill, level)
-            ];
-            return {
-              pages,
-              imagePrompt: "Dracula castle in beautiful morning sunlight pixel art",
-              choices: [],
-              isVictory: true
-            };
-          } else {
-            pages = [
-              padText(`Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`, char, sett, vill, level),
-              padText(`With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.`, char, sett, vill, level),
-              padText(`You climb a winding stone staircase, staying alert for traps as a shadow flutters past!`, char, sett, vill, level),
-              padText(`You reach a giant wooden door. ${vill.name} has laid a new trap to stop you!`, char, sett, vill, level)
-            ];
-          }
-
-          return {
-            pages,
-            imagePrompt: `Spooky scene in ${sett.name} with ${char.name} facing ${vill.name} pixel art`,
-            question: qData.q,
-            choices: [
-              { text: qData.a, isCorrect: true, isGameOver: false },
-              { text: qData.w1, isCorrect: false, isGameOver: true, gameOverMessage: qData.m1 },
-              { text: qData.w2, isCorrect: false, isGameOver: true, gameOverMessage: qData.m2 }
-            ].sort(() => Math.random() - 0.5) // shuffle the choices
-          };
-        };
-
-        // --- FIREBASE SETUP ---
-        let app, auth, db, appId;
-        try {
-          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
-          }
-        } catch (e) {
-          console.error("Firebase init failed:", e);
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                {/* Bat Body */}
+                <rect x="14" y="5" width="4" height="6" fill="#151515" />
+                <rect x="15" y="3" width="2" height="2" fill="#151515" />
+                {/* Red Eyes */}
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                
+                {wingFrame === 0 ? (
+                  /* Wings Down Frame */
+                  <g>
+                    {/* Left Wing */}
+                    <rect x="10" y="5" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="6" y="6" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="2" y="8" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="0" y="10" width="2" height="3" fill="#2d2d2d" />
+                    {/* Right Wing */}
+                    <rect x="18" y="5" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="22" y="6" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="26" y="8" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="30" y="10" width="2" height="3" fill="#2d2d2d" />
+                  </g>
+                ) : (
+                  /* Wings Up Frame */
+                  <g>
+                    {/* Left Wing */}
+                    <rect x="10" y="4" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="6" y="2" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="2" y="0" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="0" y="0" width="2" height="2" fill="#2d2d2d" />
+                    {/* Right Wing */}
+                    <rect x="18" y="4" width="4" height="3" fill="#3a3a3a" />
+                    <rect x="22" y="2" width="4" height="4" fill="#3a3a3a" />
+                    <rect x="26" y="0" width="4" height="4" fill="#2d2d2d" />
+                    <rect x="30" y="0" width="2" height="2" fill="#2d2d2d" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
         }
+
+        // --- NEW ISOLATED IMAGE PANEL ---
+        const ImagePanel = ({ prompt, turnCount }) => {
+          const [loaded, setLoaded] = useState(false);
+          const [hasError, setHasError] = useState(false);
+          const imgRef = useRef(null);
+          
+          useEffect(() => {
+            // Race-condition check: if the image loaded from cache instantly before layout effects
+            if (imgRef.current && imgRef.current.complete) {
+              setLoaded(true);
+            } else {
+              setLoaded(false);
+            }
+            setHasError(false);
+          }, [prompt, turnCount]);
+
+          if (!prompt) return <div className="w-full h-full bg-black"></div>;
+
+          return (
+            <div className="w-full h-full relative overflow-hidden bg-black">
+              {!loaded && !hasError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                  <span className="text-4xl animate-bounce mb-4">🦇</span>
+                  <span className="font-pixel text-[10px] md:text-xs text-purple-400 animate-pulse text-center px-4 leading-relaxed">
+                    Painting Scene...
+                  </span>
+                </div>
+              )}
+              {hasError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                  <span className="text-4xl mb-4 opacity-50">🖼️</span>
+                  <span className="font-pixel text-[10px] text-gray-500 text-center px-4">
+                    The magical painting faded.
+                  </span>
+                </div>
+              ) : (
+                <img 
+                  ref={imgRef}
+                  key={`${prompt}-${turnCount}`}
+                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=800&nologo=true&seed=${turnCount}`}
+                  alt="Scene"
+                  className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setLoaded(true)}
+                  onError={() => { 
+                    setLoaded(true); 
+                    setHasError(true);
+                  }}
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              )}
+            </div>
+          );
+        };
+
+        // --- INTERACTIVE TEXT HIGHLIGHTER ---
+        const HighlightableText = ({ text, textSize }) => {
+          const [highlights, setHighlights] = useState([]);
+
+          useEffect(() => {
+            setHighlights([]);
+          }, [text]); // Clear highlights on new page
+
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
+              setHighlights(prev => [...prev, selectedText]);
+            }
+          };
+
+          const removeHighlight = (phraseToRemove) => {
+            setHighlights(prev => prev.filter(h => h !== phraseToRemove));
+          };
+
+          const renderText = () => {
+            if (highlights.length === 0) return text;
+            
+            // Sort by length descending to prevent partial match bugs on overlapping phrases
+            const escapedHighlights = highlights
+              .slice()
+              .sort((a, b) => b.length - a.length)
+              .map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+              
+            const regex = new RegExp(`(${escapedHighlights.join('|')})`, 'gi');
+            const parts = text.split(regex);
+
+            return parts.map((part, i) => {
+              const lowerPart = part.toLowerCase();
+              const matchedHighlight = highlights.find(h => h.toLowerCase() === lowerPart);
+              
+              if (matchedHighlight) {
+                return (
+                  <mark 
+                    key={i} 
+                    className="bg-yellow-400 text-black px-1 rounded cursor-pointer transition-colors hover:bg-red-400" 
+                    title="Click to remove highlight"
+                    onClick={() => removeHighlight(matchedHighlight)}
+                  >
+                    {part}
+                  </mark>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            });
+          };
+
+          return (
+            <div className="relative w-full">
+              {highlights.length > 0 && (
+                <div className="flex justify-end mb-2">
+                  <button 
+                    onClick={() => setHighlights([])} 
+                    className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-red-900 !px-2 !py-1 !text-[8px]"
+                  >
+                    Clear Highlights
+                  </button>
+                </div>
+              )}
+              <p 
+                className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap mb-4" 
+                style={{ fontSize: `${textSize}px` }}
+                onMouseUp={handleSelection}
+                onTouchEnd={handleSelection}
+              >
+                {renderText()}
+              </p>
+              <p className="font-pixel text-[8px] text-gray-500 mt-2 text-right opacity-70">
+                Tip: Highlight text with your mouse or finger to mark keywords!
+              </p>
+            </div>
+          );
+        };
 
         // --- MAIN COMPONENT ---
         function Adventurevania() {
-          // --- ALL STATE DECLARATIONS AT TOP TO PREVENT TEMPORAL DEAD ZONE HOISTING ERRORS ---
+          // --- ALL STATE DECLARATIONS AT TOP ---
           const [gameState, setGameState] = useState('menu'); 
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
@@ -717,7 +820,7 @@
             window.speechSynthesis.speak(utterance);
           };
 
-          // Keyboard Navigation controls with browser event cancellation
+          // Keyboard Navigation controls
           useEffect(() => {
             const handleKeyDown = (e) => {
               if(document.activeElement.tagName === "INPUT") return;
@@ -889,7 +992,7 @@
 
             const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.`;
 
-            // USE POST WORKAROUND: Safely transmits complex prompt data in JSON payload to bypass school-level WAF/firewall GET request query blockages.
+            // POST WORKAROUND: Safely transmits complex prompt data in JSON payload to bypass school-level WAF/firewall GET request query blockages.
             try {
               const response = await fetch(POLLINATIONS_TEXT_URL, {
                 method: 'POST',
@@ -930,19 +1033,9 @@
               setCurrentPageIndex(0); 
               setGameState('story');
             } catch (err) {
-              console.warn("Pollination Engine Error (Gracefully falling back to integrated database...):", err.message);
-              
-              // SEAMLESS FALLBACK: Safely triggers pre-programmed backup nodes without throwing out-of-bounds index exceptions!
-              try {
-                const localNode = generateLocalNode(turnCount, setupData);
-                setCurrentNode(localNode);
-                if (turnCount === 0) setSessionInitialNode(localNode);
-                setCurrentPageIndex(0);
-                setGameState('story');
-              } catch (localErr) {
-                console.error("Local Fallback Fatal Error:", localErr);
-                setErrorMsg(`The magical connection was lost, and the fallback engine failed: ${localErr.message}`);
-              }
+              console.warn("Pollination Engine Error:", err.message);
+              setErrorMsg(`The magical connection was lost: ${err.message}. Please click 'Try Again' to reconnect.`);
+              setGameState('story');
             }
           };
 
@@ -1082,8 +1175,59 @@
             );
           };
 
+          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
+            if (!node || !node.pages) return null;
+            
+            const isAtLastPage = currentPageIndex === node.pages.length - 1;
+            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
+            const showChallenge = isHistory || isAtLastPage;
+
+            return (
+              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
+                <div className="pixel-border bg-black p-4 md:p-6 relative">
+                  
+                  {/* Decorative Corners */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+
+                  <div className="w-full">
+                     <HighlightableText text={textToDisplay} textSize={textSize} />
+                  </div>
+
+                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    {showChallenge && node.question && (
+                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
+                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* TTS Read Aloud Button */}
+                    {!isHistory && (
+                      <button 
+                        onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} 
+                        className="nes-btn shrink-0"
+                      >
+                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {isHistory && chosenAction && (
+                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
+                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
           const renderGameArea = () => {
-            // Elegant fallback error screen - completely bypasses black layouts if API/Fallback crashes out
+            // Elegant fallback error screen
             if (!currentNode) {
               return (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-6">
@@ -1156,6 +1300,15 @@
                     ))}
                     
                     {renderStoryNode(currentNode, false)}
+
+                    {errorMsg && (
+                      <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
+                        <div>
+                          {errorMsg}
+                        </div>
+                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                      </div>
+                    )}
 
                     <div ref={endOfStoryRef} />
                   </div>
