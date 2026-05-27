@@ -187,7 +187,7 @@
             { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
             { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
             { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
-            { name: "Beast Tamer", icon: "🦁", desc: "Understands all animal life." },
+            { name: "Great Lakes Explorer", icon: "🌊", desc: "Expert navigator of the Great Lakes." },
             { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
             { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
             { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
@@ -197,7 +197,7 @@
             { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
             { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
             { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
-            { name: "Time Lich", icon: "💀", desc: "Erases important history." },
+            { name: "The Negabor", icon: "👹", desc: "A moody green ogre who drains positive energy." },
             { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
             { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
             { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
@@ -260,20 +260,20 @@
         let fbApp, fbAuth, fbDb, fbAppId;
         let synthCtx = null; 
 
-        // Compat Bindings
-        const initializeApp = (config) => {
+        // Stable globally bound Compat wrappers
+        const initializeFirebaseApp = (config) => {
           if (typeof firebase !== 'undefined' && firebase.initializeApp) {
             return firebase.initializeApp(config);
           }
           return null;
         };
-        const getAuth = (app) => {
+        const getFirebaseAuth = () => {
           if (typeof firebase !== 'undefined' && firebase.auth) {
             return firebase.auth();
           }
           return null;
         };
-        const getFirestore = (app) => {
+        const getFirebaseFirestore = () => {
           if (typeof firebase !== 'undefined' && firebase.firestore) {
             return firebase.firestore();
           }
@@ -299,23 +299,22 @@
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
           if (Object.keys(firebaseConfig).length > 0) {
-            fbApp = initializeApp(firebaseConfig);
-            fbAuth = getAuth(fbApp);
-            fbDb = getFirestore(fbApp);
+            fbApp = initializeFirebaseApp(firebaseConfig);
+            fbAuth = getFirebaseAuth();
+            fbDb = getFirebaseFirestore();
             fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
           }
         } catch (e) {
           console.error("Firebase init failed:", e);
         }
 
-        // --- DUAL-ENGINE COHERENT FALLBACK GENERATOR ---
+        // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
         const generateLocalNode = (turn, setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
           const sett = CATEGORIES.settings[setup.setting];
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
 
           const padSentence = (index) => {
             const fillers = [
@@ -345,7 +344,7 @@
         };
 
         // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
-        const SunsetPixelArt = ({ setting, turn }) => {
+        const SunsetPixelArt = ({ setting, turn, villain }) => {
           const canvasRef = useRef(null);
 
           useEffect(() => {
@@ -409,6 +408,42 @@
               ctx.beginPath();
               ctx.arc(w - 70, 60, 18, 0, Math.PI * 2);
               ctx.fill();
+            }
+
+            // 2.5 THE NEGABOR GREEN OGRE FACE RENDERING (If villain index 3 is selected)
+            if (villain === 3) {
+              const ogreX = w * 0.15;
+              const ogreY = 45;
+              
+              // Big green head base
+              ctx.fillStyle = '#388e3c'; 
+              ctx.fillRect(ogreX, ogreY, 40, 40);
+              
+              // Horns / Ears
+              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8);
+              ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
+              
+              // Glowing yellow-red eyes
+              ctx.fillStyle = '#f57c00'; 
+              ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6);
+              ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
+              
+              ctx.fillStyle = '#ff1744'; 
+              ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2);
+              ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
+
+              // Flat nose
+              ctx.fillStyle = '#1b5e20'; 
+              ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
+
+              // Fangs
+              ctx.fillStyle = '#ffffff'; 
+              ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4);
+              ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
+              
+              // Angry mouth line
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
             }
 
             // 3. MOUNTAIN SILHOUETTE
@@ -536,7 +571,7 @@
               ctx.fillRect(bx + 10, by - 3, 4, 3);
             }
 
-          }, [setting, turn]);
+          }, [setting, turn, villain]);
 
           return (
             <canvas 
@@ -549,7 +584,8 @@
           );
         };
 
-        // --- MAIN APP ---
+        // --- FLAPPY BAT MINIGAME FOR LOAD SCREEN ---
+        // Exposing globally-safe React reference context inside the Babel environment
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
@@ -592,7 +628,7 @@
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
 
-          // Initialize Firebase Auth compat listener
+          // Initialize Firebase Auth compat listener safely
           useEffect(() => {
             const initAuth = async () => {
               if(!fbAuth) return;
@@ -639,6 +675,23 @@
             }
             return () => clearInterval(interval);
           }, [gameState]);
+
+          // Critter Spawner
+          useEffect(() => {
+            let timeoutId;
+            const spawnCritter = () => {
+              const id = Date.now();
+              const isBat = Math.random() > 0.5;
+              const direction = Math.random() > 0.5 ? 'Right' : 'Left';
+              const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
+              const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
+              setCritters(prev => [...prev, { id, isBat, style: { top: `${top}vh`, animation } }]);
+              setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, 12500);
+              timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
+            };
+            timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
+            return () => clearTimeout(timeoutId);
+          }, []);
 
           // --- SYNTH AUDIO ---
           const playSynthNote = (freq, type, duration, volMod) => {
@@ -923,19 +976,6 @@
             }
           };
 
-          const startGame = () => {
-            setTurnCount(0);
-            setStoryHistory([]);
-            setSessionStartTime(Date.now());
-            setCorrectAnswers(0);
-            setTotalQuestions(0);
-            const seed = Math.random().toString(36).substring(2, 10);
-            setSessionSeed(seed);
-            generateStoryNode(null, setupData, seed);
-          };
-
-          // --- RENDERERS ---
-
           const renderMenu = () => (
             <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
               <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
@@ -1136,7 +1176,7 @@
                 
                 {/* RIGHT PANE - Custom procedural Sunset scene (Offline ready, zero AI delay!) */}
                 <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
-                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} />
+                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} />
                 </div>
               </div>
             );
