@@ -97,7 +97,20 @@
         60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place */
         100% { left: -20vw; transform: scaleX(-1); }
       }
+
+      /* Rapid wing flutter keyframes */
+      @keyframes wingFlapLeft {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
+      @keyframes wingFlapRight {
+        0% { transform: scaleY(1); }
+        100% { transform: scaleY(-0.4) translateY(2px); }
+      }
       
+      .wing-l { transform-origin: 16px 8px; animation: wingFlapLeft 0.08s infinite alternate ease-in-out; }
+      .wing-r { transform-origin: 16px 8px; animation: wingFlapRight 0.08s infinite alternate ease-in-out; }
+
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
@@ -282,41 +295,54 @@
           ]
         };
 
-        // Procedural Story Engine Fallback - 4 Distinct Pages, Non-Repeating
+        // Text padder to aggressively ensure the local fallback reaches 100-120 words per page depending on level
+        const padText = (baseText, char, sett, vill, level) => {
+          let filler = "";
+          if (level === 0) {
+             filler = ` The big room is cold. ${char.name} looks around. You see dark shapes on the wall. They look like big bugs. You must stop ${vill.name} today. You think about your friends. You want to save them. You walk slow and try to be quiet. A cold wind blows by your face. The scary place makes you sad, but you are brave. You will not give up. You look for a clue.`;
+          } else if (level === 1) {
+             filler = ` The air in the ${sett.name} feels remarkably heavy, carrying the scent of ancient dust. ${char.name} looks around cautiously, every shadow seeming to dance in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. You know that ${vill.name} is watching, waiting for a single mistake.`;
+          } else if (level === 2) {
+             filler = ` Despite the overwhelming odds, you refuse to back down. The architecture is mind-boggling, with twisted corridors and impossible geometry that defies logic. You think about the people relying on you, the stakes of the mission, and the terrifying consequences of failure. A strange, eerie glow illuminates the path ahead, casting long, distorted silhouettes across the stone. You steel your nerves against the impending danger lurking just beyond sight.`;
+          } else {
+             filler = ` A deafening cacophony reverberates through the macabre architecture of the ancient structure. The paramount objective weighs heavily upon your psyche, a relentless burden of responsibility. Sputtering torches project grotesque, elongated silhouettes against the deteriorating masonry, transforming mere alcoves into lurking monstrosities. You navigate the treacherous environment with calculated precision, acutely aware that the malevolent antagonist anticipates your arrival. The oppressive atmosphere threatens to suffocate your remaining resolve.`;
+          }
+          return baseText + filler;
+        };
+
+        // Local Procedural Story Engine Fallback - Tuned to reading levels
         const generateLocalNode = (turn, setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
           const sett = CATEGORIES.settings[setup.setting];
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
+          const level = setup.readingLevel;
 
+          // Reading Comp questions based on the filler text added
           const compQuestions = [
-            { q: `What color was the smoke when ${vill.name} appeared?`, a: "Purple", w1: "Green", w2: "Black", m1: "The smoke surrounds you!", m2: "You cough and lose your way!" },
-            { q: `What made a sudden crash at the start of your journey?`, a: "Thunder", w1: "A falling rock", w2: "A slamming door", m1: "You jump at the wrong sound!", m2: "The noise deafens you!" },
-            { q: `What kind of staircase did you have to climb?`, a: "A winding stone staircase", w1: "A wooden ladder", w2: "A rope bridge", m1: "You slip and fall back!", m2: "The stairs crumble beneath you!" }
+            { q: `What kind of shapes did ${char.name} see on the wall?`, a: "Big bugs", w1: "Small birds", w2: "Tall trees", m1: "The shapes surround you!", m2: "You slip and lose your way!" },
+            { q: `What does the air in the ${sett.name} smell like?`, a: "Ancient dust", w1: "Fresh flowers", w2: "Salty ocean", m1: "You jump at the wrong smell!", m2: "The dust chokes you!" },
+            { q: `What kind of geometry did the architecture have?`, a: "Impossible", w1: "Basic", w2: "Circular", m1: "You walk in an endless circle!", m2: "The walls close in!" },
+            { q: `What projects grotesque, elongated silhouettes?`, a: "Sputtering torches", w1: "Bright sunbeams", w2: "Glowing mushrooms", m1: "The darkness consumes you!", m2: "A trapdoor opens beneath you!" }
           ];
 
-          let qData = compQuestions[turn % compQuestions.length]; 
-
-          const fillerP1 = ` The air inside is remarkably heavy, carrying the scent of ancient dust and forgotten secrets. You look around cautiously, every shadow seeming to dance in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. `;
-          const fillerP2 = ` Despite the overwhelming odds, you refuse to back down. The architecture is mind-boggling, with twisted corridors and impossible geometry that defies logic. You think about the people relying on you, the stakes of the mission, and the terrifying consequences of failure. A strange, eerie glow illuminates the path ahead, casting long, distorted silhouettes across the stone. `;
-          const fillerP3 = ` You can almost feel the dark magic pulsating through the floorboards. The villain's influence is everywhere, corrupting the very essence of this place. Yet, a spark of hope remains. You recall ancient legends of heroes who faced similar darkness and emerged victorious. You steel your nerves, knowing that the next few moments will test not just your knowledge, but your spirit. `;
-          const fillerP4 = ` The tension reaches its peak as you approach the next major obstacle. The temperature drops rapidly, and a cold sweat forms on your brow. You grip your tools tightly, taking a deep breath of the freezing, stale air. You know that you are being watched, and that every single choice from here on out will determine your ultimate fate. `;
+          let qData = compQuestions[level]; // Adjust question to level 
 
           let pages = [];
           if (turn === 0) {
             pages = [
-              `With a sudden crash of thunder, ${char.name} steps into the spooky, shadowed corridors of the ${sett.name}.` + fillerP1,
-              `Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name} already.` + fillerP2,
-              `The flickering torches cast long, strange shadows against the ancient stone walls, making every corner look like a lurking monster.` + fillerP3,
-              `Suddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, weaving a trap into the architecture of the room.` + fillerP4
+              padText(`With a sudden crash of thunder, ${char.name} steps into the spooky corridors of the ${sett.name}.`, char, sett, vill, level),
+              padText(`Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name}.`, char, sett, vill, level),
+              padText(`The flickering lights cast long, strange shadows against the ancient walls, making every corner look like a monster.`, char, sett, vill, level),
+              padText(`Suddenly, the terrifying ${vill.name} appears in a puff of smoke! "You'll never succeed!" they cackle.`, char, sett, vill, level)
             ];
           } else if (turn === 10) {
             pages = [
-              `AMAZING! After overcoming all of ${vill.name}'s treacherous traps, ${char.name} finally reaches the heart of the ${sett.name}.` + fillerP1,
-              `With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!` + fillerP2,
-              `The spooky shadows melt away, and a bright morning sun rises over the horizon.` + fillerP3,
-              `You have conquered Adventurevania! The realm is safe once more thanks to your heroic efforts and sharp mind.` + fillerP4
+              padText(`AMAZING! After overcoming all of ${vill.name}'s treacherous traps, ${char.name} reaches the heart of the ${sett.name}.`, char, sett, vill, level),
+              padText(`With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!`, char, sett, vill, level),
+              padText(`The spooky shadows melt away, and a bright morning sun rises over the horizon.`, char, sett, vill, level),
+              padText(`You have conquered Adventurevania! The realm is safe once more thanks to your heroic efforts and sharp mind.`, char, sett, vill, level)
             ];
             return {
               pages,
@@ -326,10 +352,10 @@
             };
           } else {
             pages = [
-              `Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.` + fillerP1,
-              `With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.` + fillerP2,
-              `You climb a winding stone staircase, staying alert for traps as a shadow flutters past!` + fillerP3,
-              `You reach a giant wooden door. ${vill.name} has laid a new trap to stop you!` + fillerP4
+              padText(`Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`, char, sett, vill, level),
+              padText(`With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.`, char, sett, vill, level),
+              padText(`You climb a winding stone staircase, staying alert for traps as a shadow flutters past!`, char, sett, vill, level),
+              padText(`You reach a giant wooden door. ${vill.name} has laid a new trap to stop you!`, char, sett, vill, level)
             ];
           }
 
@@ -887,7 +913,6 @@
                  }
               } else if (gameState === 'menu') {
                  if (e.key === 'Enter') {
-                    if (isMuted) setIsMuted(false); 
                     setSetupStep(0); 
                     setSetupFocusIndex(0);
                     setGameState('setup');
@@ -954,10 +979,10 @@
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
             const levelInstructions = [
-              "Difficulty: Grades 1-2 (Early Primary). Use simple, highly decodable words and short phonetic sentences. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.",
-              "Difficulty: Grades 3-4 (Primary). Use standard sentences and intermediate vocabulary. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.",
-              "Difficulty: Grades 5-6 (Junior). Use descriptive language and varied sentence structures. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.",
-              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric narrative with advanced, sophisticated vocabulary. Reading Comprehension: Ask a complex analytical question about themes or subtle clues."
+              "Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words (e.g., big, run, dark, sad). Sentences must be very short and phonetic. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.",
+              "Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary (e.g., spooky, shadows, suddenly). Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.",
+              "Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language, varied sentence structures, and more complex words (e.g., treacherous, echoing, architecture). Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.",
+              "Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary (e.g., cacophony, malevolent, macabre, reverberate). Reading Comprehension: Ask a complex analytical question about themes or subtle clues."
             ];
 
             let historyContext = "";
@@ -988,9 +1013,9 @@
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
-              1. Write a continuous story segment that progresses the plot forward. The total length must be 400-480 words.
+              1. Write a continuous story segment that progresses the plot forward.
               2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). Each page MUST contain different text. Page 1 continues into Page 2, Page 2 continues into Page 3, and Page 3 continues into Page 4. DO NOT repeat the same text.
-              3. EACH individual page MUST be between 100 and 120 words long.
+              3. EACH individual page MUST be between 100 and 120 words long. Use pacing and descriptions to reach this.
               4. Create a reading comprehension question based STRICTLY on the story you just wrote on the FINAL page. The question's difficulty must match the Reading Level constraint. DO NOT ask external math or science questions; it must be about the text.
               5. State the question or puzzle clearly in the "question" field.
               6. Provide 2 or 3 "choices" representing answers to the reading comprehension question.
@@ -1000,7 +1025,7 @@
               `;
             }
 
-            const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts.`;
+            const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.`;
 
             const fullApiUrl = `${GEMINI_URL}`;
 
@@ -1197,7 +1222,7 @@
               </div>
 
               <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
-                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { if(isMuted) setIsMuted(false); setSetupStep(0); setGameState('setup'); }}>
+                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
                   ▶️ Press Enter to Start
                 </button>
                 
@@ -1373,6 +1398,20 @@
                         <span className="font-pixel text-[12px] text-gray-400">A</span>
                       </div>
 
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
+                        if(window.confirm("Are you sure you want to restart this adventure from the beginning?")) {
+                          setCurrentNode(sessionInitialNode);
+                          setTurnCount(0);
+                          setStoryHistory([]);
+                          setCurrentPageIndex(0);
+                          setCorrectAnswers(0);
+                          setTotalQuestions(0);
+                          setGameState('story');
+                        }
+                      }}>
+                        <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
+                      </button>
+
                       <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={saveGame} disabled={gameState === 'gameover'}>
                         <span className="text-xl md:text-2xl drop-shadow-md">💾</span> <span className="hidden md:inline">Save</span>
                       </button>
@@ -1461,13 +1500,15 @@
                        </h2>
                        <div className="flex flex-col md:flex-row gap-4">
                          <button className="nes-btn text-xs md:text-sm green" onClick={() => {
-                            setCurrentNode(sessionInitialNode);
-                            setTurnCount(0);
-                            setStoryHistory([]);
-                            setCurrentPageIndex(0);
-                            setCorrectAnswers(0);
-                            setTotalQuestions(0);
-                            setGameState('story');
+                            if(window.confirm("Are you sure you want to restart this adventure?")) {
+                              setCurrentNode(sessionInitialNode);
+                              setTurnCount(0);
+                              setStoryHistory([]);
+                              setCurrentPageIndex(0);
+                              setCorrectAnswers(0);
+                              setTotalQuestions(0);
+                              setGameState('story');
+                            }
                          }}>Restart This Adventure</button>
                          <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
                        </div>
@@ -1480,7 +1521,7 @@
                          🏆 VICTORY! 🏆
                        </h2>
                        <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
                     </div>
                   )}
                 </div>
