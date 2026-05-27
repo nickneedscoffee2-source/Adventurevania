@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Firebase Compat Bundles (Stable Globals) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -294,9 +298,9 @@
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
           if (Object.keys(firebaseConfig).length > 0 && typeof firebase !== 'undefined') {
-            fbApp = initializeFirebaseApp(firebaseConfig);
-            fbAuth = getFirebaseAuth();
-            fbDb = getFirebaseFirestore();
+            fbApp = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb = firebase.firestore();
             fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
           }
         } catch (e) {
@@ -579,10 +583,109 @@
           );
         };
 
+        // --- INTERACTIVE TEXT HIGHLIGHTER ---
+        const InteractiveText = ({ text, textSize }) => {
+          const [highlights, setHighlights] = useState([]);
+
+          useEffect(() => {
+            setHighlights([]);
+          }, [text]); 
+
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
+              setHighlights(prev => [...prev, selectedText]);
+            }
+          };
+
+          const removeHighlight = (phrase) => {
+            setHighlights(prev => prev.filter(h => h !== phrase));
+          };
+
+          const renderText = () => {
+            if (highlights.length === 0) return text;
+            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
+            const parts = text.split(regex);
+
+            return parts.map((part, i) => {
+              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+              if (matched) {
+                return (
+                  <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
+                    {part}
+                  </mark>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            });
+          };
+
+          return (
+            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
+                {renderText()}
+              </p>
+            </div>
+          );
+        };
+
+        // RetroBat component definition 
+        function RetroBat({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
+
+          useEffect(() => {
+            const frameTimer = setInterval(() => {
+              setWingFrame(f => (f === 0 ? 1 : 0));
+            }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
+
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                {/* Bat Body */}
+                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
+                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
+                {/* Red Eyes */}
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                
+                {wingFrame === 0 ? (
+                  <g>
+                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
+                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
+                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
+        }
+
         // --- MAIN APP ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
+          
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
@@ -811,10 +914,112 @@
 
           const triggerLightning = () => {
              setShowLightning(true);
-             playThunderSynth();
+             const ctx = synthCtxRef.current;
+             if (ctx && !isMuted) {
+               try {
+                 const bufferSize = ctx.sampleRate * 1.5;
+                 const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                 const data = buffer.getChannelData(0);
+                 for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                 const noiseNode = ctx.createBufferSource();
+                 noiseNode.buffer = buffer;
+                 const filterNode = ctx.createBiquadFilter();
+                 filterNode.type = 'lowpass';
+                 filterNode.frequency.setValueAtTime(600, ctx.currentTime);
+                 filterNode.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.2);
+                 const gainNode = ctx.createGain();
+                 gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
+                 gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
+                 noiseNode.connect(filterNode);
+                 filterNode.connect(gainNode);
+                 gainNode.connect(ctx.destination);
+                 noiseNode.start();
+               } catch(e) { console.warn(e); }
+             }
              setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
-             else setTimeout(playGhostHowl, 800);
+             if (Math.random() > 0.5) {
+               setTimeout(() => {
+                 if (ctx && !isMuted) {
+                   try {
+                     if (ctx.state === 'suspended') ctx.resume();
+                     const now = ctx.currentTime;
+                     const voiceOsc = ctx.createOscillator();
+                     const subOsc = ctx.createOscillator();
+                     const finalGain = ctx.createGain();
+                     voiceOsc.type = 'triangle';
+                     subOsc.type = 'sine';
+                     voiceOsc.frequency.setValueAtTime(160, now);
+                     voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
+                     voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
+                     voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
+                     voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
+                     subOsc.frequency.setValueAtTime(80, now);
+                     subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
+                     subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
+                     subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
+                     subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
+                     const vibratoLFO = ctx.createOscillator();
+                     const vibratoGain = ctx.createGain();
+                     vibratoLFO.type = 'sine';
+                     vibratoLFO.frequency.setValueAtTime(5.8, now); 
+                     vibratoGain.gain.setValueAtTime(12, now); 
+                     vibratoLFO.connect(vibratoGain);
+                     vibratoGain.connect(voiceOsc.frequency);
+                     vibratoGain.connect(subOsc.frequency);
+                     const filter = ctx.createBiquadFilter();
+                     filter.type = 'bandpass';
+                     filter.Q.setValueAtTime(3.5, now);
+                     filter.frequency.setValueAtTime(400, now);
+                     filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+                     filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
+                     finalGain.gain.setValueAtTime(0.0001, now);
+                     finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
+                     finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
+                     finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
+                     voiceOsc.connect(filter);
+                     subOsc.connect(filter);
+                     filter.connect(finalGain);
+                     finalGain.connect(ctx.destination);
+                     vibratoLFO.start(now);
+                     voiceOsc.start(now);
+                     subOsc.start(now);
+                     vibratoLFO.stop(now + 5.6);
+                     voiceOsc.stop(now + 5.6);
+                     subOsc.stop(now + 5.6);
+                   } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
+                 }
+               }, 1000);
+             } else {
+               setTimeout(() => {
+                 if (ctx && !isMuted) {
+                   try {
+                     const osc = ctx.createOscillator();
+                     const gain = ctx.createGain();
+                     osc.type = 'sine';
+                     const now = ctx.currentTime;
+                     osc.frequency.setValueAtTime(250, now);
+                     osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
+                     const lfo = ctx.createOscillator();
+                     lfo.type = 'sine';
+                     lfo.frequency.setValueAtTime(5, now);
+                     const lfoGain = ctx.createGain();
+                     lfoGain.gain.setValueAtTime(10, now);
+                     lfo.connect(lfoGain);
+                     lfoGain.connect(osc.frequency);
+                     lfo.start(now + 1.0);
+                     lfo.stop(now + 4.0);
+                     osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
+                     gain.gain.setValueAtTime(0.0001, now);
+                     gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
+                     gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+                     osc.connect(gain);
+                     gain.connect(ctx.destination);
+                     osc.start(now);
+                     osc.stop(now + 4.0);
+                   } catch(e) { console.warn(e); }
+                 }
+               }, 800);
+             }
           };
 
           useEffect(() => {
@@ -858,14 +1063,12 @@
                    setSetupFocusIndex(prev => Math.max(prev - 5, 0));
                  } else if (e.key === 'Enter') {
                    const currentKey = STEPS_KEYS[setupStep];
-                   setSetupData(prev => {
-                     const nextSetup = { ...prev, [currentKey]: setupFocusIndex };
-                     if (setupStep === 5) {
-                        startGameWithData(nextSetup);
-                     }
-                     return nextSetup;
-                   });
-                   if (setupStep < 5) {
+                   const nextSetup = { ...setupData, [currentKey]: setupFocusIndex };
+                   setSetupData(nextSetup);
+                   
+                   if (setupStep === 5) {
+                      startGameWithData(nextSetup);
+                   } else {
                      setSetupStep(prev => prev + 1);
                      setSetupFocusIndex(0); 
                    }
@@ -1038,6 +1241,13 @@
             }
           };
 
+          const startGame = () => {
+            const currentKey = STEPS_KEYS[setupStep];
+            const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
+            setSetupData(finalSetup);
+            startGameWithData(finalSetup);
+          };
+
           const handleChoice = (choice) => {
             if (currentNode.question) {
               setTotalQuestions(prev => prev + 1);
@@ -1055,9 +1265,11 @@
               });
               setCurrentPageIndex(0);
               setGameState('gameover');
+              recordEngagement('GameOver');
             } else {
               if (turnCount + 1 >= 10) {
                  setGameState('victory');
+                 recordEngagement('Victory');
               } else {
                  generateStoryNode(choice.text);
               }
@@ -1104,6 +1316,7 @@
                   <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
                 </div>
 
+                {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
                 <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
                     {currentDataList.map((item, idx) => {
@@ -1136,7 +1349,7 @@
                         setSetupFocusIndex(0);
                       }}>Next</button>
                     ) : (
-                      <button className="nes-btn green animate-pulse" onClick={() => startGameWithData(setupData)}>Start Quest</button>
+                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
                     )}
                   </div>
                 </div>
@@ -1146,10 +1359,12 @@
 
           const renderLoading = () => (
             <div className="flex flex-col h-full w-full bg-[#180907]">
+              {/* Top/Middle Minigame */}
               <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
                 <FlappyBatMinigame />
               </div>
               
+              {/* Bottom Progress Bar */}
               <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
                 <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-4">{loadingMsg}</h2>
                 <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
@@ -1327,6 +1542,16 @@
             <React.Fragment>
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
+              
+              {/* Dynamic Animated Critters Layer */}
+              <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                {critters.map(crit => {
+                  if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
+                  return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
+                })}
+              </div>
+
+              {showLightning && <div className="lightning-overlay"></div>}
               
               <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
                 
