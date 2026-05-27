@@ -1,1719 +1,1720 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adventurevania - Choose Your Own Adventure</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Firebase Compat Bundles (Stable Globals) -->
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js)"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js)"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js)"></script>
+<style>
+  @import url('[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap)');
+  
+  .font-pixel { font-family: 'Press Start 2P', cursive; }
+  .font-terminal { font-family: 'VT323', monospace; }
+  
+  .crt::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+    z-index: 50;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+  }
+  
+  .pixel-border {
+    box-shadow: 
+      inset -4px -4px 0px 0px rgba(0,0,0,0.6),
+      inset 4px 4px 0px 0px rgba(255,255,255,0.15),
+      0 0 0 4px #D32F2F,
+      0 0 0 8px #000;
+  }
+  .music-border {
+    box-shadow: 
+      inset -2px -2px 0px 0px rgba(0,0,0,0.5),
+      inset 2px 2px 0px 0px rgba(255,255,255,0.15),
+      0 0 0 2px #E65100,
+      0 0 0 4px #000;
+  }
+  
+  .scanline {
+    width: 100%;
+    height: 100px;
+    z-index: 49;
+    position: fixed;
+    pointer-events: none;
+    background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(230,81,0,0.1) 50%, rgba(0,0,0,0) 100%);
+    opacity: 0.15;
+    animation: scanline 8s linear infinite;
+  }
+  
+  @keyframes scanline {
+    0% { top: -100px; }
+    100% { top: 100%; }
+  }
+  @keyframes lightning {
+    0% { background-color: rgba(255, 235, 204, 0); }
+    10% { background-color: rgba(255, 240, 217, 0.7); }
+    20% { background-color: rgba(255, 235, 204, 0); }
+    35% { background-color: rgba(255, 240, 217, 0.5); }
+    45% { background-color: rgba(255, 235, 204, 0); }
+    100% { background-color: rgba(255, 235, 204, 0); }
+  }
+  .lightning-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 99;
+    animation: lightning 0.7s ease-out;
+  }
+  .critter {
+    position: fixed; pointer-events: none; z-index: 80; 
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
+  }
+  .nes-btn {
+    position: relative;
+    display: inline-block;
+    background-color: #B71C1C;
+    color: white;
+    padding: 8px 16px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 
+      inset -4px -4px 0px 0px rgba(0,0,0,0.5),
+      inset 4px 4px 0px 0px rgba(255,255,255,0.25);
+    transition: transform 0.1s;
+  }
+  .nes-btn:active {
+    transform: scale(0.95);
+    box-shadow: 
+      inset 4px 4px 0px 0px rgba(0,0,0,0.5),
+      inset -4px -4px 0px 0px rgba(255,255,255,0.25);
+  }
+  .nes-btn.green { background-color: #E65100; color: #fff; }
+  .nes-btn.red { background-color: #3e2723; color: #ffab91; }
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 12px; }
+  ::-webkit-scrollbar-track { background: #1a0f0d; border-left: 2px solid #E65100; }
+  ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
+  
+  body { 
+    background: linear-gradient(135deg, #180907 0%, #2D140F 40%, #4D1A0F 75%, #180907 100%); 
+    margin: 0; 
+    overflow-x: hidden; 
+  }
+  
+  /* Music Slider styling */
+  input[type=range] { accent-color: #E65100; }
+</style>
 
-    <!-- Firebase Compat Bundles (Stable Globals) -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
-      
-      .font-pixel { font-family: 'Press Start 2P', cursive; }
-      .font-terminal { font-family: 'VT323', monospace; }
-      
-      .crt::before {
-        content: " ";
-        display: block;
-        position: absolute;
-        top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
-        z-index: 50;
-        background-size: 100% 2px, 3px 100%;
-        pointer-events: none;
+<script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    // --- GLOBAL ERROR BOUNDARY (Prevents White Screens) ---
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, errorMessage: '' };
       }
-      
-      .pixel-border {
-        box-shadow: 
-          inset -4px -4px 0px 0px rgba(0,0,0,0.6),
-          inset 4px 4px 0px 0px rgba(255,255,255,0.15),
-          0 0 0 4px #D32F2F,
-          0 0 0 8px #000;
+      static getDerivedStateFromError(error) {
+        return { hasError: true, errorMessage: error.toString() };
       }
-
-      .music-border {
-        box-shadow: 
-          inset -2px -2px 0px 0px rgba(0,0,0,0.5),
-          inset 2px 2px 0px 0px rgba(255,255,255,0.15),
-          0 0 0 2px #E65100,
-          0 0 0 4px #000;
+      componentDidCatch(error, errorInfo) {
+        console.error("React Crash:", error, errorInfo);
       }
-      
-      .scanline {
-        width: 100%;
-        height: 100px;
-        z-index: 49;
-        position: fixed;
-        pointer-events: none;
-        background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(230,81,0,0.1) 50%, rgba(0,0,0,0) 100%);
-        opacity: 0.15;
-        animation: scanline 8s linear infinite;
-      }
-      
-      @keyframes scanline {
-        0% { top: -100px; }
-        100% { top: 100%; }
-      }
-
-      @keyframes lightning {
-        0% { background-color: rgba(255, 235, 204, 0); }
-        10% { background-color: rgba(255, 240, 217, 0.7); }
-        20% { background-color: rgba(255, 235, 204, 0); }
-        35% { background-color: rgba(255, 240, 217, 0.5); }
-        45% { background-color: rgba(255, 235, 204, 0); }
-        100% { background-color: rgba(255, 235, 204, 0); }
-      }
-
-      .lightning-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; z-index: 99;
-        animation: lightning 0.7s ease-out;
-      }
-
-      .critter {
-        position: fixed; pointer-events: none; z-index: 80; 
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
-      }
-
-      .nes-btn {
-        position: relative;
-        display: inline-block;
-        background-color: #B71C1C;
-        color: white;
-        padding: 8px 16px;
-        font-family: 'Press Start 2P', cursive;
-        font-size: 10px;
-        text-transform: uppercase;
-        cursor: pointer;
-        box-shadow: 
-          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
-          inset 4px 4px 0px 0px rgba(255,255,255,0.25);
-        transition: transform 0.1s;
-      }
-      .nes-btn:active {
-        transform: scale(0.95);
-        box-shadow: 
-          inset 4px 4px 0px 0px rgba(0,0,0,0.5),
-          inset -4px -4px 0px 0px rgba(255,255,255,0.25);
-      }
-      .nes-btn.green { background-color: #E65100; color: #fff; }
-      .nes-btn.red { background-color: #3e2723; color: #ffab91; }
-
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 12px; }
-      ::-webkit-scrollbar-track { background: #1a0f0d; border-left: 2px solid #E65100; }
-      ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
-      
-      body { 
-        background: linear-gradient(135deg, #180907 0%, #2D140F 40%, #4D1A0F 75%, #180907 100%); 
-        margin: 0; 
-        overflow-x: hidden; 
-      }
-      
-      /* Music Slider styling */
-      input[type=range] { accent-color: #E65100; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // --- GLOBAL ERROR BOUNDARY (Prevents White Screens) ---
-        class ErrorBoundary extends React.Component {
-          constructor(props) {
-            super(props);
-            this.state = { hasError: false, errorMessage: '' };
-          }
-          static getDerivedStateFromError(error) {
-            return { hasError: true, errorMessage: error.toString() };
-          }
-          componentDidCatch(error, errorInfo) {
-            console.error("React Crash:", error, errorInfo);
-          }
-          render() {
-            if (this.state.hasError) {
-              return (
-                <div className="flex flex-col items-center justify-center h-screen bg-[#180907] p-8 text-center border-4 border-red-600">
-                  <h1 className="font-pixel text-4xl text-red-500 mb-6">SYSTEM CRASH</h1>
-                  <p className="font-terminal text-2xl text-white mb-6">A magical anomaly broke the timeline:</p>
-                  <div className="bg-black p-4 text-red-400 font-terminal text-xl pixel-border w-full max-w-2xl break-words">
-                    {this.state.errorMessage}
-                  </div>
-                  <button className="nes-btn green mt-8" onClick={() => window.location.reload()}>Reboot System</button>
-                </div>
-              );
-            }
-            return this.props.children; 
-          }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="flex flex-col items-center justify-center h-screen bg-[#180907] p-8 text-center border-4 border-red-600">
+              <h1 className="font-pixel text-4xl text-red-500 mb-6">SYSTEM CRASH</h1>
+              <p className="font-terminal text-2xl text-white mb-6">A magical anomaly broke the timeline:</p>
+              <div className="bg-black p-4 text-red-400 font-terminal text-xl pixel-border w-full max-w-2xl break-words">
+                {this.state.errorMessage}
+              </div>
+              <button className="nes-btn green mt-8" onClick={() => window.location.reload()}>Reboot System</button>
+            </div>
+          );
         }
-
-        // --- CONFIGURATION & CONSTANTS ---
-        const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
-        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
-
-        const MENU_IMAGES = [
-          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
-          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
-          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
-        ];
-
-        const SYNTH_TRACKS = [
-          {
-            name: "Simon's Theme",
-            tempo: 145,
-            melody: [
-              { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 }, { note: "B4", dur: 2 },
-              { note: "A4", dur: 4 }, { note: "E4", dur: 4 },
-              { note: "F4", dur: 2 }, { note: "A4", dur: 2 }, { note: "D5", dur: 2 }, { note: "C5", dur: 2 },
-              { note: "B4", dur: 8 }
-            ],
-            bass: ["A2", "C2", "D2", "E2"]
-          },
-          {
-            name: "Moonlight Sonata",
-            tempo: 85,
-            melody: [
-              { note: "A4", dur: 4 }, { note: "C5", dur: 4 }, { note: "E5", dur: 4 }, { note: "A5", dur: 4 },
-              { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
-            ],
-            bass: ["A2", "F2", "C2", "E2"]
-          },
-          {
-            name: "Creepy Crawly",
-            tempo: 140,
-            melody: [
-              { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
-              { note: "G#4", dur: 4 }, { note: "E4", dur: 4 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, 
-              { note: "C5", dur: 4 }, { note: "D5", dur: 4 }, { note: "E5", dur: 8 }
-            ],
-            bass: ["A2", "E2", "F2", "G2"]
-          }
-        ];
-
-        const NOTE_FREQ = {
-          "C2": 65.41, "C#2": 69.30, "D2": 73.42, "D#2": 77.78, "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
-          "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "A#4": 466.16, "B4": 493.88,
-          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30, "A5": 880.00, "G5": 783.99, "F5": 698.46
-        };
-
-        const CATEGORIES = {
-          characters: [
-            { name: "The Mathlete", icon: "⚡", desc: "Calculates at the speed of light!" },
-            { name: "Word Weaver", icon: "📖", desc: "Casts spells using vocabulary." },
-            { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
-            { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
-            { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
-            { name: "Great Lakes Explorer", icon: "🌊", desc: "Expert navigator of the Great Lakes." },
-            { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
-            { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
-            { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
-            { name: "Codebreaker", icon: "🔍", desc: "Solves logic puzzles and ciphers." }
-          ],
-          villains: [
-            { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
-            { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
-            { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
-            { name: "The Negabor", icon: "👹", desc: "A moody green ogre who drains positive energy." },
-            { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
-            { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
-            { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
-            { name: "Map-Mangler", icon: "🌪️", desc: "Scrambles the continents." },
-            { name: "Multiplication Mummy", icon: "🧻", desc: "Traps you in tangles of times tables." },
-            { name: "Punc. Poltergeist", icon: "🎭", desc: "Ends sentences prematurely!" }
-          ],
-          settings: [
-            { name: "Haunted Library", icon: "🏛️", desc: "Books fly off the shelves here." },
-            { name: "Castle of Calculus", icon: "🏰", desc: "A fortress built on math." },
-            { name: "Primeval Forest", icon: "🌲", desc: "Dark woods full of science." },
-            { name: "Ancient Pyramids", icon: "🏜️", desc: "Social studies in the sand." },
-            { name: "Abandoned Lab", icon: "🏭", desc: "Where chemistry went wrong." },
-            { name: "Spooky Swamp", icon: "🐊", desc: "Murky and full of biology." },
-            { name: "Ghost Town", icon: "🏚️", desc: "An empty historical settlement." },
-            { name: "Clockwork Tower", icon: "🕰️", desc: "A giant machine of gears." },
-            { name: "Forgotten Museum", icon: "🖼️", desc: "Artifacts come alive at night." },
-            { name: "Creepy Carnival", icon: "🎪", desc: "Rollercoasters of physics." }
-          ],
-          plots: [
-            { name: "Find the Lost Artifact", icon: "💎", desc: "Recover the ancient treasure." },
-            { name: "Rescue the Mayor", icon: "👑", desc: "The town leader is kidnapped!" },
-            { name: "Stop the Machine", icon: "💣", desc: "Halt the villain's contraption." },
-            { name: "Solve the Mystery", icon: "🧩", desc: "Find out who is haunting town." },
-            { name: "Escape the Maze", icon: "🌀", desc: "Find your way out of the labyrinth." },
-            { name: "Restore the Timeline", icon: "🕰️", desc: "Fix history before it's gone." },
-            { name: "Cure the Curse", icon: "💊", desc: "Heal the townsfolk's ailments." },
-            { name: "Find Hidden Treasure", icon: "💰", desc: "Follow the clues to the gold." },
-            { name: "Defend the Castle", icon: "🛡️", desc: "Hold off the monster invasion." },
-            { name: "Expose the Monster", icon: "🔦", desc: "Pull off the villain's mask!" }
-          ],
-          dilemmas: [
-            { name: "Running Out of Time", icon: "⏰", desc: "The clock is ticking down fast." },
-            { name: "Hopelessly Lost", icon: "🧭", desc: "You have no idea where you are." },
-            { name: "Ignored Warning", icon: "⚠️", desc: "You shouldn't have opened that door." },
-            { name: "Lost Magic Tool", icon: "🚫", desc: "Your primary weapon is gone." },
-            { name: "Betrayed by Friend", icon: "🐍", desc: "Someone wasn't who they seemed." },
-            { name: "Trapped in Room", icon: "🚪", desc: "The walls are closing in." },
-            { name: "Sudden Storm", icon: "🌩️", desc: "Extreme weather strikes." },
-            { name: "Weakness Revealed", icon: "👁️", desc: "The villain knows how to beat you." },
-            { name: "Missing Pieces", icon: "🧩", desc: "You don't have all the clues." },
-            { name: "Accused of Crime", icon: "⚖️", desc: "The town thinks YOU did it!" }
-          ],
-          readingLevels: [
-            { name: "Early Primary", icon: "🧸", desc: "Grades 1-2 reading level." },
-            { name: "Primary", icon: "🎒", desc: "Grade 3-4 reading level." },
-            { name: "Junior", icon: "📚", desc: "Grade 5-6 reading level." },
-            { name: "Intermediate", icon: "🎓", desc: "Grade 7-8 reading level." }
-          ]
-        };
-
-        const STEPS_KEYS = ["character", "villain", "setting", "plot", "dilemma", "readingLevel"];
-        const CATEGORIES_KEYS = ["characters", "villains", "settings", "plots", "dilemmas", "readingLevels"];
-
-        const getActiveCategoryList = (step) => {
-          return CATEGORIES[CATEGORIES_KEYS[step]];
-        };
-
-        // --- UTILITIES ---
-        // VITAL: Restored the missing sleep utility that caused ReferenceErrors
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
-        let synthCtx = null; 
-
-        // Compat Wrappers to bridge Global Compatibility variables cleanly without ES module imports
-        const initializeFirebaseApp = (config) => {
-          if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-            return firebase.initializeApp(config);
-          }
-          return null;
-        };
-        const getFirebaseAuth = () => {
-          if (typeof firebase !== 'undefined' && firebase.auth) {
-            return firebase.auth();
-          }
-          return null;
-        };
-        const getFirebaseFirestore = () => {
-          if (typeof firebase !== 'undefined' && firebase.firestore) {
-            return firebase.firestore();
-          }
-          return null;
-        };
-
-        const doc = (database, ...paths) => database ? database.doc(paths.join('/')) : null;
-        const collection = (database, ...paths) => database ? database.collection(paths.join('/')) : null;
-        const setDoc = (docRef, data) => docRef ? docRef.set(data) : Promise.reject(new Error("No Database Connection"));
-        const getDoc = async (docRef) => {
-          if (!docRef) return { exists: () => false };
-          const snap = await docRef.get();
-          return {
-            exists: () => snap.exists,
-            data: () => snap.data()
-          };
-        };
-        const signInAnonymously = (authRef) => authRef ? authRef.signInAnonymously() : Promise.reject(new Error("No Auth Connection"));
-        const signInWithCustomToken = (authRef, token) => authRef ? authRef.signInWithCustomToken(token) : Promise.reject(new Error("No Auth Connection"));
-        const onAuthStateChanged = (authRef, callback) => authRef ? authRef.onAuthStateChanged(callback) : () => {};
-
-        try {
-          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          if (Object.keys(firebaseConfig).length > 0 && typeof firebase !== 'undefined') {
-            fbApp = initializeFirebaseApp(firebaseConfig);
-            fbAuth = getFirebaseAuth();
-            fbDb = getFirebaseFirestore();
-            fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
-          }
-        } catch (e) {
-          console.error("Firebase init failed:", e);
+        return this.props.children; 
+      }
+    }
+    // --- CONFIGURATION & CONSTANTS ---
+    const POLLINATIONS_TEXT_URL = "[text.pollinations.ai](https://text.pollinations.ai/)";
+    const SPREADSHEET_WEB_APP_URL = "[script.google.com](https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec)"; 
+    const MENU_IMAGES = [
+      "[image.pollinations.ai](https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1)",
+      "[image.pollinations.ai](https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2)",
+      "[image.pollinations.ai](https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3)"
+    ];
+    const SYNTH_TRACKS = [
+      {
+        name: "Simon's Theme",
+        tempo: 145,
+        melody: [
+          { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 }, { note: "B4", dur: 2 },
+          { note: "A4", dur: 4 }, { note: "E4", dur: 4 },
+          { note: "F4", dur: 2 }, { note: "A4", dur: 2 }, { note: "D5", dur: 2 }, { note: "C5", dur: 2 },
+          { note: "B4", dur: 8 }
+        ],
+        bass: ["A2", "C2", "D2", "E2"]
+      },
+      {
+        name: "Moonlight Sonata",
+        tempo: 85,
+        melody: [
+          { note: "A4", dur: 4 }, { note: "C5", dur: 4 }, { note: "E5", dur: 4 }, { note: "A5", dur: 4 },
+          { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
+        ],
+        bass: ["A2", "F2", "C2", "E2"]
+      },
+      {
+        name: "Creepy Crawly",
+        tempo: 140,
+        melody: [
+          { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
+          { note: "G#4", dur: 4 }, { note: "E4", dur: 4 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, 
+          { note: "C5", dur: 4 }, { note: "D5", dur: 4 }, { note: "E5", dur: 8 }
+        ],
+        bass: ["A2", "E2", "F2", "G2"]
+      }
+    ];
+    const NOTE_FREQ = {
+      "C2": 65.41, "C#2": 69.30, "D2": 73.42, "D#2": 77.78, "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
+      "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "A#4": 466.16, "B4": 493.88,
+      "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30, "A5": 880.00, "G5": 783.99, "F5": 698.46
+    };
+    const CATEGORIES = {
+      characters: [
+        { name: "The Mathlete", icon: "⚡", desc: "Calculates at the speed of light!" },
+        { name: "Word Weaver", icon: "📖", desc: "Casts spells using vocabulary." },
+        { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
+        { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
+        { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
+        { name: "Great Lakes Explorer", icon: "🌊", desc: "Expert navigator of the Great Lakes." },
+        { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
+        { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
+        { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
+        { name: "Codebreaker", icon: "🔍", desc: "Solves logic puzzles and ciphers." }
+      ],
+      villains: [
+        { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
+        { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
+        { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
+        { name: "The Negabor", icon: "👹", desc: "A moody green ogre who drains positive energy." },
+        { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
+        { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
+        { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
+        { name: "Map-Mangler", icon: "🌪️", desc: "Scrambles the continents." },
+        { name: "Multiplication Mummy", icon: "🧻", desc: "Traps you in tangles of times tables." },
+        { name: "Punc. Poltergeist", icon: "🎭", desc: "Ends sentences prematurely!" }
+      ],
+      settings: [
+        { name: "Haunted Library", icon: "🏛️", desc: "Books fly off the shelves here." },
+        { name: "Castle of Calculus", icon: "🏰", desc: "A fortress built on math." },
+        { name: "Primeval Forest", icon: "🌲", desc: "Dark woods full of science." },
+        { name: "Ancient Pyramids", icon: "🏜️", desc: "Social studies in the sand." },
+        { name: "Abandoned Lab", icon: "🏭", desc: "Where chemistry went wrong." },
+        { name: "Spooky Swamp", icon: "🐊", desc: "Murky and full of biology." },
+        { name: "Ghost Town", icon: "🏚️", desc: "An empty historical settlement." },
+        { name: "Clockwork Tower", icon: "🕰️", desc: "A giant machine of gears." },
+        { name: "Forgotten Museum", icon: "🖼️", desc: "Artifacts come alive at night." },
+        { name: "Creepy Carnival", icon: "🎪", desc: "Rollercoasters of physics." }
+      ],
+      plots: [
+        { name: "Find the Lost Artifact", icon: "💎", desc: "Recover the ancient treasure." },
+        { name: "Rescue the Mayor", icon: "👑", desc: "The town leader is kidnapped!" },
+        { name: "Stop the Machine", icon: "💣", desc: "Halt the villain's contraption." },
+        { name: "Solve the Mystery", icon: "🧩", desc: "Find out who is haunting town." },
+        { name: "Escape the Maze", icon: "🌀", desc: "Find your way out of the labyrinth." },
+        { name: "Restore the Timeline", icon: "🕰️", desc: "Fix history before it's gone." },
+        { name: "Cure the Curse", icon: "💊", desc: "Heal the townsfolk's ailments." },
+        { name: "Find Hidden Treasure", icon: "💰", desc: "Follow the clues to the gold." },
+        { name: "Defend the Castle", icon: "🛡️", desc: "Hold off the monster invasion." },
+        { name: "Expose the Monster", icon: "🔦", desc: "Pull off the villain's mask!" }
+      ],
+      dilemmas: [
+        { name: "Running Out of Time", icon: "⏰", desc: "The clock is ticking down fast." },
+        { name: "Hopelessly Lost", icon: "🧭", desc: "You have no idea where you are." },
+        { name: "Ignored Warning", icon: "⚠️", desc: "You shouldn't have opened that door." },
+        { name: "Lost Magic Tool", icon: "🚫", desc: "Your primary weapon is gone." },
+        { name: "Betrayed by Friend", icon: "🐍", desc: "Someone wasn't who they seemed." },
+        { name: "Trapped in Room", icon: "🚪", desc: "The walls are closing in." },
+        { name: "Sudden Storm", icon: "🌩️", desc: "Extreme weather strikes." },
+        { name: "Weakness Revealed", icon: "👁️", desc: "The villain knows how to beat you." },
+        { name: "Missing Pieces", icon: "🧩", desc: "You don't have all the clues." },
+        { name: "Accused of Crime", icon: "⚖️", desc: "The town thinks YOU did it!" }
+      ],
+      readingLevels: [
+        { name: "Early Primary", icon: "🧸", desc: "Grades 1-2 reading level." },
+        { name: "Primary", icon: "🎒", desc: "Grade 3-4 reading level." },
+        { name: "Junior", icon: "📚", desc: "Grade 5-6 reading level." },
+        { name: "Intermediate", icon: "🎓", desc: "Grade 7-8 reading level." }
+      ]
+    };
+    const STEPS_KEYS = ["character", "villain", "setting", "plot", "dilemma", "readingLevel"];
+    const CATEGORIES_KEYS = ["characters", "villains", "settings", "plots", "dilemmas", "readingLevels"];
+    const getActiveCategoryList = (step) => {
+      return CATEGORIES[CATEGORIES_KEYS[step]];
+    };
+    // --- UTILITIES ---
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    // Words and filler lists per level to enforce counts without breaking tone
+    const levelFillers = {
+      0: [
+        "It is dark here.", "The wind is loud.", "You feel brave.", "Take one small step.", "Look left and right."
+      ],
+      1: [
+        "You steady your breathing and look ahead.", "The room is quiet, but your mind is sharp.",
+        "You think about the next clue you might find.", "You keep your eyes open for a sign."
+      ],
+      2: [
+        "Shadows stretch along the walls as you think.", "Your steps are careful, your focus clear.",
+        "Details matter; you study every corner.", "A quiet rhythm guides your next decision."
+      ],
+      3: [
+        "A hush settles as you weigh your options.", "You analyze the scene with cool precision.",
+        "Atmosphere thickens like velvet night.", "Resolve gathers; the choice will define the path."
+      ]
+    };
+    // Basic tokenizer for word counts
+    const tokenizeWords = (text) => {
+      return text
+        .replace(/\n/g, ' ')
+        .replace(/['’]/g, "'")
+        .replace(/[^A-Za-z0-9' -]/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean);
+    };
+    // Trim/extend to target ranges per level
+    const enforceWordCountsAndVariety = (pages, level) => {
+      const targets = [
+        [40, 50],
+        [75, 100],
+        [100, 120],
+        [130, 150]
+      ][level] || [75, 100];
+      // Make sure no two adjacent pages are the same or near-identical
+      const isNearDuplicate = (a, b) => {
+        const A = tokenizeWords(a.toLowerCase());
+        const B = tokenizeWords(b.toLowerCase());
+        if (A.length === 0 || B.length === 0) return false;
+        const setA = new Set(A);
+        const overlap = B.filter(w => setA.has(w)).length;
+        const ratio = overlap / Math.max(A.length, B.length);
+        return ratio > 0.7 || a.trim() === b.trim();
+      };
+      const deduped = pages.slice(0, 4).map(p => p || "");
+      for (let i = 1; i < deduped.length; i++) {
+        if (isNearDuplicate(deduped[i-1], deduped[i])) {
+          // Nudge variety by appending a level-appropriate unique line
+          const filler = levelFillers[level][i % levelFillers[level].length];
+          deduped[i] = deduped[i] + " " + filler;
         }
-
-        // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
-        const generateLocalNode = (turn, setup) => {
-          const char = CATEGORIES.characters[setup.character];
-          const vill = CATEGORIES.villains[setup.villain];
-          const sett = CATEGORIES.settings[setup.setting];
-          const plot = CATEGORIES.plots[setup.plot];
-          const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
-
-          let p1, p2, p3, p4, q, choices;
-
-          // Strongly responsive to Grade 1 vs advanced fallbacks
-          if (level === 0 || level === 1) {
-            p1 = `The sky is dark. ${char.name} walks into the ${sett.name}. It is very scary.`;
-            p2 = `There is a loud noise! The bad ${vill.name} is here.`;
-            p3 = `Oh no! The ${vill.name} wants to stop you from getting to the end.`;
-            p4 = `You must solve a fast puzzle to open the big door and win.`;
-            q = `Who made the loud noise?`;
-            choices = [
-              { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
-              { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" },
-              { text: `A sleeping cat`, isCorrect: false, isGameOver: true, gameOverMessage: "No, cats are quiet. You lose!" }
-            ];
+      }
+      // Now enforce counts
+      const result = deduped.map((p, idx) => {
+        let words = tokenizeWords(p);
+        // If page 4 is supposed to host the challenge lead-in, we still enforce length
+        if (words.length < targets[0]) {
+          // Add fillers up to min
+          while (words.length < targets[0]) {
+            const add = levelFillers[level][(idx + words.length) % levelFillers[level].length];
+            words = words.concat(tokenizeWords(add));
+          }
+        } else if (words.length > targets[1]) {
+          // Trim smartly but keep sentences whole when possible
+          const text = words.join(' ');
+          const sentences = text.split(/(?<=[.!?])\s+/);
+          let acc = [];
+          for (let s of sentences) {
+            const next = tokenizeWords(acc.concat([s]).join(' ')).length;
+            if (next <= targets[1]) acc.push(s);
+            else break;
+          }
+          if (acc.length === 0) {
+            words = words.slice(0, targets[1]);
           } else {
-            p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy.`;
-            p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures. You must stay vigilant to proceed with your quest to ${plot.name}.`;
-            p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
-            p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap.`;
-            q = `What is blocking the path forward?`;
-            choices = [
-              { text: `An iron gate`, isCorrect: true, isGameOver: false },
-              { text: `A magic shield`, isCorrect: false, isGameOver: true, gameOverMessage: "You touched the wrong shield and got zapped!" },
-              { text: `A sleeping dragon`, isCorrect: false, isGameOver: true, gameOverMessage: "You woke the dragon up!" }
-            ];
+            words = tokenizeWords(acc.join(' '));
           }
-
-          return {
-            pages: [p1, p2, p3, p4],
-            imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
-            question: q,
-            choices: choices.sort(() => Math.random() - 0.5)
-          };
+        }
+        return words.join(' ').replace(/\s+/g, ' ').trim();
+      });
+      // Final safety dedupe pass
+      for (let i = 1; i < result.length; i++) {
+        if (isNearDuplicate(result[i-1], result[i])) {
+          const filler = levelFillers[level][(i + 1) % levelFillers[level].length];
+          result[i] = result[i] + " " + filler;
+        }
+      }
+      return result;
+    };
+    // Ensure question and choices exist and are valid
+    const ensureChoices = (nodeData, level, lastPageText) => {
+      const safeGameOver = [
+        "That was not the best choice. Try again next time.",
+        "Oops! That path was a trap.",
+        "You missed a clue and lost ground."
+      ];
+      if (!nodeData.question || typeof nodeData.question !== 'string' || nodeData.question.trim().length < 5) {
+        // Create a simple question from the page context
+        nodeData.question = "What is the main obstacle right now?";
+      }
+      if (!Array.isArray(nodeData.choices)) nodeData.choices = [];
+      // Guarantee at least 3 choices with 1 correct
+      let hasCorrect = nodeData.choices.some(c => c && c.isCorrect === true);
+      // Normalize text and add messages
+      nodeData.choices = nodeData.choices
+        .filter(c => c && typeof c.text === 'string' && c.text.trim().length > 0)
+        .slice(0, 3)
+        .map(c => ({
+          text: c.text.trim(),
+          isCorrect: !!c.isCorrect,
+          isGameOver: c.isCorrect ? false : true,
+          gameOverMessage: c.isCorrect ? undefined : (c.gameOverMessage || safeGameOver[Math.floor(Math.random()*safeGameOver.length)])
+        }));
+      while (nodeData.choices.length < 3) {
+        nodeData.choices.push({
+          text: "Take a wrong turn",
+          isCorrect: false,
+          isGameOver: true,
+          gameOverMessage: safeGameOver[nodeData.choices.length % safeGameOver.length]
+        });
+      }
+      if (!hasCorrect) {
+        // Make the first one correct, themed to lastPageText
+        nodeData.choices[0] = {
+          text: "Choose the clue that fits the story",
+          isCorrect: true,
+          isGameOver: false
         };
-
-        // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
-        const SunsetPixelArt = ({ setting, turn, villain }) => {
-          const canvasRef = useRef(null);
-
-          useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            const w = canvas.width;
-            const h = canvas.height;
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, w, h);
-
-            // 1. SKY GRADIENT based on sunset progression stage (turn 0 to 9)
-            let skyColors = [];
-            if (turn === 0) {
-              skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
-            } else if (turn >= 1 && turn <= 3) {
-              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
-            } else if (turn >= 4 && turn <= 6) {
-              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
-            } else {
-              skyColors = ['#180040', '#000028', '#000010', '#000000']; 
-            }
-
-            const step = h / skyColors.length;
-            skyColors.forEach((color, i) => {
-              ctx.fillStyle = color;
-              ctx.fillRect(0, i * step, w, step);
-            });
-
-            // 2. SUNSTAGE & CELESTIALS
-            if (turn < 7) {
-              const sunY = 60 + turn * 18;
-              const sunSize = 32;
-              
-              ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
-              ctx.beginPath();
-              ctx.arc(w/2, sunY, sunSize + 16, 0, Math.PI * 2);
-              ctx.fill();
-              
-              ctx.fillStyle = '#ffeb3b';
-              ctx.beginPath();
-              ctx.arc(w/2, sunY, sunSize, 0, Math.PI * 2);
-              ctx.fill();
-            } else {
-              ctx.fillStyle = '#ffffff';
-              for (let i = 0; i < 20; i++) {
-                const rx = (Math.sin(i * 99) * 0.5 + 0.5) * w;
-                const ry = (Math.cos(i * 33) * 0.5 + 0.5) * (h - 100);
-                ctx.fillRect(Math.floor(rx), Math.floor(ry), 2, 2);
-              }
-
-              const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
-              const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
-              ctx.fillStyle = moonGlow;
-              ctx.beginPath();
-              ctx.arc(w - 70, 60, 26, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.fillStyle = moonColor;
-              ctx.beginPath();
-              ctx.arc(w - 70, 60, 18, 0, Math.PI * 2);
-              ctx.fill();
-            }
-
-            // 2.5 THE NEGABOR GREEN OGRE FACE RENDERING (If villain index 3 is selected)
-            if (villain === 3) {
-              const ogreX = w * 0.15;
-              const ogreY = 45;
-              
-              // Big green head base
-              ctx.fillStyle = '#388e3c'; 
-              ctx.fillRect(ogreX, ogreY, 40, 40);
-              
-              // Horns / Ears
-              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8);
-              ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
-              
-              // Glowing yellow-red eyes
-              ctx.fillStyle = '#f57c00'; 
-              ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6);
-              ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
-              
-              ctx.fillStyle = '#ff1744'; 
-              ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2);
-              ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
-
-              // Flat nose
-              ctx.fillStyle = '#1b5e20'; 
-              ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
-
-              // Fangs
-              ctx.fillStyle = '#ffffff'; 
-              ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4);
-              ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
-              
-              // Angry mouth line
-              ctx.fillStyle = '#000000';
-              ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
-            }
-
-            // 3. MOUNTAIN SILHOUETTE
-            ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
+      }
+      return nodeData;
+    };
+    // Remove code fences, sanitize, and get JSON object
+    const cleanJsonText = (jsonText) => {
+      if (!jsonText) return "{}";
+      let txt = jsonText
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim();
+      // Find outermost object braces
+      const startIdx = txt.indexOf('{');
+      const endIdx = txt.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1) {
+        txt = txt.substring(startIdx, endIdx + 1);
+      }
+      // Replace smart quotes with straight, and enforce JSON compliance
+      txt = txt
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'");
+      return txt;
+    };
+    // Build a compact state summary for continuity
+    const makeStateSummary = (history) => {
+      if (!history || history.length === 0) return "No choices yet.";
+      const recent = history.slice(-3).map((h, i) => `Step ${history.length - (history.length - i - 1)}: "${h.chosenAction}"`).join('; ');
+      return `Recent choices: ${recent}.`;
+    };
+    // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
+    let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
+    let synthCtx = null; 
+    const initializeFirebaseApp = (config) => {
+      if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+        return firebase.initializeApp(config);
+      }
+      return null;
+    };
+    const getFirebaseAuth = () => {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        return firebase.auth();
+      }
+      return null;
+    };
+    const getFirebaseFirestore = () => {
+      if (typeof firebase !== 'undefined' && firebase.firestore) {
+        return firebase.firestore();
+      }
+      return null;
+    };
+    const doc = (database, ...paths) => database ? database.doc(paths.join('/')) : null;
+    const collection = (database, ...paths) => database ? database.collection(paths.join('/')) : null;
+    const setDoc = (docRef, data) => docRef ? docRef.set(data) : Promise.reject(new Error("No Database Connection"));
+    const getDoc = async (docRef) => {
+      if (!docRef) return { exists: () => false };
+      const snap = await docRef.get();
+      return {
+        exists: () => snap.exists,
+        data: () => snap.data()
+      };
+    };
+    const signInAnonymously = (authRef) => authRef ? authRef.signInAnonymously() : Promise.reject(new Error("No Auth Connection"));
+    const signInWithCustomToken = (authRef, token) => authRef ? authRef.signInWithCustomToken(token) : Promise.reject(new Error("No Auth Connection"));
+    const onAuthStateChanged = (authRef, callback) => authRef ? authRef.onAuthStateChanged(callback) : () => {};
+    try {
+      const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+      if (Object.keys(firebaseConfig).length > 0 && typeof firebase !== 'undefined') {
+        fbApp = initializeFirebaseApp(firebaseConfig);
+        fbAuth = getFirebaseAuth();
+        fbDb = getFirebaseFirestore();
+        fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+      }
+    } catch (e) {
+      console.error("Firebase init failed:", e);
+    }
+    // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
+    const generateLocalNode = (turn, setup) => {
+      const char = CATEGORIES.characters[setup.character];
+      const vill = CATEGORIES.villains[setup.villain];
+      const sett = CATEGORIES.settings[setup.setting];
+      const plot = CATEGORIES.plots[setup.plot];
+      const dil = CATEGORIES.dilemmas[setup.dilemma];
+      const level = setup.readingLevel;
+      let p1, p2, p3, p4, q, choices;
+      if (level === 0 || level === 1) {
+        p1 = `The sky is dark. ${char.name} walks into the ${sett.name}. It is very scary.`;
+        p2 = `There is a loud noise! The bad ${vill.name} is here.`;
+        p3 = `Oh no! The ${vill.name} wants to stop you from getting to the end.`;
+        p4 = `You must solve a fast puzzle to open the big door and win.`;
+        q = `Who made the loud noise?`;
+        choices = [
+          { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
+          { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" },
+          { text: `A sleeping cat`, isCorrect: false, isGameOver: true, gameOverMessage: "No, cats are quiet. You lose!" }
+        ];
+      } else {
+        p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy.`;
+        p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures. You must stay vigilant to proceed with your quest to ${plot.name}.`;
+        p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
+        p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap.`;
+        q = `What is blocking the path forward?`;
+        choices = [
+          { text: `An iron gate`, isCorrect: true, isGameOver: false },
+          { text: `A magic shield`, isCorrect: false, isGameOver: true, gameOverMessage: "You touched the wrong shield and got zapped!" },
+          { text: `A sleeping dragon`, isCorrect: false, isGameOver: true, gameOverMessage: "You woke the dragon up!" }
+        ];
+      }
+      return {
+        pages: [p1, p2, p3, p4],
+        imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
+        question: q,
+        choices: choices.sort(() => Math.random() - 0.5)
+      };
+    };
+    // --- CUSTOM PROCEDURAL RENDERER (unchanged) ---
+    const SunsetPixelArt = ({ setting, turn, villain }) => {
+      const canvasRef = useRef(null);
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        let skyColors = [];
+        if (turn === 0) {
+          skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
+        } else if (turn >= 1 && turn <= 3) {
+          skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
+        } else if (turn >= 4 && turn <= 6) {
+          skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
+        } else {
+          skyColors = ['#180040', '#000028', '#000010', '#000000']; 
+        }
+        const step = h / skyColors.length;
+        skyColors.forEach((color, i) => {
+          ctx.fillStyle = color;
+          ctx.fillRect(0, i * step, w, step);
+        });
+        if (turn < 7) {
+          const sunY = 60 + turn * 18;
+          const sunSize = 32;
+          
+          ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
+          ctx.beginPath();
+          ctx.arc(w/2, sunY, sunSize + 16, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#ffeb3b';
+          ctx.beginPath();
+          ctx.arc(w/2, sunY, sunSize, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#ffffff';
+          for (let i = 0; i < 20; i++) {
+            const rx = (Math.sin(i * 99) * 0.5 + 0.5) * w;
+            const ry = (Math.cos(i * 33) * 0.5 + 0.5) * (h - 100);
+            ctx.fillRect(Math.floor(rx), Math.floor(ry), 2, 2);
+          }
+          const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
+          const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
+          ctx.fillStyle = moonGlow;
+          ctx.beginPath();
+          ctx.arc(w - 70, 60, 26, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = moonColor;
+          ctx.beginPath();
+          ctx.arc(w - 70, 60, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (villain === 3) {
+          const ogreX = w * 0.15;
+          const ogreY = 45;
+          ctx.fillStyle = '#388e3c'; 
+          ctx.fillRect(ogreX, ogreY, 40, 40);
+          ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8);
+          ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
+          ctx.fillStyle = '#f57c00'; 
+          ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6);
+          ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
+          ctx.fillStyle = '#ff1744'; 
+          ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2);
+          ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
+          ctx.fillStyle = '#1b5e20'; 
+          ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
+          ctx.fillStyle = '#ffffff'; 
+          ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4);
+          ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
+        }
+        ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(0, h - 80);
+        ctx.lineTo(w * 0.2, h - 120);
+        ctx.lineTo(w * 0.4, h - 70);
+        ctx.lineTo(w * 0.6, h - 105);
+        ctx.lineTo(w * 0.8, h - 80);
+        ctx.lineTo(w, h - 130);
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#100504';
+        ctx.fillRect(0, h - 40, w, 40);
+        ctx.fillStyle = '#3e2723';
+        ctx.fillRect(0, h - 40, w, 4);
+        ctx.fillStyle = '#000000';
+        switch(setting) {
+          case 0: {
+            ctx.fillRect(10, 0, 30, h);
+            ctx.fillRect(w - 40, 0, 30, h);
+            ctx.fillStyle = '#ffeb3b';
+            ctx.fillRect(120, h - 140, 12, 6);
+            ctx.fillRect(w - 150, h - 180, 14, 8);
+            break;
+          }
+          case 1: {
+            ctx.fillRect(30, h - 220, 60, 180);
+            ctx.fillRect(200, h - 180, 50, 140);
             ctx.beginPath();
-            ctx.moveTo(0, h);
-            ctx.lineTo(0, h - 80);
-            ctx.lineTo(w * 0.2, h - 120);
-            ctx.lineTo(w * 0.4, h - 70);
-            ctx.lineTo(w * 0.6, h - 105);
-            ctx.lineTo(w * 0.8, h - 80);
-            ctx.lineTo(w, h - 130);
-            ctx.lineTo(w, h);
+            ctx.moveTo(30, h - 220);
+            ctx.lineTo(60, h - 270);
+            ctx.lineTo(90, h - 220);
+            ctx.fill();
+            break;
+          }
+          case 2: {
+            const drawTree = (tx, ty) => {
+              ctx.fillRect(tx + 12, ty, 6, h - ty);
+              ctx.beginPath();
+              ctx.moveTo(tx, ty + 60);
+              ctx.lineTo(tx + 15, ty);
+              ctx.lineTo(tx + 30, ty + 60);
+              ctx.fill();
+              ctx.beginPath();
+              tx -= 5;
+              ctx.moveTo(tx, ty + 120);
+              ctx.lineTo(tx + 20, ty + 40);
+              ctx.lineTo(tx + 40, ty + 120);
+              ctx.fill();
+            };
+            drawTree(40, h - 240);
+            drawTree(w - 90, h - 260);
+            break;
+          }
+          case 3: {
+            ctx.beginPath();
+            ctx.moveTo(w/2 - 120, h - 40);
+            ctx.lineTo(w/2, h - 190);
+            ctx.lineTo(w/2 + 120, h - 40);
             ctx.closePath();
             ctx.fill();
-
-            // 4. SETTING SILHOUETTES
-            // Wrapped in block braces {} to prevent babel lexical parsing errors
-            ctx.fillStyle = '#100504';
-            ctx.fillRect(0, h - 40, w, 40);
-            ctx.fillStyle = '#3e2723';
-            ctx.fillRect(0, h - 40, w, 4);
-            ctx.fillStyle = '#000000';
-
-            switch(setting) {
-              case 0: {
-                ctx.fillRect(10, 0, 30, h);
-                ctx.fillRect(w - 40, 0, 30, h);
-                ctx.fillStyle = '#ffeb3b';
-                ctx.fillRect(120, h - 140, 12, 6);
-                ctx.fillRect(w - 150, h - 180, 14, 8);
-                break;
-              }
-              case 1: {
-                ctx.fillRect(30, h - 220, 60, 180);
-                ctx.fillRect(200, h - 180, 50, 140);
-                ctx.beginPath();
-                ctx.moveTo(30, h - 220);
-                ctx.lineTo(60, h - 270);
-                ctx.lineTo(90, h - 220);
-                ctx.fill();
-                break;
-              }
-              case 2: {
-                const drawTree = (tx, ty) => {
-                  ctx.fillRect(tx + 12, ty, 6, h - ty);
-                  ctx.beginPath();
-                  ctx.moveTo(tx, ty + 60);
-                  ctx.lineTo(tx + 15, ty);
-                  ctx.lineTo(tx + 30, ty + 60);
-                  ctx.fill();
-                  ctx.beginPath();
-                  tx -= 5;
-                  ctx.moveTo(tx, ty + 120);
-                  ctx.lineTo(tx + 20, ty + 40);
-                  ctx.lineTo(tx + 40, ty + 120);
-                  ctx.fill();
-                };
-                drawTree(40, h - 240);
-                drawTree(w - 90, h - 260);
-                break;
-              }
-              case 3: {
-                ctx.beginPath();
-                ctx.moveTo(w/2 - 120, h - 40);
-                ctx.lineTo(w/2, h - 190);
-                ctx.lineTo(w/2 + 120, h - 40);
-                ctx.closePath();
-                ctx.fill();
-                break;
-              }
-              case 4: {
-                ctx.fillRect(20, h - 160, 20, 120);
-                ctx.fillRect(w - 50, h - 190, 30, 150);
-                ctx.fillStyle = '#00e676';
-                ctx.fillRect(25, h - 120, 4, 4);
-                ctx.fillStyle = '#ff1744';
-                ctx.fillRect(25, h - 100, 4, 4);
-                break;
-              }
-              case 5: {
-                ctx.fillRect(0, h - 50, w, 20);
-                ctx.fillRect(40, h - 180, 12, 140);
-                ctx.fillRect(w - 80, h - 200, 14, 160);
-                break;
-              }
-              case 6: {
-                ctx.fillRect(20, h - 170, 80, 130);
-                ctx.fillRect(w - 110, h - 190, 90, 150);
-                ctx.fillStyle = '#000';
-                ctx.fillRect(w/2 - 3, h - 100, 6, 40);
-                ctx.fillRect(w/2 - 12, h - 90, 24, 6);
-                break;
-              }
-              case 7: {
-                ctx.beginPath();
-                ctx.arc(80, h - 160, 45, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-              }
-              case 8: {
-                ctx.fillRect(60, h - 120, 40, 80);
-                ctx.fillRect(w - 100, h - 140, 40, 100);
-                ctx.beginPath();
-                ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-              }
-              case 9: {
-                ctx.beginPath();
-                ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2);
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-                ctx.lineWidth = 2;
-                for (let a = 0; a < 8; a++) {
-                  const angle = (a * Math.PI) / 4;
-                  ctx.beginPath();
-                  ctx.moveTo(w/2, h - 150);
-                  ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70);
-                  ctx.stroke();
-                }
-                break;
-              }
+            break;
+          }
+          case 4: {
+            ctx.fillRect(20, h - 160, 20, 120);
+            ctx.fillRect(w - 50, h - 190, 30, 150);
+            ctx.fillStyle = '#00e676';
+            ctx.fillRect(25, h - 120, 4, 4);
+            ctx.fillStyle = '#ff1744';
+            ctx.fillRect(25, h - 100, 4, 4);
+            break;
+          }
+          case 5: {
+            ctx.fillRect(0, h - 50, w, 20);
+            ctx.fillRect(40, h - 180, 12, 140);
+            ctx.fillRect(w - 80, h - 200, 14, 160);
+            break;
+          }
+          case 6: {
+            ctx.fillRect(20, h - 170, 80, 130);
+            ctx.fillRect(w - 110, h - 190, 90, 150);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(w/2 - 3, h - 100, 6, 40);
+            ctx.fillRect(w/2 - 12, h - 90, 24, 6);
+            break;
+          }
+          case 7: {
+            ctx.beginPath();
+            ctx.arc(80, h - 160, 45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          }
+          case 8: {
+            ctx.fillRect(60, h - 120, 40, 80);
+            ctx.fillRect(w - 100, h - 140, 40, 100);
+            ctx.beginPath();
+            ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          }
+          case 9: {
+            ctx.beginPath();
+            ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2);
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.lineWidth = 2;
+            for (let a = 0; a < 8; a++) {
+              const angle = (a * Math.PI) / 4;
+              ctx.beginPath();
+              ctx.moveTo(w/2, h - 150);
+              ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70);
+              ctx.stroke();
             }
-
-            ctx.fillStyle = '#000000';
-            for (let i = 0; i < 4; i++) {
-              const bx = (Math.sin(i * 45 + turn) * 0.5 + 0.5) * (w - 60) + 30;
-              const by = (Math.cos(i * 12 + turn) * 0.3 + 0.3) * (h - 140) + 20;
-              ctx.fillRect(bx, by, 8, 4);
-              ctx.fillRect(bx - 6, by - 3, 4, 3);
-              ctx.fillRect(bx + 10, by - 3, 4, 3);
-            }
-
-          }, [setting, turn, villain]);
-
-          return (
-            <canvas 
-              ref={canvasRef} 
-              width={500} 
-              height={500} 
-              className="w-full h-full object-cover transition-opacity duration-1000"
-              style={{ imageRendering: 'pixelated' }}
-            />
-          );
-        };
-
-        // --- INTERACTIVE TEXT HIGHLIGHTER ---
-        const InteractiveText = ({ text, textSize }) => {
-          const [highlights, setHighlights] = useState([]);
-
-          useEffect(() => {
-            setHighlights([]);
-          }, [text]); 
-
-          const handleSelection = () => {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
-            const selectedText = selection.toString().trim();
-            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
-              setHighlights(prev => [...prev, selectedText]);
-            }
-          };
-
-          const removeHighlight = (phrase) => {
-            setHighlights(prev => prev.filter(h => h !== phrase));
-          };
-
-          const renderText = () => {
-            if (!text) return null;
-            if (highlights.length === 0) return text;
-            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
-            const parts = text.split(regex);
-
-            return parts.map((part, i) => {
-              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
-              if (matched) {
-                return (
-                  <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
-                    {part}
-                  </mark>
-                );
-              }
-              return <span key={i}>{part}</span>;
-            });
-          };
-
-          return (
-            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
-              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
-                {renderText()}
-              </p>
-            </div>
-          );
-        };
-
-        // RetroBat component definition 
-        function RetroBat({ style }) {
-          const [wingFrame, setWingFrame] = useState(0);
-
-          useEffect(() => {
-            const frameTimer = setInterval(() => {
-              setWingFrame(f => (f === 0 ? 1 : 0));
-            }, 100);
-            return () => clearInterval(frameTimer);
-          }, []);
-
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                {/* Bat Body */}
-                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
-                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
-                {/* Red Eyes */}
-                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
-                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
-                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
-                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
-                  </g>
-                )}
-              </svg>
-            </div>
-          );
+            break;
+          }
         }
-
-        // --- FLAPPY BAT MINIGAME COMPONENT ---
-        const FlappyBatMinigame = () => {
-          const canvasRef = useRef(null);
-
-          useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let animationFrameId;
-
-            let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
-            let pipes = [];
-            let score = 0;
-            let gameOver = false;
-            let frameCount = 0;
-
-            const drawBat = (x, y, size) => {
-              ctx.fillStyle = '#ffb300'; // Golden sunset bat
-              ctx.fillRect(x, y + size/3, size, size/3); // body
-              if (Math.floor(frameCount / 8) % 2 === 0) {
-                ctx.fillRect(x - size/2, y, size/2, size/2); 
-                ctx.fillRect(x + size, y, size/2, size/2); 
-              } else {
-                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); 
-                ctx.fillRect(x + size, y + size/2, size/2, size/2); 
-              }
-              ctx.fillStyle = '#ff2222'; 
-              ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
-            };
-
-            const update = () => {
-              if (gameOver) return;
-              bat.velocity += bat.gravity;
-              bat.y += bat.velocity;
-
-              if (bat.y > canvas.height - bat.size || bat.y < 0) {
+        ctx.fillStyle = '#000000';
+        for (let i = 0; i < 4; i++) {
+          const bx = (Math.sin(i * 45 + turn) * 0.5 + 0.5) * (w - 60) + 30;
+          const by = (Math.cos(i * 12 + turn) * 0.3 + 0.3) * (h - 140) + 20;
+          ctx.fillRect(bx, by, 8, 4);
+          ctx.fillRect(bx - 6, by - 3, 4, 3);
+          ctx.fillRect(bx + 10, by - 3, 4, 3);
+        }
+      }, [setting, turn, villain]);
+      return (
+        <canvas 
+          ref={canvasRef} 
+          width={500} 
+          height={500} 
+          className="w-full h-full object-cover transition-opacity duration-1000"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      );
+    };
+    // --- INTERACTIVE TEXT HIGHLIGHTER ---
+    const InteractiveText = ({ text, textSize }) => {
+      const [highlights, setHighlights] = useState([]);
+      useEffect(() => {
+        setHighlights([]);
+      }, [text]); 
+      const handleSelection = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) return;
+        const selectedText = selection.toString().trim();
+        if (selectedText.length > 1 && !highlights.includes(selectedText)) {
+          setHighlights(prev => [...prev, selectedText]);
+        }
+      };
+      const removeHighlight = (phrase) => {
+        setHighlights(prev => prev.filter(h => h !== phrase));
+      };
+      const renderText = () => {
+        if (!text) return null;
+        if (highlights.length === 0) return text;
+        const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
+        const parts = text.split(regex);
+        return parts.map((part, i) => {
+          const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+          if (matched) {
+            return (
+              <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
+                {part}
+              </mark>
+            );
+          }
+          return <span key={i}>{part}</span>;
+        });
+      };
+      return (
+        <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+          <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
+            {renderText()}
+          </p>
+        </div>
+      );
+    };
+    function RetroBat({ style }) {
+      const [wingFrame, setWingFrame] = useState(0);
+      useEffect(() => {
+        const frameTimer = setInterval(() => {
+          setWingFrame(f => (f === 0 ? 1 : 0));
+        }, 100);
+        return () => clearInterval(frameTimer);
+      }, []);
+      return (
+        <div className="critter" style={style}>
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" viewBox="0 0 32 16" className="w-24 h-12">
+            <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
+            <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
+            <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+            <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+            {wingFrame === 0 ? (
+              <g>
+                <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
+                <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
+                <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
+                <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
+                <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
+                <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
+                <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
+                <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
+              </g>
+            ) : (
+              <g>
+                <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
+                <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
+                <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
+                <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
+                <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
+                <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
+                <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
+                <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
+              </g>
+            )}
+          </svg>
+        </div>
+      );
+    }
+    // --- FLAPPY BAT MINIGAME (unchanged) ---
+    const FlappyBatMinigame = () => {
+      const canvasRef = useRef(null);
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+        let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+        let pipes = [];
+        let score = 0;
+        let gameOver = false;
+        let frameCount = 0;
+        const drawBat = (x, y, size) => {
+          ctx.fillStyle = '#ffb300';
+          ctx.fillRect(x, y + size/3, size, size/3);
+          if (Math.floor(frameCount / 8) % 2 === 0) {
+            ctx.fillRect(x - size/2, y, size/2, size/2); 
+            ctx.fillRect(x + size, y, size/2, size/2); 
+          } else {
+            ctx.fillRect(x - size/2, y + size/2, size/2, size/2); 
+            ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+          }
+          ctx.fillStyle = '#ff2222'; 
+          ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
+        };
+        const update = () => {
+          if (gameOver) return;
+          bat.velocity += bat.gravity;
+          bat.y += bat.velocity;
+          if (bat.y > canvas.height - bat.size || bat.y < 0) {
+            gameOver = true;
+          }
+          if (frameCount % 110 === 0) {
+            const gap = 120;
+            const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
+            pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 45 });
+          }
+          pipes.forEach(p => {
+            p.x -= 2.5;
+            if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
+              if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
                 gameOver = true;
               }
-
-              if (frameCount % 110 === 0) {
-                const gap = 120;
-                const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
-                pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 45 });
-              }
-
-              pipes.forEach(p => {
-                p.x -= 2.5;
-                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
-                  if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
-                    gameOver = true;
-                  }
-                }
-                if (!p.passed && bat.x > p.x + p.width) {
-                  p.passed = true;
-                  score++;
-                }
-              });
-
-              pipes = pipes.filter(p => p.x + p.width > 0);
-              frameCount++;
-            };
-
-            const draw = () => {
-              ctx.fillStyle = '#1c0f0d'; // Warm dark background
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-              pipes.forEach(p => {
-                ctx.fillStyle = '#d84315'; // Sunset brick orange
-                ctx.fillRect(p.x, 0, p.width, p.topHeight);
-                ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-                ctx.strokeStyle = '#3e2723';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(p.x, 0, p.width, p.topHeight);
-                ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-              });
-
-              drawBat(bat.x, bat.y, bat.size);
-
-              ctx.fillStyle = 'white';
-              ctx.font = '16px "Press Start 2P", monospace';
-              ctx.fillText(`SCORE:${score}`, 10, 30);
-
-              if (gameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#ef4444';
-                ctx.textAlign = 'center';
-                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
-                ctx.fillStyle = 'white';
-                ctx.font = '10px "Press Start 2P", monospace';
-                ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
-                ctx.textAlign = 'left';
-              }
-            };
-
-            const loop = () => {
-              update();
-              draw();
-              animationFrameId = window.requestAnimationFrame(loop);
-            };
-
-            loop();
-
-            const handleInput = (e) => {
-              if (e.type === 'keydown' && e.code === 'Space') {
-                e.preventDefault();
-              }
-              if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
-
-              if (gameOver) {
-                bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
-                pipes = [];
-                score = 0;
-                gameOver = false;
-                frameCount = 0;
-              } else {
-                bat.velocity = bat.jump;
-              }
-            };
-
-            window.addEventListener('keydown', handleInput, { passive: false });
-            canvas.addEventListener('touchstart', handleInput, { passive: false });
-            canvas.addEventListener('mousedown', handleInput);
-
-            return () => {
-              window.cancelAnimationFrame(animationFrameId);
-              window.removeEventListener('keydown', handleInput);
-              if (canvas) {
-                canvas.removeEventListener('touchstart', handleInput);
-                canvas.removeEventListener('mousedown', handleInput);
-              }
-            };
-          }, []);
-
-          return (
-            <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
-              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
-                Play Flappy Bat while the AI writes your book!
-              </p>
-              <canvas 
-                ref={canvasRef} 
-                width={480} 
-                height={280} 
-                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full"
-              />
-              <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
-            </div>
-          );
+            }
+            if (!p.passed && bat.x > p.x + p.width) {
+              p.passed = true;
+              score++;
+            }
+          });
+          pipes = pipes.filter(p => p.x + p.width > 0);
+          frameCount++;
         };
-
-        // --- MAIN APP ---
-        function Adventurevania() {
-          const [user, setUser] = useState(null); 
-          const [gameState, setGameState] = useState('menu'); 
-          
-          const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
-          const [setupStep, setSetupStep] = useState(0); 
-          const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
-          const [currentNode, setCurrentNode] = useState(null);
-          const [currentPageIndex, setCurrentPageIndex] = useState(0); 
-          const [turnCount, setTurnCount] = useState(0); 
-          const [storyHistory, setStoryHistory] = useState([]);
-          const [sessionInitialNode, setSessionInitialNode] = useState(null); 
-          const [sessionSeed, setSessionSeed] = useState("");
-          const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
-          const [sessionStartTime, setSessionStartTime] = useState(null);
-          const [correctAnswers, setCorrectAnswers] = useState(0);
-          const [totalQuestions, setTotalQuestions] = useState(0);
-          const [menuImgIndex, setMenuImgIndex] = useState(0);
-          const [showLightning, setShowLightning] = useState(false);
-          const [musicVolume, setMusicVolume] = useState(0.3);
-          const [isMuted, setIsMuted] = useState(true); 
-          const [currentTrack, setCurrentTrack] = useState(0);
-          const [focusedChoice, setFocusedChoice] = useState(0);
-          const [critters, setCritters] = useState([]); 
-          const [textSize, setTextSize] = useState(18); 
-          const [isSpeaking, setIsSpeaking] = useState(false);
-          const [loadingMsg, setLoadingMsg] = useState("");
-          const [loadingProgress, setLoadingProgress] = useState(0);
-          const [errorMsg, setErrorMsg] = useState("");
-          const [confirmDialog, setConfirmDialog] = useState(null);
-
-          const endOfStoryRef = useRef(null);
-          const melodyIntervalRef = useRef(null);
-          const synthCtxRef = useRef(null);
-
-          // Audio effect functions injected here
-          const playThunderSynth = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              const bufferSize = ctx.sampleRate * 1.5;
-              const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-              const data = buffer.getChannelData(0);
-              for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-              const noiseNode = ctx.createBufferSource();
-              noiseNode.buffer = buffer;
-              const filterNode = ctx.createBiquadFilter();
-              filterNode.type = 'lowpass';
-              filterNode.frequency.setValueAtTime(600, ctx.currentTime);
-              filterNode.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.2);
-              const gainNode = ctx.createGain();
-              gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
-              gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
-              noiseNode.connect(filterNode);
-              filterNode.connect(gainNode);
-              gainNode.connect(ctx.destination);
-              noiseNode.start();
-            } catch(e) { console.warn(e); }
-          };
-
-          const playGhostHowl = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.type = 'sine';
-              const now = ctx.currentTime;
-              osc.frequency.setValueAtTime(250, now);
-              osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
-              const lfo = ctx.createOscillator();
-              lfo.type = 'sine';
-              lfo.frequency.setValueAtTime(5, now);
-              const lfoGain = ctx.createGain();
-              lfoGain.gain.setValueAtTime(10, now);
-              lfo.connect(lfoGain);
-              lfoGain.connect(osc.frequency);
-              lfo.start(now + 1.0);
-              lfo.stop(now + 4.0);
-              osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
-              gain.gain.setValueAtTime(0.0001, now);
-              gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
-              gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.start(now);
-              osc.stop(now + 4.0);
-            } catch(e) { console.warn(e); }
-          };
-
-          const playRealisticWolfHowl = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              if (ctx.state === 'suspended') ctx.resume();
-              const now = ctx.currentTime;
-              const voiceOsc = ctx.createOscillator();
-              const subOsc = ctx.createOscillator();
-              const finalGain = ctx.createGain();
-              voiceOsc.type = 'triangle';
-              subOsc.type = 'sine';
-              voiceOsc.frequency.setValueAtTime(160, now);
-              voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
-              voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
-              voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
-              voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
-              subOsc.frequency.setValueAtTime(80, now);
-              subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
-              subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
-              subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
-              subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
-              const vibratoLFO = ctx.createOscillator();
-              const vibratoGain = ctx.createGain();
-              vibratoLFO.type = 'sine';
-              vibratoLFO.frequency.setValueAtTime(5.8, now); 
-              vibratoGain.gain.setValueAtTime(12, now); 
-              vibratoLFO.connect(vibratoGain);
-              vibratoGain.connect(voiceOsc.frequency);
-              vibratoGain.connect(subOsc.frequency);
-              const filter = ctx.createBiquadFilter();
-              filter.type = 'bandpass';
-              filter.Q.setValueAtTime(3.5, now);
-              filter.frequency.setValueAtTime(400, now);
-              filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
-              filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
-              finalGain.gain.setValueAtTime(0.0001, now);
-              finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
-              finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
-              finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
-              voiceOsc.connect(filter);
-              subOsc.connect(filter);
-              filter.connect(finalGain);
-              finalGain.connect(ctx.destination);
-              vibratoLFO.start(now);
-              voiceOsc.start(now);
-              subOsc.start(now);
-              vibratoLFO.stop(now + 5.6);
-              voiceOsc.stop(now + 5.6);
-              subOsc.stop(now + 5.6);
-            } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
-          };
-
-          // Initialize Firebase Auth compat listener safely
-          useEffect(() => {
-            const initAuth = async () => {
-              if(!fbAuth) return;
-              try {
-                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
-                } else {
-                  await signInAnonymously(fbAuth);
-                }
-              } catch (err) { console.error("Auth Error", err); }
-            };
-            initAuth();
-            if (fbAuth) {
-              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
-              return () => unsubscribe();
+        const draw = () => {
+          ctx.fillStyle = '#1c0f0d';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          pipes.forEach(p => {
+            ctx.fillStyle = '#d84315';
+            ctx.fillRect(p.x, 0, p.width, p.topHeight);
+            ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+            ctx.strokeStyle = '#3e2723';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(p.x, 0, p.width, p.topHeight);
+            ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+          });
+          drawBat(bat.x, bat.y, bat.size);
+          ctx.fillStyle = 'white';
+          ctx.font = '16px "Press Start 2P", monospace';
+          ctx.fillText(`SCORE:${score}`, 10, 30);
+          if (gameOver) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ef4444';
+            ctx.textAlign = 'center';
+            ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+            ctx.fillStyle = 'white';
+            ctx.font = '10px "Press Start 2P", monospace';
+            ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
+            ctx.textAlign = 'left';
+          }
+        };
+        const loop = () => {
+          update();
+          draw();
+          animationFrameId = window.requestAnimationFrame(loop);
+        };
+        loop();
+        const handleInput = (e) => {
+          if (e.type === 'keydown' && e.code === 'Space') {
+            e.preventDefault();
+          }
+          if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
+          if (gameOver) {
+            bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+            pipes = [];
+            score = 0;
+            gameOver = false;
+            frameCount = 0;
+          } else {
+            bat.velocity = bat.jump;
+          }
+        };
+        window.addEventListener('keydown', handleInput, { passive: false });
+        canvas.addEventListener('touchstart', handleInput, { passive: false });
+        canvas.addEventListener('mousedown', handleInput);
+        return () => {
+          window.cancelAnimationFrame(animationFrameId);
+          window.removeEventListener('keydown', handleInput);
+          if (canvas) {
+            canvas.removeEventListener('touchstart', handleInput);
+            canvas.removeEventListener('mousedown', handleInput);
+          }
+        };
+      }, []);
+      return (
+        <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
+          <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
+            Play Flappy Bat while the AI writes your book!
+          </p>
+          <canvas 
+            ref={canvasRef} 
+            width={480} 
+            height={280} 
+            className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full"
+          />
+          <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
+        </div>
+      );
+    };
+    // --- MAIN APP ---
+    function Adventurevania() {
+      const [user, setUser] = useState(null); 
+      const [gameState, setGameState] = useState('menu'); 
+      
+      const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
+      const [setupStep, setSetupStep] = useState(0); 
+      const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
+      const [currentNode, setCurrentNode] = useState(null);
+      const [currentPageIndex, setCurrentPageIndex] = useState(0); 
+      const [turnCount, setTurnCount] = useState(0); 
+      const [storyHistory, setStoryHistory] = useState([]);
+      const [sessionInitialNode, setSessionInitialNode] = useState(null); 
+      const [sessionSeed, setSessionSeed] = useState("");
+      const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
+      const [sessionStartTime, setSessionStartTime] = useState(null);
+      const [correctAnswers, setCorrectAnswers] = useState(0);
+      const [totalQuestions, setTotalQuestions] = useState(0);
+      const [menuImgIndex, setMenuImgIndex] = useState(0);
+      const [showLightning, setShowLightning] = useState(false);
+      const [musicVolume, setMusicVolume] = useState(0.3);
+      const [isMuted, setIsMuted] = useState(true); 
+      const [currentTrack, setCurrentTrack] = useState(0);
+      const [focusedChoice, setFocusedChoice] = useState(0);
+      const [critters, setCritters] = useState([]); 
+      const [textSize, setTextSize] = useState(18); 
+      const [isSpeaking, setIsSpeaking] = useState(false);
+      const [loadingMsg, setLoadingMsg] = useState("");
+      const [loadingProgress, setLoadingProgress] = useState(0);
+      const [errorMsg, setErrorMsg] = useState("");
+      const [confirmDialog, setConfirmDialog] = useState(null);
+      const endOfStoryRef = useRef(null);
+      const melodyIntervalRef = useRef(null);
+      const synthCtxRef = useRef(null);
+      // Audio effects (unchanged)
+      const playThunderSynth = () => {
+        const ctx = synthCtxRef.current;
+        if (!ctx || isMuted) return;
+        try {
+          const bufferSize = ctx.sampleRate * 1.5;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          const noiseNode = ctx.createBufferSource();
+          noiseNode.buffer = buffer;
+          const filterNode = ctx.createBiquadFilter();
+          filterNode.type = 'lowpass';
+          filterNode.frequency.setValueAtTime(600, ctx.currentTime);
+          filterNode.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.2);
+          const gainNode = ctx.createGain();
+          gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
+          noiseNode.connect(filterNode);
+          filterNode.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          noiseNode.start();
+        } catch(e) { console.warn(e); }
+      };
+      const playGhostHowl = () => {
+        const ctx = synthCtxRef.current;
+        if (!ctx || isMuted) return;
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          const now = ctx.currentTime;
+          osc.frequency.setValueAtTime(250, now);
+          osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
+          const lfo = ctx.createOscillator();
+          lfo.type = 'sine';
+          lfo.frequency.setValueAtTime(5, now);
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.setValueAtTime(10, now);
+          lfo.connect(lfoGain);
+          lfoGain.connect(osc.frequency);
+          lfo.start(now + 1.0);
+          lfo.stop(now + 4.0);
+          osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 4.0);
+        } catch(e) { console.warn(e); }
+      };
+      const playRealisticWolfHowl = () => {
+        const ctx = synthCtxRef.current;
+        if (!ctx || isMuted) return;
+        try {
+          if (ctx.state === 'suspended') ctx.resume();
+          const now = ctx.currentTime;
+          const voiceOsc = ctx.createOscillator();
+          const subOsc = ctx.createOscillator();
+          const finalGain = ctx.createGain();
+          voiceOsc.type = 'triangle';
+          subOsc.type = 'sine';
+          voiceOsc.frequency.setValueAtTime(160, now);
+          voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
+          voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
+          voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
+          voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
+          subOsc.frequency.setValueAtTime(80, now);
+          subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
+          subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
+          subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
+          subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
+          const vibratoLFO = ctx.createOscillator();
+          const vibratoGain = ctx.createGain();
+          vibratoLFO.type = 'sine';
+          vibratoLFO.frequency.setValueAtTime(5.8, now); 
+          vibratoGain.gain.setValueAtTime(12, now); 
+          vibratoLFO.connect(vibratoGain);
+          vibratoGain.connect(voiceOsc.frequency);
+          vibratoGain.connect(subOsc.frequency);
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.Q.setValueAtTime(3.5, now);
+          filter.frequency.setValueAtTime(400, now);
+          filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+          filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
+          finalGain.gain.setValueAtTime(0.0001, now);
+          finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
+          finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
+          finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
+          voiceOsc.connect(filter);
+          subOsc.connect(filter);
+          filter.connect(finalGain);
+          finalGain.connect(ctx.destination);
+          vibratoLFO.start(now);
+          voiceOsc.start(now);
+          subOsc.start(now);
+          vibratoLFO.stop(now + 5.6);
+          voiceOsc.stop(now + 5.6);
+          subOsc.stop(now + 5.6);
+        } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
+      };
+      // Initialize Firebase Auth
+      useEffect(() => {
+        const initAuth = async () => {
+          if(!fbAuth) return;
+          try {
+            if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+              await signInWithCustomToken(fbAuth, window.__initial_auth_token);
+            } else {
+              await signInAnonymously(fbAuth);
             }
-          }, []);
+          } catch (err) { console.error("Auth Error", err); }
+        };
+        initAuth();
+        if (fbAuth) {
+          const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+          return () => unsubscribe();
+        }
+      }, []);
+      // Scroll to bottom
+      useEffect(() => {
+        if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
+          endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, [currentNode, currentPageIndex, gameState]);
+      // Rotating Menu
+      useEffect(() => {
+        if(gameState !== 'menu') return;
+        const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
+        return () => clearInterval(imgInterval);
+      }, [gameState]);
+      // Simulated Progress Bar
+      useEffect(() => {
+        let interval;
+        if (gameState === 'loading') {
+          setLoadingProgress(0);
+          interval = setInterval(() => {
+            setLoadingProgress(prev => {
+              const increment = (100 - prev) * 0.08; 
+              return prev + increment;
+            });
+          }, 400);
+        }
+        return () => clearInterval(interval);
+      }, [gameState]);
+      // --- SYNTH AUDIO ---
+      const playSynthNote = (freq, type, duration, volMod) => {
+        const ctx = synthCtxRef.current;
+        if (!ctx || isMuted || !freq) return;
+        try {
+          if (ctx.state === 'suspended') ctx.resume();
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gainNode.gain.setValueAtTime(0, ctx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(musicVolume * volMod, ctx.currentTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration - 0.01);
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (e) { console.warn("Synth error:", e); }
+      };
+      const startSynthEngine = () => {
+        if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+        if (!synthCtxRef.current) {
+          synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+          synthCtx = synthCtxRef.current; 
+        }
+        const track = SYNTH_TRACKS[currentTrack];
+        const stepDuration = 60 / track.tempo / 2; 
+        let step = 0;
+        melodyIntervalRef.current = setInterval(() => {
+          if (isMuted) return;
+          if (step % 4 === 0) {
+            const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
+            if (NOTE_FREQ[bassNote]) playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
+          }
+          let melodySum = 0;
+          let currentMelodyNote = null;
+          for (let i = 0; i < track.melody.length; i++) {
+            const item = track.melody[i];
+            if (step % 16 === melodySum) { currentMelodyNote = item; break; }
+            melodySum += item.dur;
+          }
+          if (currentMelodyNote && NOTE_FREQ[currentMelodyNote.note]) {
+            playSynthNote(NOTE_FREQ[currentMelodyNote.note], "square", stepDuration * currentMelodyNote.dur * 0.9, 0.3);
+          }
+          step = (step + 1) % 16;
+        }, stepDuration * 1000);
+      };
+      useEffect(() => {
+        if (!isMuted) startSynthEngine();
+        else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
+        return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
+      }, [isMuted, currentTrack, musicVolume]);
+      const triggerLightning = () => {
+         setShowLightning(true);
+         playThunderSynth();
+         setTimeout(() => setShowLightning(false), 500);
+         if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
+         else setTimeout(playGhostHowl, 800);
+      };
+      useEffect(() => {
+        const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
+        return () => clearInterval(lightningInterval);
+      }, [isMuted, musicVolume]);
+      // --- TTS ---
+      const handleReadAloud = (text) => {
+        if (!window.speechSynthesis) return;
+        if (isSpeaking) {
+          window.speechSynthesis.cancel();
+          setIsSpeaking(false);
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9; 
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+      };
+      // Keyboard Listeners
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
+          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { e.preventDefault(); }
+          if (gameState === 'setup') {
+             const currentDataList = getActiveCategoryList(setupStep);
+             if (!currentDataList) return;
+             const numOptions = currentDataList.length;
+             if (e.key === 'ArrowRight') {
+               setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
+             } else if (e.key === 'ArrowLeft') {
+               setSetupFocusIndex(prev => Math.max(prev - 1, 0));
+             } else if (e.key === 'ArrowDown') {
+               setSetupFocusIndex(prev => Math.min(prev + 5, numOptions - 1));
+             } else if (e.key === 'ArrowUp') {
+               setSetupFocusIndex(prev => Math.max(prev - 5, 0));
+             } else if (e.key === 'Enter') {
+               const currentKey = STEPS_KEYS[setupStep];
+               const nextSetup = { ...setupData, [currentKey]: setupFocusIndex };
+               setSetupData(nextSetup);
+               
+               if (setupStep === 5) {
+                  startGameWithData(nextSetup);
+               } else {
+                 setSetupStep(prev => prev + 1);
+                 setSetupFocusIndex(0); 
+               }
+             }
+          } else if (gameState === 'story' && !errorMsg) {
+             const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+             
+             if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
+                 setCurrentPageIndex(p => p - 1);
+                 if (window.speechSynthesis) window.speechSynthesis.cancel();
+                 setIsSpeaking(false);
+             } else if (!isAtLastPage && (e.key === 'Enter' || e.key === 'ArrowRight')) {
+               setCurrentPageIndex(p => p + 1);
+               if (window.speechSynthesis) window.speechSynthesis.cancel();
+               setIsSpeaking(false);
+             } else if (isAtLastPage && currentNode?.choices?.length > 0) {
+               if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
+               else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
+               else if (e.key === 'Enter') handleChoice(currentNode.choices[focusedChoice]);
+             }
+          } else if (gameState === 'menu') {
+             if (e.key === 'Enter') {
+                setSetupStep(0); 
+                setSetupFocusIndex(0);
+                setGameState('setup');
+             }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown, { passive: false });
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [gameState, setupStep, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData]);
+      const startGameWithData = (finalSetup) => {
+        setTurnCount(0);
+        setStoryHistory([]);
+        setSessionStartTime(Date.now());
+        setCorrectAnswers(0);
+        setTotalQuestions(0);
+        const seed = Math.random().toString(36).substring(2, 10);
+        setSessionSeed(seed);
+        generateStoryNode(null, finalSetup, seed);
+      };
+      const generateStoryNode = async (actionText = null, overrideSetupData = null, overrideSeed = null) => {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        setGameState('loading');
+        setFocusedChoice(0); 
+        setCurrentPageIndex(0);
+        setLoadingMsg(`Summoning Chapter ${turnCount + 1}...`);
+        setErrorMsg("");
+        
+        const currentSetup = overrideSetupData || setupData;
+        const currentSeed = overrideSeed || sessionSeed;
+        const char = CATEGORIES.characters[currentSetup.character];
+        const vill = CATEGORIES.villains[currentSetup.villain];
+        const sett = CATEGORIES.settings[currentSetup.setting];
+        const plot = CATEGORIES.plots[currentSetup.plot];
+        const dil = CATEGORIES.dilemmas[currentSetup.dilemma];
+        const wordRanges = [
+          "40-50 words per page",
+          "75-100 words per page",
+          "100-120 words per page",
+          "130-150 words per page"
+        ];
+        const getReadingLevelInstruction = (level) => {
+          if (level === 0) return "Reading level: Early Primary (Grades 1-2). Use only very simple sight words and short sentences of 3-7 words. No complex clauses. Keep vocabulary concrete and familiar.";
+          if (level === 1) return "Reading level: Primary (Grades 3-4). Use simple compound sentences and basic vocabulary. Keep sentences mostly 6-12 words.";
+          if (level === 2) return "Reading level: Junior (Grades 5-6). Use descriptive words and clear structure. Sentences 10-18 words.";
+          return "Reading level: Intermediate (Grades 7-8). Use vivid, spooky, atmospheric vocabulary with varied sentence lengths. Sentences 12-22 words.";
+        };
+        // Compact continuity summary
+        const continuity = makeStateSummary(storyHistory);
+        // Strong JSON schema and constraints
+        const schemaInstruction = `
+Return a single JSON object with this exact shape: { "pages": [string, string, string, string], "imagePrompt": string, "question": string, "choices": [ { "text": string, "isCorrect": boolean, "isGameOver": boolean, "gameOverMessage"?: string }, { "text": string, "isCorrect": boolean, "isGameOver": boolean, "gameOverMessage"?: string }, { "text": string, "isCorrect": boolean, "isGameOver": boolean, "gameOverMessage"?: string } ] } Hard constraints:
 
-          // Scroll to bottom
-          useEffect(() => {
-            if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
-              endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, [currentNode, currentPageIndex, gameState]);
+Exactly 4 pages. Each page must be unique and continue the same scene.
+Meet ${wordRanges[currentSetup.readingLevel]} on every page. Do not underfill.
+The final page (page 4) should include a clear lead-in to a reading comprehension check.
+Provide a question about the chapter.
+Provide 3 choices total. Exactly one 'isCorrect': true. All incorrect choices must have 'isGameOver': true with a short, kid-safe 'gameOverMessage'.
+Keep 'imagePrompt' short and descriptive of the scene only.
+Do not include any additional fields.
+Do not repeat the same sentence or page content.
+Do not use markdown code fences. `; let promptText = `
+Quest Chapter ${turnCount + 1} of 10. Hero: ${char.name} Villain: ${vill.name} Setting: ${sett.name} Plot: ${plot.name} Dilemma: ${dil.name} Player: ${playerName || "Player"} ${getReadingLevelInstruction(currentSetup.readingLevel)} ${schemaInstruction} Continuity: ${continuity} Seed tag: ${currentSeed}_${turnCount} `;
 
-          // Rotating Menu
-          useEffect(() => {
-            if(gameState !== 'menu') return;
-            const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
-            return () => clearInterval(imgInterval);
-          }, [gameState]);
 
-          // Simulated Progress Bar
-          useEffect(() => {
-            let interval;
-            if (gameState === 'loading') {
-              setLoadingProgress(0);
-              interval = setInterval(() => {
-                setLoadingProgress(prev => {
-                  const increment = (100 - prev) * 0.08; 
-                  return prev + increment;
-                });
-              }, 400);
-            }
-            return () => clearInterval(interval);
-          }, [gameState]);
 
-          // --- SYNTH AUDIO ---
-          const playSynthNote = (freq, type, duration, volMod) => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted || !freq) return;
-            try {
-              if (ctx.state === 'suspended') ctx.resume();
-              const osc = ctx.createOscillator();
-              const gainNode = ctx.createGain();
-              osc.type = type;
-              osc.frequency.setValueAtTime(freq, ctx.currentTime);
-              gainNode.gain.setValueAtTime(0, ctx.currentTime);
-              gainNode.gain.linearRampToValueAtTime(musicVolume * volMod, ctx.currentTime + 0.01);
-              gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration - 0.01);
-              osc.connect(gainNode);
-              gainNode.connect(ctx.destination);
-              osc.start();
-              osc.stop(ctx.currentTime + duration);
-            } catch (e) { console.warn("Synth error:", e); }
-          };
-
-          const startSynthEngine = () => {
-            if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
-            if (!synthCtxRef.current) {
-              synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              synthCtx = synthCtxRef.current; 
-            }
-            const track = SYNTH_TRACKS[currentTrack];
-            const stepDuration = 60 / track.tempo / 2; 
-            let step = 0;
-            melodyIntervalRef.current = setInterval(() => {
-              if (isMuted) return;
-              if (step % 4 === 0) {
-                const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
-                if (NOTE_FREQ[bassNote]) playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
-              }
-              let melodySum = 0;
-              let currentMelodyNote = null;
-              for (let i = 0; i < track.melody.length; i++) {
-                const item = track.melody[i];
-                if (step % 16 === melodySum) { currentMelodyNote = item; break; }
-                melodySum += item.dur;
-              }
-              if (currentMelodyNote && NOTE_FREQ[currentMelodyNote.note]) {
-                playSynthNote(NOTE_FREQ[currentMelodyNote.note], "square", stepDuration * currentMelodyNote.dur * 0.9, 0.3);
-              }
-              step = (step + 1) % 16;
-            }, stepDuration * 1000);
-          };
-
-          useEffect(() => {
-            if (!isMuted) startSynthEngine();
-            else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
-            return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
-          }, [isMuted, currentTrack, musicVolume]);
-
-          const triggerLightning = () => {
-             setShowLightning(true);
-             playThunderSynth();
-             setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
-             else setTimeout(playGhostHowl, 800);
-          };
-
-          useEffect(() => {
-            const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
-            return () => clearInterval(lightningInterval);
-          }, [isMuted, musicVolume]);
-
-          // --- TTS ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
-
-          // Keyboard Listeners
-          useEffect(() => {
-            const handleKeyDown = (e) => {
-              if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
-              if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { e.preventDefault(); }
-
-              if (gameState === 'setup') {
-                 const currentDataList = getActiveCategoryList(setupStep);
-                 if (!currentDataList) return;
-                 const numOptions = currentDataList.length;
-
-                 if (e.key === 'ArrowRight') {
-                   setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
-                 } else if (e.key === 'ArrowLeft') {
-                   setSetupFocusIndex(prev => Math.max(prev - 1, 0));
-                 } else if (e.key === 'ArrowDown') {
-                   setSetupFocusIndex(prev => Math.min(prev + 5, numOptions - 1));
-                 } else if (e.key === 'ArrowUp') {
-                   setSetupFocusIndex(prev => Math.max(prev - 5, 0));
-                 } else if (e.key === 'Enter') {
-                   const currentKey = STEPS_KEYS[setupStep];
-                   const nextSetup = { ...setupData, [currentKey]: setupFocusIndex };
-                   setSetupData(nextSetup);
-                   
-                   if (setupStep === 5) {
-                      startGameWithData(nextSetup);
-                   } else {
-                     setSetupStep(prev => prev + 1);
-                     setSetupFocusIndex(0); 
-                   }
-                 }
-              } else if (gameState === 'story' && !errorMsg) {
-                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
-                 
-                 if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
-                     setCurrentPageIndex(p => p - 1);
-                     if (window.speechSynthesis) window.speechSynthesis.cancel();
-                     setIsSpeaking(false);
-                 } else if (!isAtLastPage && (e.key === 'Enter' || e.key === 'ArrowRight')) {
-                   setCurrentPageIndex(p => p + 1);
-                   if (window.speechSynthesis) window.speechSynthesis.cancel();
-                   setIsSpeaking(false);
-                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
-                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
-                   else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
-                   else if (e.key === 'Enter') handleChoice(currentNode.choices[focusedChoice]);
-                 }
-              } else if (gameState === 'menu') {
-                 if (e.key === 'Enter') {
-                    setSetupStep(0); 
-                    setSetupFocusIndex(0);
-                    setGameState('setup');
-                 }
-              }
-            };
-
-            window.addEventListener('keydown', handleKeyDown, { passive: false });
-            return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData]);
-
-          const startGameWithData = (finalSetup) => {
-            setTurnCount(0);
-            setStoryHistory([]);
-            setSessionStartTime(Date.now());
-            setCorrectAnswers(0);
-            setTotalQuestions(0);
-            const seed = Math.random().toString(36).substring(2, 10);
-            setSessionSeed(seed);
-            generateStoryNode(null, finalSetup, seed);
-          };
-
-          const generateStoryNode = async (actionText = null, overrideSetupData = null, overrideSeed = null) => {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            setIsSpeaking(false);
-
-            setGameState('loading');
-            setFocusedChoice(0); 
-            setCurrentPageIndex(0);
-            setLoadingMsg(`Summoning Chapter ${turnCount + 1}...`);
-            setErrorMsg("");
+        if (turnCount === 0) {
+          promptText += "\nWrite an opening that sets the spooky-cool tone and stakes for the dilemma without resolving anything.";
+        } else {
+          promptText += `\nContinue the story logically from the prior choice: "${actionText}". Do not contradict earlier facts.`;
+        }
+        if (turnCount >= 9) {
+          promptText += "\nFINAL CHAPTER: Conclude the plot with a heroic win. The question may be a reflective comprehension check. Choices should still include one correct and two incorrect.";
+        }
+        const systemInstruction = `You are an educational children's author. Obey the reading level strictly and the word-count per page. Output valid JSON only. Do not include backticks or code fences. Avoid repeating content.`;
+        let success = false;
+        let attempts = 0;
+        let lastError = "";
+        while (attempts < 3 && !success) {
+          attempts++;
+          try {
+            if (attempts > 1) await sleep(attempts * 1000);
+            // Deterministic per-chapter seed + slight jitter per attempt
+            const attemptSeed = `${currentSeed}_${turnCount}_try${attempts}_${Math.floor(Math.random()*9999)}`;
+            const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${encodeURIComponent(attemptSeed)}`;
+            const response = await fetch(pollinationUrl);
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
             
-            const currentSetup = overrideSetupData || setupData;
-            const currentSeed = overrideSeed || sessionSeed;
-
-            const char = CATEGORIES.characters[currentSetup.character];
-            const vill = CATEGORIES.villains[currentSetup.villain];
-            const sett = CATEGORIES.settings[currentSetup.setting];
-            const plot = CATEGORIES.plots[currentSetup.plot];
-            const dil = CATEGORIES.dilemmas[currentSetup.dilemma];
-
-            const wordCounts = ["40 to 50 words", "75 to 100 words", "100 to 120 words", "130 to 150 words"];
-            const getReadingLevelInstruction = (level) => {
-              if (level === 0) return "Write like a kindergarten book. Sentences MUST be 3 to 5 words max. Use ONLY baby sight words like: big, red, run, fast, bad, see. NO BIG WORDS allowed.";
-              if (level === 1) return "Write for a 3rd grader. Use simple compound sentences and basic vocabulary.";
-              if (level === 2) return "Write for a 6th grader. Use descriptive words and standard formatting.";
-              return "Write for an 8th grader. Use highly advanced, dark, atmospheric, and spooky vocabulary.";
-            };
-
-            let historyContext = "";
-            if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Previous Choice ${i + 1}: Chosen Option: "${h.chosenAction}"`).join('\n');
+            let rawText = await response.text();
+            const jsonText = cleanJsonText(rawText);
+            let nodeData;
+            try {
+              nodeData = JSON.parse(jsonText);
+            } catch(parseErr) {
+              // Attempt to salvage from common mistake: single quotes
+              const fixed = jsonText.replace(/(['"])?([a-zA-Z0-9_]+)\1\s*:/g, '"$2":')
+                                    .replace(/:\s*'([^']*)'/g, ': "$1"')
+                                    .replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+              nodeData = JSON.parse(fixed);
             }
-
-            let promptText = `
-              Quest Chapter ${turnCount + 1} of 10.
-              - Hero: ${char.name}
-              - Boss: ${vill.name}
-              - Setting: ${sett.name}
-              - Quest Plot: ${plot.name}
-              - Danger: ${dil.name}
-              - Reading level instructions: ${getReadingLevelInstruction(currentSetup.readingLevel)}
-              - Seed: ${currentSeed}_${turnCount}
-            `;
-
-            if (turnCount === 0) {
-              promptText += "\nSetup the plot, setting, and dilemma. Keep a kid-friendly Castlevania spooky tone.";
-            } else {
-              promptText += `\nPast History choices made:\n${historyContext}\nContinue story based on action: "${actionText}".`;
+            // Structural repair if needed
+            if (!nodeData || !Array.isArray(nodeData.pages)) {
+              const fallbackText = nodeData && typeof nodeData.storyText === 'string' ? nodeData.storyText : "";
+              const segments = fallbackText.split(/\n{2,}/).filter(t => t.trim().length > 10);
+              nodeData.pages = segments.length >= 4 ? segments.slice(0, 4) : [
+                "You walk into the shadowed hall. The air is cold. Your steps echo.",
+                "A sharp noise breaks the hush. You look back and see a shape.",
+                "The path splits near old doors. A clue glows on the floor.",
+                "You pause and think. Read the clue closely. What should you do?"
+              ];
             }
-
-            if (turnCount >= 9) {
-              promptText += "\nFINAL CHAPTER. Resolve the plot fully with a heroic win over the villain. set isVictory to true. Do not provide any more questions.";
-            } else {
-              promptText += `
-              \nCRITICAL REQUIREMENTS:
-              1. Return exactly 4 strings in 'pages' array. Page 1 sets scene. Page 2 adds tension. Page 3 has setting detail. Page 4 contains reading comp challenge.
-              2. Keep word counts exactly matching: ${wordCounts[currentSetup.readingLevel]} per page.
-              3. Create a reading comprehension question based on Chapter text, and 2-3 choices. One choice must be 'isCorrect: true', others incorrect with a 'gameOverMessage'.
-              4. 'imagePrompt' must be a short description (unrelated to images, just text scene).
-              `;
-            }
-
-            const systemInstruction = `You are an educational children's book author. Your most important rule is to strictly obey the requested reading level. Output a single JSON block. Do NOT use markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside JSON text strings.`;
-
-            let success = false;
-            let attempts = 0;
-            let lastError = "";
-
-            while (attempts < 3 && !success) {
-              attempts++;
-              try {
-                if (attempts > 1) await sleep(attempts * 1500); 
-
-                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${currentSeed}_${attempts}`;
-                const response = await fetch(pollinationUrl);
-                if (!response.ok) throw new Error(`Status: ${response.status}`);
-                
-                let jsonText = await response.text();
-                jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                
-                const startIdx = jsonText.indexOf('{');
-                const endIdx = jsonText.lastIndexOf('}');
-                if (startIdx !== -1 && endIdx !== -1) {
-                  jsonText = jsonText.substring(startIdx, endIdx + 1);
-                } else {
-                  throw new Error("Formatting Bounds Error");
-                }
-                
-                const nodeData = JSON.parse(jsonText);
-                
-                if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
-                   if (nodeData.storyText) {
-                     const segments = nodeData.storyText.split("\n\n").filter(t => t.trim().length > 10);
-                     nodeData.pages = segments.length >= 4 ? segments.slice(0, 4) : [nodeData.storyText, "You walk carefully into the dim red sunset glow...", "Your footsteps echo against dusty walls...", "You must solve a mystery to proceed."];
-                   } else {
-                     throw new Error("Invalid structure.");
-                   }
-                }
-
-                while (nodeData.pages.length < 4) {
-                  nodeData.pages.push("You carefully explore the quiet sunset hallways...");
-                }
-
-                setCurrentNode(nodeData);
-                if (turnCount === 0) setSessionInitialNode(nodeData); 
-                setCurrentPageIndex(0); 
-                setGameState('story');
-                success = true;
-                
-              } catch (err) {
-                console.warn(`Engine Error (Attempt ${attempts}):`, err.message);
-                lastError = err.message;
-              }
-            }
-
-            if (!success) {
-              try {
-                const localNode = generateLocalNode(turnCount, currentSetup);
-                setCurrentNode(localNode);
-                if (turnCount === 0) setSessionInitialNode(localNode);
-                setCurrentPageIndex(0);
-                setGameState('story');
-              } catch (localErr) {
-                setErrorMsg(`The magical connection was lost, and fallback system failed: ${localErr.message}`);
-                setGameState('story');
-              }
-            }
-          };
-
-          const startGame = () => {
-            const currentKey = STEPS_KEYS[setupStep];
-            const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
-            setSetupData(finalSetup);
-            startGameWithData(finalSetup);
-          };
-
-          const handleChoice = (choice) => {
-            if (currentNode.question) {
-              setTotalQuestions(prev => prev + 1);
-              if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
-            }
-
-            setStoryHistory([...storyHistory, { node: currentNode, chosenAction: choice.text }]);
-            setTurnCount(turnCount + 1);
-
-            if (choice.isGameOver) {
-              setCurrentNode({
-                ...currentNode,
-                pages: [currentNode.pages[currentNode.pages.length - 1] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
-                choices: []
-              });
-              setCurrentPageIndex(0);
-              setGameState('gameover');
-            } else {
-              if (turnCount + 1 >= 10) {
-                 setGameState('victory');
-              } else {
-                 generateStoryNode(choice.text);
-              }
-            }
-          };
-
-          const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
-              <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
-                 <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
-                 <div className="absolute inset-0 bg-[#E65100]/25 mix-blend-color-burn"></div>
-                 <div className="absolute inset-0 bg-black/40"></div>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
-                    <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-amber-500 tracking-wider drop-shadow-[0_0_15px_rgba(230,81,0,1)] w-full text-center break-words leading-tight">
-                      ADVENTUREVANIA
-                    </h1>
-                    <p className="font-terminal text-orange-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(230,81,0,1)]">A Reading Quest</p>
-                 </div>
-              </div>
-
-              <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
-                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
-                  ▶️ Press Enter to Start
-                </button>
-
-                <div className="flex flex-col gap-2 w-full text-left mt-2">
-                    <label className="font-pixel text-[8px] md:text-[10px] text-orange-400 text-center">Student Identification:</label>
-                    <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-[#1c0f0d] border-2 border-red-950 text-orange-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-orange-500" />
-                </div>
-              </div>
-            </div>
-          );
-
-          const renderSetup = () => {
-            const currentDataList = getActiveCategoryList(setupStep);
-            if (!currentDataList) return null;
-            const currentKey = STEPS_KEYS[setupStep];
-
-            return (
-              <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
-                <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
-                  <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
-                    {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
-                  </h2>
-                  <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
-                </div>
-
-                <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
-                    {currentDataList.map((item, idx) => {
-                      const isSelected = setupData[currentKey] === idx;
-                      const isFocused = setupFocusIndex === idx;
-                      return (
-                        <div 
-                          key={idx} 
-                          onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [currentKey]: idx}); }} 
-                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
-                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
-                        >
-                          <div className="text-3xl mb-1">{item.icon}</div>
-                          <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
-                          <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
-                  <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
-                  <div className="flex gap-4">
-                    {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
-                    {setupStep < 5 ? (
-                      <button className="nes-btn green" onClick={() => { 
-                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                        setSetupStep(setupStep + 1); 
-                        setSetupFocusIndex(0);
-                      }}>Next</button>
-                    ) : (
-                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          };
-
-          const renderLoading = () => (
-            <div className="flex flex-col h-full w-full bg-[#180907]">
-              <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
-                <FlappyBatMinigame />
-              </div>
-              
-              <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
-                <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-4">{loadingMsg}</h2>
-                <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
-                  <div className="absolute top-0 left-0 h-full bg-orange-600 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
-                </div>
-                <p className="font-terminal text-xl text-orange-400 mt-2">{Math.floor(Math.min(loadingProgress, 99))}%</p>
-              </div>
-            </div>
-          );
-
-          const renderGameArea = () => {
-            if (!currentNode && !errorMsg) return renderLoading();
-            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
-
-            return (
-              <div className="flex flex-col md:flex-row h-full w-full bg-[#180907] relative overflow-hidden">
-                <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
-                  <div className="flex justify-between items-center bg-[#2d140f] p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
-                    <div className="font-pixel text-[10px] md:text-sm text-amber-500 flex items-center gap-2 animate-pulse">
-                       🗺️ Chapter: {turnCount + 1}/10
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-4">
-                      <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
-                        <span className="font-pixel text-[8px] text-gray-400">A</span>
-                        <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
-                        <span className="font-pixel text-[12px] text-gray-400">A</span>
-                      </div>
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'restart', message: "Are you sure you want to restart this adventure from the beginning?" }); }}>
-                        <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
-                      </button>
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'quit', message: "Are you sure you want to quit to the main menu?" }); }}>
-                        <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
-                    {storyHistory.map((hist, idx) => (
-                      <React.Fragment key={idx}>
-                        {renderStoryNode(hist.node, true, hist.chosenAction)}
-                      </React.Fragment>
-                    ))}
-                    {renderStoryNode(currentNode, false)}
-
-                    {errorMsg && (
-                      <div className="bg-[#5d120d] border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
-                        <div>{errorMsg}</div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
-                      </div>
-                    )}
-                    <div ref={endOfStoryRef} />
-                  </div>
-
-                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-[#2D140F]/95 p-3 md:p-4 border-t-4 border-red-950 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
-                      {!isAtLastPage ? (
-                        <div className="flex w-full max-w-md gap-4">
-                          {currentPageIndex > 0 && (
-                            <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                               ⬅️ Back
-                            </button>
-                          )}
-                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(230,81,0,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                             Next Page 📖 (Enter)
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex w-full max-w-4xl justify-start mb-2">
-                             <button className="nes-btn !bg-stone-900 !text-orange-400 hover:!bg-stone-800 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                               ⬅️ Back to Page {currentPageIndex}
-                             </button>
-                          </div>
-                          <p className="font-pixel text-[9px] text-amber-500/80 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
-                          <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
-                            {currentNode?.choices?.map((choice, idx) => {
-                              const isFocused = focusedChoice === idx;
-                              return (
-                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
-                                  <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-amber-300 font-bold' : ''}`}>{choice.text}</span>
-                                  <span className={`${isFocused ? 'opacity-100 text-orange-500' : 'opacity-0'} shrink-0`}>▶</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {gameState === 'gameover' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-[#3e2723]/95 p-6 border-t-4 border-[#B71C1C] z-10 text-center flex flex-col items-center gap-4">
-                       <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
-                       <div className="flex flex-col md:flex-row gap-4">
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentNode(sessionInitialNode); setTurnCount(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
-                         <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
-                       </div>
-                    </div>
-                  )}
-
-                  {gameState === 'victory' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-[#1b5e20]/95 p-8 border-t-4 border-yellow-500 z-10 text-center">
-                       <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
-                       <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* RIGHT PANE - Custom procedural Sunset scene (Offline ready, zero AI delay!) */}
-                <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
-                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} />
-                </div>
-              </div>
-            );
-          };
-
-          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node || !node.pages) return null;
-            const isAtLastPage = currentPageIndex === node.pages.length - 1;
-            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
-            const showChallenge = isHistory || isAtLastPage;
-
-            return (
-              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
-                <div className="pixel-border bg-black p-4 md:p-6 relative">
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
-
-                  <div className="w-full">
-                     <InteractiveText text={textToDisplay} textSize={textSize} />
-                  </div>
-
-                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {showChallenge && node.question && (
-                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
-                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
-                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
-                        </p>
-                      </div>
-                    )}
-                    {!isHistory && (
-                      <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} className="nes-btn shrink-0">
-                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {isHistory && chosenAction && (
-                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
-                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
-                  </div>
-                )}
-              </div>
-            );
-          };
-
-          const renderAudioPlayer = () => (
-             <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
-                <div className="flex items-center gap-3 justify-between">
-                  <button onClick={() => { if(isMuted) { if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') synthCtxRef.current.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
-                    {isMuted ? '🔇' : '🔊'}
-                  </button>
-                  <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
-                </div>
-                <select className="bg-gray-950 text-orange-400 font-pixel text-[8px] p-1 border border-red-950 outline-none cursor-pointer" value={currentTrack} onChange={(e) => setCurrentTrack(parseInt(e.target.value))}>
-                  {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
-                </select>
+            // Sanitize page content
+            nodeData.pages = nodeData.pages
+              .slice(0, 4)
+              .map(p => (typeof p === 'string' ? p : String(p || "")))
+              .map(p => p.replace(/\s+/g, ' ').trim())
+              .map(p => p.replace(/[“”]/g, '"').replace(/[‘’]/g, "'"));
+            // Enforce counts and variety
+            nodeData.pages = enforceWordCountsAndVariety(nodeData.pages, currentSetup.readingLevel);
+            // Ensure question and choices
+            nodeData.question = typeof nodeData.question === 'string' ? nodeData.question.trim() : "";
+            nodeData.imagePrompt = typeof nodeData.imagePrompt === 'string' ? nodeData.imagePrompt.trim() : `${sett.name}, pixel-art mood`;
+            nodeData = ensureChoices(nodeData, currentSetup.readingLevel, nodeData.pages[3] || "");
+            // Final guard: no empty strings
+            if (nodeData.pages.some(p => !p || p.length < 10)) throw new Error("Pages too short after enforcement.");
+            setCurrentNode(nodeData);
+            if (turnCount === 0) setSessionInitialNode(nodeData); 
+            setCurrentPageIndex(0); 
+            setGameState('story');
+            success = true;
+            
+          } catch (err) {
+            console.warn(`Engine Error (Attempt ${attempts}):`, err.message);
+            lastError = err.message;
+          }
+        }
+        if (!success) {
+          try {
+            const localNode = generateLocalNode(turnCount, currentSetup);
+            // Even for local fallback, enforce counts to feel consistent
+            localNode.pages = enforceWordCountsAndVariety(localNode.pages, currentSetup.readingLevel);
+            const ensured = ensureChoices(localNode, currentSetup.readingLevel, localNode.pages[3] || "");
+            setCurrentNode(ensured);
+            if (turnCount === 0) setSessionInitialNode(ensured);
+            setCurrentPageIndex(0);
+            setGameState('story');
+          } catch (localErr) {
+            setErrorMsg(`The magical connection was lost, and fallback system failed: ${localErr.message}`);
+            setGameState('story');
+          }
+        }
+      };
+      const startGame = () => {
+        const currentKey = STEPS_KEYS[setupStep];
+        const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
+        setSetupData(finalSetup);
+        startGameWithData(finalSetup);
+      };
+      const handleChoice = (choice) => {
+        if (currentNode.question) {
+          setTotalQuestions(prev => prev + 1);
+          if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
+        }
+        setStoryHistory([...storyHistory, { node: currentNode, chosenAction: choice.text }]);
+        setTurnCount(turnCount + 1);
+        if (choice.isGameOver) {
+          setCurrentNode({
+            ...currentNode,
+            pages: [currentNode.pages[currentNode.pages.length - 1] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
+            choices: []
+          });
+          setCurrentPageIndex(0);
+          setGameState('gameover');
+        } else {
+          if (turnCount + 1 >= 10) {
+             setGameState('victory');
+          } else {
+             generateStoryNode(choice.text);
+          }
+        }
+      };
+      const renderMenu = () => (
+        <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
+          <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
+             <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
+             <div className="absolute inset-0 bg-[#E65100]/25 mix-blend-color-burn"></div>
+             <div className="absolute inset-0 bg-black/40"></div>
+             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
+                <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-amber-500 tracking-wider drop-shadow-[0_0_15px_rgba(230,81,0,1)] w-full text-center break-words leading-tight">
+                  ADVENTUREVANIA
+                </h1>
+                <p className="font-terminal text-orange-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(230,81,0,1)]">A Reading Quest</p>
              </div>
-          );
-
-          return (
-            <React.Fragment>
-              <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
-              <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
-              
-              {/* Dynamic Animated Critters Layer */}
-              <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                {critters.map(crit => {
-                  if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
-                  return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
+          </div>
+          <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
+            <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
+              ▶️ Press Enter to Start
+            </button>
+            <div className="flex flex-col gap-2 w-full text-left mt-2">
+                <label className="font-pixel text-[8px] md:text-[10px] text-orange-400 text-center">Student Identification:</label>
+                <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-[#1c0f0d] border-2 border-red-950 text-orange-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-orange-500" />
+            </div>
+          </div>
+        </div>
+      );
+      const renderSetup = () => {
+        const currentDataList = getActiveCategoryList(setupStep);
+        if (!currentDataList) return null;
+        const currentKey = STEPS_KEYS[setupStep];
+        return (
+          <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
+            <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
+              <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
+                {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
+              </h2>
+              <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
+                {currentDataList.map((item, idx) => {
+                  const isSelected = setupData[currentKey] === idx;
+                  const isFocused = setupFocusIndex === idx;
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [currentKey]: idx}); }} 
+                      className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
+                      style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
+                    >
+                      <div className="text-3xl mb-1">{item.icon}</div>
+                      <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
+                      <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
+                    </div>
+                  );
                 })}
               </div>
-
-              {showLightning && <div className="lightning-overlay"></div>}
-              
-              <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
-                
-                {confirmDialog && (
-                  <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-                    <div className="pixel-border bg-[#2d140f] p-6 md:p-8 text-center max-w-sm w-full">
-                      <h3 className="font-pixel text-orange-400 mb-4 text-xl">Are you sure?</h3>
-                      <p className="font-terminal text-xl text-white mb-8 leading-relaxed">
-                        {confirmDialog.message}
-                      </p>
-                      <div className="flex gap-4 justify-center">
-                        <button className="nes-btn green flex-1" onClick={() => {
-                          if (confirmDialog.type === 'restart') {
-                            setCurrentPageIndex(0);
-                            setTurnCount(0);
-                            setStoryHistory([]);
-                            setCorrectAnswers(0);
-                            setTotalQuestions(0);
-                            setGameState('story');
-                            generateStoryNode(null, setupData, sessionSeed);
-                          } else if (confirmDialog.type === 'quit') {
-                            setGameState('menu');
-                          }
-                          setConfirmDialog(null);
-                        }}>Yes</button>
-                        <button className="nes-btn red flex-1" onClick={() => setConfirmDialog(null)}>No</button>
-                      </div>
-                    </div>
+            </div>
+            <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
+              <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
+              <div className="flex gap-4">
+                {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
+                {setupStep < 5 ? (
+                  <button className="nes-btn green" onClick={() => { 
+                    setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                    setSetupStep(setupStep + 1); 
+                    setSetupFocusIndex(0);
+                  }}>Next</button>
+                ) : (
+                  <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      };
+      const renderLoading = () => (
+        <div className="flex flex-col h-full w-full bg-[#180907]">
+          <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
+            <FlappyBatMinigame />
+          </div>
+          
+          <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
+            <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-4">{loadingMsg}</h2>
+            <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
+              <div className="absolute top-0 left-0 h-full bg-orange-600 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
+            </div>
+            <p className="font-terminal text-xl text-orange-400 mt-2">{Math.floor(Math.min(loadingProgress, 99))}%</p>
+          </div>
+        </div>
+      );
+      const renderGameArea = () => {
+        if (!currentNode && !errorMsg) return renderLoading();
+        const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+        return (
+          <div className="flex flex-col md:flex-row h-full w-full bg-[#180907] relative overflow-hidden">
+            <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
+              <div className="flex justify-between items-center bg-[#2d140f] p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
+                <div className="font-pixel text-[10px] md:text-sm text-amber-500 flex items-center gap-2 animate-pulse">
+                   🗺️ Chapter: {turnCount + 1}/10
+                </div>
+                <div className="flex items-center gap-2 md:gap-4">
+                  <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
+                    <span className="font-pixel text-[8px] text-gray-400">A</span>
+                    <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
+                    <span className="font-pixel text-[12px] text-gray-400">A</span>
+                  </div>
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'restart', message: "Are you sure you want to restart this adventure from the beginning?" }); }}>
+                    <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
+                  </button>
+                  <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'quit', message: "Are you sure you want to quit to the main menu?" }); }}>
+                    <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
+                  </button>
+                </div>
+              </div>
+              <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
+                {storyHistory.map((hist, idx) => (
+                  <React.Fragment key={idx}>
+                    {renderStoryNode(hist.node, true, hist.chosenAction)}
+                  </React.Fragment>
+                ))}
+                {renderStoryNode(currentNode, false)}
+                {errorMsg && (
+                  <div className="bg-[#5d120d] border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
+                    <div>{errorMsg}</div>
+                    <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
                   </div>
                 )}
-
-                <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
-                  {renderAudioPlayer()}
-
-                  <div className="flex-grow h-full flex flex-col overflow-hidden relative">
-                    {gameState === 'menu' && renderMenu()}
-                    {gameState === 'setup' && renderSetup()}
-                    {gameState === 'loading' && renderLoading()}
-                    {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
+                <div ref={endOfStoryRef} />
+              </div>
+              {(gameState === 'story') && !errorMsg && currentNode?.pages && (
+                <div className="absolute bottom-0 left-0 right-0 bg-[#2D140F]/95 p-3 md:p-4 border-t-4 border-red-950 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
+                  {!isAtLastPage ? (
+                    <div className="flex w-full max-w-md gap-4">
+                      {currentPageIndex > 0 && (
+                        <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                           ⬅️ Back
+                        </button>
+                      )}
+                      <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(230,81,0,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                         Next Page 📖 (Enter)
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex w-full max-w-4xl justify-start mb-2">
+                         <button className="nes-btn !bg-stone-900 !text-orange-400 hover:!bg-stone-800 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                           ⬅️ Back to Page {currentPageIndex}
+                         </button>
+                      </div>
+                      <p className="font-pixel text-[9px] text-amber-500/80 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
+                      <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
+                        {currentNode?.choices?.map((choice, idx) => {
+                          const isFocused = focusedChoice === idx;
+                          return (
+                            <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
+                              <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-amber-300 font-bold' : ''}`}>{choice.text}</span>
+                              <span className={`${isFocused ? 'opacity-100 text-orange-500' : 'opacity-0'} shrink-0`}>▶</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              {gameState === 'gameover' && (
+                <div className="absolute bottom-0 left-0 right-0 bg-[#3e2723]/95 p-6 border-t-4 border-[#B71C1C] z-10 text-center flex flex-col items-center gap-4">
+                   <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
+                   <div className="flex flex-col md:flex-row gap-4">
+                     <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentNode(sessionInitialNode); setTurnCount(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
+                     <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
+                   </div>
+                </div>
+              )}
+              {gameState === 'victory' && (
+                <div className="absolute bottom-0 left-0 right-0 bg-[#1b5e20]/95 p-8 border-t-4 border-yellow-500 z-10 text-center">
+                   <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
+                   <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
+                   <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
+                </div>
+              )}
+            </div>
+            
+            <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
+                <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} />
+            </div>
+          </div>
+        );
+      };
+      const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
+        if (!node || !node.pages) return null;
+        const isAtLastPage = currentPageIndex === node.pages.length - 1;
+        const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
+        const showChallenge = isHistory || isAtLastPage;
+        return (
+          <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
+            <div className="pixel-border bg-black p-4 md:p-6 relative">
+              <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
+              <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
+              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+              <div className="w-full">
+                 <InteractiveText text={textToDisplay} textSize={textSize} />
+              </div>
+              <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                {showChallenge && node.question && (
+                  <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
+                    <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                      <span className="text-yellow-400">CHALLENGE:</span> {node.question}
+                    </p>
+                  </div>
+                )}
+                {!isHistory && (
+                  <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} className="nes-btn shrink-0">
+                    {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {isHistory && chosenAction && (
+              <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
+                <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
+              </div>
+            )}
+          </div>
+        );
+      };
+      const renderAudioPlayer = () => (
+         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-3 justify-between">
+              <button onClick={() => { if(isMuted) { if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') synthCtxRef.current.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
+                {isMuted ? '🔇' : '🔊'}
+              </button>
+              <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
+            </div>
+            <select className="bg-gray-950 text-orange-400 font-pixel text-[8px] p-1 border border-red-950 outline-none cursor-pointer" value={currentTrack} onChange={(e) => setCurrentTrack(parseInt(e.target.value))}>
+              {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
+            </select>
+         </div>
+      );
+      return (
+        <React.Fragment>
+          <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
+          <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
+          
+          <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+            {critters.map(crit => {
+              if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
+              return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
+            })}
+          </div>
+          {showLightning && <div className="lightning-overlay"></div>}
+          
+          <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
+            
+            {confirmDialog && (
+              <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+                <div className="pixel-border bg-[#2d140f] p-6 md:p-8 text-center max-w-sm w-full">
+                  <h3 className="font-pixel text-orange-400 mb-4 text-xl">Are you sure?</h3>
+                  <p className="font-terminal text-xl text-white mb-8 leading-relaxed">
+                    {confirmDialog.message}
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <button className="nes-btn green flex-1" onClick={() => {
+                      if (confirmDialog.type === 'restart') {
+                        setCurrentPageIndex(0);
+                        setTurnCount(0);
+                        setStoryHistory([]);
+                        setCorrectAnswers(0);
+                        setTotalQuestions(0);
+                        setGameState('story');
+                        generateStoryNode(null, setupData, sessionSeed);
+                      } else if (confirmDialog.type === 'quit') {
+                        setGameState('menu');
+                      }
+                      setConfirmDialog(null);
+                    }}>Yes</button>
+                    <button className="nes-btn red flex-1" onClick={() => setConfirmDialog(null)}>No</button>
                   </div>
                 </div>
               </div>
-            </React.Fragment>
-          );
-        }
+            )}
+            <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
+              {renderAudioPlayer()}
+              <div className="flex-grow h-full flex flex-col overflow-hidden relative">
+                {gameState === 'menu' && renderMenu()}
+                {gameState === 'setup' && renderSetup()}
+                {gameState === 'loading' && renderLoading()}
+                {(gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && renderGameArea()}
+              </div>
+            </div>
+          </div>
+        </React.Fragment>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ErrorBoundary><Adventurevania /></ErrorBoundary>);
+</script>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ErrorBoundary><Adventurevania /></ErrorBoundary>);
-    </script>
-</body>
-</html>
+
+
