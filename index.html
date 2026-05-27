@@ -146,18 +146,6 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
-
-      /* Story Book Columns */
-      .story-columns {
-        column-count: 1;
-        column-gap: 2rem;
-      }
-      @media (min-width: 768px) {
-        .story-columns {
-          column-count: 2;
-          column-rule: 2px dashed #4A00E0;
-        }
-      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -288,9 +276,9 @@
             { name: "Accused of Crime", icon: "⚖️", desc: "The town thinks YOU did it!" }
           ],
           readingLevels: [
-            { name: "Early Primary", icon: "🧸", desc: "Short sentences & simple words." },
-            { name: "Primary", icon: "🎒", desc: "Grade 1-3 reading level." },
-            { name: "Junior", icon: "📚", desc: "Grade 4-6 reading level." },
+            { name: "Early Primary", icon: "🧸", desc: "Grades 1-2 reading level." },
+            { name: "Primary", icon: "🎒", desc: "Grade 3-4 reading level." },
+            { name: "Junior", icon: "📚", desc: "Grade 5-6 reading level." },
             { name: "Intermediate", icon: "🎓", desc: "Grade 7-8 reading level." }
           ]
         };
@@ -492,6 +480,9 @@
           const [currentNode, setCurrentNode] = useState(null);
           const [currentPageIndex, setCurrentPageIndex] = useState(0);
           const [turnCount, setTurnCount] = useState(0);
+          const [sessionInitialNode, setSessionInitialNode] = useState(null); // Keep starting node for 'Restart Same Adventure'
+          const [sessionSeed, setSessionSeed] = useState("");
+          const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
           
           // Analytics & Tracking State
           const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -913,6 +904,7 @@
 
             const trackingData = {
               timestamp: new Date().toISOString(),
+              playerName: playerName || "Anonymous Player",
               character: CATEGORIES.characters[setupData.character].name,
               villain: CATEGORIES.villains[setupData.villain].name,
               outcome: outcome,
@@ -959,15 +951,14 @@
             const currentSubject = subjects[turnCount % subjects.length];
 
             const levelInstructions = [
-              "Difficulty: Grades 1-2 (Early Primary). Use simple sentences and basic vocabulary. Math: basic addition/subtraction. Language: sight words, simple spelling. Science/Social: basic community/nature facts.",
-              "Difficulty: Grades 3-4 (Primary). Use engaging standard sentences. Math: multiplication/division. Language: nouns, verbs, reading comprehension. Science/Social: habitats, states of matter, simple maps.",
-              "Difficulty: Grades 5-6 (Junior). Use descriptive language. Math: fractions, decimals, basic geometry. Language: complex grammar, inferences. Science/Social: ecosystems, history, simple physics.",
-              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric narrative with deep descriptions and advanced vocabulary. Math: algebra, advanced fractions. Language: advanced vocabulary, literary devices. Science/Social: biology, world history, complex mechanics."
+              "Difficulty: Grades 1-2 (Early Primary). Math: basic addition/subtraction. Language: sight words. Science/Social: basic nature facts.",
+              "Difficulty: Grades 3-4 (Primary). Math: multiplication/division. Language: nouns, verbs. Science/Social: habitats, states of matter.",
+              "Difficulty: Grades 5-6 (Junior). Math: fractions, decimals. Language: inferences. Science/Social: ecosystems, history.",
+              "Difficulty: Grades 7-8 (Intermediate). Math: algebra. Language: literary devices. Science/Social: biology, world history."
             ];
 
             let historyContext = "";
             if (storyHistory.length > 0) {
-              // Give AI context so it doesn't repeat past puzzles or scenarios
               historyContext = storyHistory.map((h, i) => `Turn ${i + 1}: Player faced plot puzzle "${h.node.question}". Player chose "${h.chosenAction}".`).join('\n');
             }
 
@@ -980,7 +971,7 @@
               - Central Dilemma: ${dil.name}
               - Turn Count: ${turnCount} out of 10.
               - Reading & Curriculum Level: ${levelInstructions[setupData.readingLevel]}
-              - Randomizer Seed: ${Math.random()} (Ensure maximum uniqueness)
+              - Randomizer Seed: ${sessionSeed}_${turnCount} (Ensure deterministic but unique generation per turn)
             `;
 
             if (turnCount === 0) {
@@ -994,8 +985,8 @@
             } else {
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
-              1. Write the story segment divided into an array of at least 4 distinct "pages" (strings). Each string represents a separate page of reading that advances the plot. Scale the length and vocabulary strictly to the Reading Level constraints provided.
-              2. Weave an educational challenge based on: ${currentSubject} deeply into the plot (like the show Odd Squad). The characters must use this curriculum concept to solve a practical problem to advance (e.g., using multiplication to configure a machine, or understanding ecosystems to pacify a creature). DO NOT just insert a random quiz; make it a narrative puzzle.
+              1. Write the story segment divided into an array of EXACTLY 4 distinct "pages" (strings). CRITICAL REQUIREMENT: EVERY SINGLE PAGE MUST BE BETWEEN 200 AND 250 WORDS LONG. The primary goal is reading practice, so expand heavily on lore, atmosphere, and character dialogue to meet this length.
+              2. Weave an educational challenge based on: ${currentSubject} deeply into the plot. The characters must use this curriculum concept to solve a practical problem to advance. DO NOT just insert a random quiz; make it a narrative puzzle.
               3. State the question or puzzle clearly in the "question" field.
               4. Provide 2 or 3 "choices" representing attempts to solve the problem.
                  - At least one choice MUST be the correct educational application (set 'isCorrect' to true).
@@ -1018,7 +1009,7 @@
                   properties: {
                     pages: {
                       type: "ARRAY",
-                      description: "Array of strings representing pages of story text. Must have at least 4 elements.",
+                      description: "Array of exactly 4 strings representing pages of story text.",
                       items: { type: "STRING" }
                     },
                     imagePrompt: { type: "STRING" },
@@ -1042,6 +1033,10 @@
             };
 
             try {
+              if (!apiKey || apiKey === "") {
+                throw new Error("No primary Google Gemini API Key configured.");
+              }
+
               const response = await fetchWithRetry(fullApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1064,13 +1059,13 @@
               
               const nodeData = JSON.parse(jsonText);
               
-              // Fallback protection just in case AI returns storyText instead of pages array
               if (!nodeData.pages && nodeData.storyText) {
                  nodeData.pages = [nodeData.storyText];
               }
               
               setCurrentNode(nodeData);
-              setCurrentPageIndex(0); // Reset to first page
+              if (turnCount === 0) setSessionInitialNode(nodeData); // Keep for restart
+              setCurrentPageIndex(0); 
               
               if (nodeData.isVictory) {
                 setGameState('victory');
@@ -1081,9 +1076,9 @@
             } catch (err) {
               console.warn("API Error (Safe local story generator activated):", err.message);
               
-              // SEAMLESS FALLBACK: Trigger local procedural curriculum story segment immediately!
               const localNode = generateLocalNode(turnCount, setupData);
               setCurrentNode(localNode);
+              if (turnCount === 0) setSessionInitialNode(localNode);
               setCurrentPageIndex(0);
               
               if (localNode.isVictory) {
@@ -1124,6 +1119,7 @@
             setSessionStartTime(Date.now());
             setCorrectAnswers(0);
             setTotalQuestions(0);
+            setSessionSeed(Math.random().toString(36).substring(2, 10));
             generateStoryNode();
           };
 
@@ -1143,7 +1139,7 @@
 
               const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
               await setDoc(docRef, {
-                setupData, storyHistory, currentNode, turnCount, gameState, timestamp: new Date().toISOString()
+                setupData, storyHistory, currentNode, turnCount, gameState, sessionSeed, sessionInitialNode, playerName, timestamp: new Date().toISOString()
               });
               setSaveCode(code);
             } catch (e) {
@@ -1162,6 +1158,9 @@
                 const data = docSnap.data();
                 setSetupData(data.setupData); setStoryHistory(data.storyHistory);
                 setCurrentNode(data.currentNode); setTurnCount(data.turnCount);
+                setSessionSeed(data.sessionSeed || "");
+                setSessionInitialNode(data.sessionInitialNode || data.currentNode);
+                if (data.playerName) setPlayerName(data.playerName);
                 setCurrentPageIndex(0);
                 setGameState(data.gameState === 'gameover' ? 'gameover' : (data.gameState === 'victory' ? 'victory' : 'story'));
                 setSaveCode(null); setSessionStartTime(Date.now()); 
@@ -1209,6 +1208,21 @@
                   </div>
                   {errorMsg && <p className="font-terminal text-red-500 text-xl">{errorMsg}</p>}
                 </div>
+
+                <div className="flex flex-col gap-2 w-full text-left mt-2">
+                    <label className="font-pixel text-[8px] md:text-[10px] text-gray-400 text-center">Student Identification:</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter Player Name..." 
+                      value={playerName}
+                      onChange={(e) => {
+                        setPlayerName(e.target.value);
+                        localStorage.setItem('adventurevania_player', e.target.value);
+                      }}
+                      className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500"
+                    />
+                </div>
+
               </div>
             </div>
           );
@@ -1436,11 +1450,22 @@
                   )}
 
                   {gameState === 'gameover' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-8 border-t-4 border-red-600 z-10 text-center">
-                       <h2 className="font-pixel text-3xl text-red-400 mb-6 flex items-center justify-center gap-4">
+                    <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-6 border-t-4 border-red-600 z-10 text-center flex flex-col items-center gap-4">
+                       <h2 className="font-pixel text-2xl md:text-3xl text-red-400 flex items-center justify-center gap-4">
                          💀 GAME OVER 💀
                        </h2>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                       <div className="flex flex-col md:flex-row gap-4">
+                         <button className="nes-btn text-xs md:text-sm green" onClick={() => {
+                            setCurrentNode(sessionInitialNode);
+                            setTurnCount(0);
+                            setStoryHistory([]);
+                            setCurrentPageIndex(0);
+                            setCorrectAnswers(0);
+                            setTotalQuestions(0);
+                            setGameState('story');
+                         }}>Restart This Adventure</button>
+                         <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
+                       </div>
                     </div>
                   )}
 
