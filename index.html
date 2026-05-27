@@ -146,6 +146,18 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
+
+      /* Story Book Columns */
+      .story-columns {
+        column-count: 1;
+        column-gap: 2rem;
+      }
+      @media (min-width: 768px) {
+        .story-columns {
+          column-count: 2;
+          column-rule: 2px dashed #4A00E0;
+        }
+      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -283,14 +295,13 @@
           ]
         };
 
-        // Text padder to aggressively ensure the local fallback reaches 200 words per page
+        // Text padder to aggressively ensure the local fallback reaches 100-120 words per page
         const padText = (baseText, char, sett, vill) => {
-          const filler1 = ` The air in the ${sett.name} feels remarkably heavy, carrying the scent of ancient dust and forgotten secrets. ${char.name} looks around cautiously, every shadow seeming to dance and writhe in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training, the preparation, and the long journey that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. You know that ${vill.name} is watching, waiting for a single mistake. The walls themselves seem to whisper warnings, urging you to turn back, but your resolve hardens. You grip your gear tightly, taking a deep breath of the cold, stale air. `;
-          const filler2 = ` Despite the overwhelming odds, ${char.name} refuses to back down. The architecture of the ${sett.name} is mind-boggling, with twisted corridors and impossible geometry that defies logic. You think about the people relying on you, the stakes of the mission, and the terrifying consequences of failure. A strange, eerie glow illuminates the path ahead, casting long, distorted silhouettes. You can almost feel the dark magic pulsating through the floorboards. ${vill.name}'s influence is everywhere, corrupting the very essence of this place. Yet, a spark of hope remains. You recall ancient legends of heroes who faced similar darkness and emerged victorious. You steel your nerves, knowing that the next few moments will test not just your knowledge, but your spirit. `;
-          return baseText + filler1 + filler2;
+          const filler1 = ` The air in the ${sett.name} feels remarkably heavy, carrying the scent of ancient dust and forgotten secrets. ${char.name} looks around cautiously, every shadow seeming to dance in the dim light. The sheer magnitude of the quest weighs heavily on your shoulders. You remember the training that brought you to this exact moment. Every footstep echoes loudly, a constant reminder of the isolation. You know that ${vill.name} is watching, waiting for a single mistake. `;
+          return baseText + filler1;
         };
 
-        // Local Procedural Story Engine Fallback - Now heavily padded to hit word counts
+        // Local Procedural Story Engine Fallback - Tuned to 100-120 words and reading comprehension
         const generateLocalNode = (turn, setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
@@ -298,11 +309,13 @@
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
 
-          const mathQuestions = [
-            { q: "You must solve this puzzle to open the door: What is 12 multiplied by 3?", a: "36", w1: "24", w2: "15", m1: "A phantom blast knocks you back!", m2: "The lock traps you in stone!" }
+          const compQuestions = [
+            { q: `What color was the smoke when ${vill.name} appeared?`, a: "Purple", w1: "Green", w2: "Black", m1: "The smoke surrounds you!", m2: "You cough and lose your way!" },
+            { q: `What made a sudden crash at the start of your journey?`, a: "Thunder", w1: "A falling rock", w2: "A slamming door", m1: "You jump at the wrong sound!", m2: "The noise deafens you!" },
+            { q: `What kind of staircase did you have to climb?`, a: "A winding stone staircase", w1: "A wooden ladder", w2: "A rope bridge", m1: "You slip and fall back!", m2: "The stairs crumble beneath you!" }
           ];
 
-          let qData = mathQuestions[0]; 
+          let qData = compQuestions[turn % compQuestions.length]; 
 
           let pages = [];
           if (turn === 0) {
@@ -310,11 +323,11 @@
               padText(`With a sudden crash of thunder, ${char.name} steps into the spooky, shadowed corridors of the ${sett.name}.`, char, sett, vill),
               padText(`Your ultimate mission is to ${plot.name}, but you feel the chilling weight of being ${dil.name} already.`, char, sett, vill),
               padText(`The flickering torches cast long, strange shadows against the ancient stone walls, making every corner look like a lurking monster.`, char, sett, vill),
-              padText(`Suddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, weaving a curriculum trap into the very architecture of the room.`, char, sett, vill)
+              padText(`Suddenly, the terrifying ${vill.name} appears in a puff of purple smoke! "You'll never succeed!" they cackle, weaving a trap into the architecture of the room.`, char, sett, vill)
             ];
           } else if (turn === 10) {
             pages = [
-              padText(`AMAZING! After overcoming all of ${vill.name}'s treacherous curriculum traps, ${char.name} finally reaches the heart of the ${sett.name}.`, char, sett, vill),
+              padText(`AMAZING! After overcoming all of ${vill.name}'s treacherous traps, ${char.name} finally reaches the heart of the ${sett.name}.`, char, sett, vill),
               padText(`With one final burst of clever thinking, you fully resolve the plot to ${plot.name}!`, char, sett, vill),
               padText(`The spooky shadows melt away, and a bright morning sun rises over the horizon.`, char, sett, vill),
               padText(`You have conquered Adventurevania! The realm is safe once more thanks to your heroic efforts and sharp mind.`, char, sett, vill)
@@ -330,7 +343,7 @@
               padText(`Carefully pressing forward, ${char.name} moves deeper into the damp shadows of the ${sett.name}.`, char, sett, vill),
               padText(`With a sudden flash of lightning, the walls rattle around you. You are still dealing with being ${dil.name}.`, char, sett, vill),
               padText(`You climb a winding stone staircase, staying alert for traps as a shadow flutters past!`, char, sett, vill),
-              padText(`You reach a giant wooden door. ${vill.name} has laid a new curriculum trap to stop you!`, char, sett, vill)
+              padText(`You reach a giant wooden door. ${vill.name} has laid a new trap to stop you!`, char, sett, vill)
             ];
           }
 
@@ -954,14 +967,11 @@
             const plot = CATEGORIES.plots[setupData.plot];
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
-            const subjects = ["Math", "Language Arts", "Science", "Social Studies"];
-            const currentSubject = subjects[turnCount % subjects.length];
-
             const levelInstructions = [
-              "Difficulty: Grades 1-2 (Early Primary). Math: basic addition/subtraction. Language: sight words. Science/Social: basic nature facts. Format constraint: Write with high detail to ensure length constraints.",
-              "Difficulty: Grades 3-4 (Primary). Math: multiplication/division. Language: nouns, verbs. Science/Social: habitats, states of matter. Format constraint: Use vivid adjectives to ensure length constraints.",
-              "Difficulty: Grades 5-6 (Junior). Math: fractions, decimals. Language: inferences. Science/Social: ecosystems, history. Format constraint: Use elaborate world-building to ensure length constraints.",
-              "Difficulty: Grades 7-8 (Intermediate). Math: algebra. Language: literary devices. Science/Social: biology, world history. Format constraint: Write densely and atmospherically to ensure length constraints."
+              "Difficulty: Grades 1-2 (Early Primary). Use simple sentences and basic vocabulary. Reading Comprehension: Ask a basic, direct recall question about a clear fact just mentioned in the text.",
+              "Difficulty: Grades 3-4 (Primary). Use engaging standard sentences. Reading Comprehension: Ask a question that requires connecting two details or understanding basic character motivations from the text.",
+              "Difficulty: Grades 5-6 (Junior). Use descriptive language. Reading Comprehension: Ask an inferential question where the answer is implied but not explicitly stated in the text.",
+              "Difficulty: Grades 7-8 (Intermediate). Use extensive, atmospheric narrative with advanced vocabulary. Reading Comprehension: Ask a complex analytical question about themes, subtle clues, or complex character dynamics in the text."
             ];
 
             let historyContext = "";
@@ -980,7 +990,7 @@
               - Reading & Curriculum Level: ${levelInstructions[setupData.readingLevel]}
               - Randomizer Seed: ${sessionSeed}_${turnCount} (Ensure deterministic but unique generation per turn)
               
-              CRITICAL LENGTH INSTRUCTION: You are generating a BOOK. Each page must be LONG. You must write EXACTLY 4 pages. Each individual page MUST be between 200 and 250 words. Use rich adjectives, inner thoughts, dialogue, and environmental storytelling to reach this length. DO NOT output short pages.
+              CRITICAL LENGTH INSTRUCTION: You are generating a BOOK. Each page must be reasonably detailed. You must write EXACTLY 4 pages. Each individual page MUST be between 100 and 120 words.
             `;
 
             if (turnCount === 0) {
@@ -995,12 +1005,12 @@
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
               1. Write the story segment divided into an array of EXACTLY 4 distinct "pages" (strings). 
-              2. ABSOLUTE CRITICAL REQUIREMENT: EVERY SINGLE PAGE IN THE ARRAY MUST BE A MINIMUM OF 200 WORDS AND MAXIMUM OF 250 WORDS. YOU MUST EXPAND ON LORE, ENVIRONMENT, CHARACTER FEELINGS, AND DIALOGUE TO ENSURE EACH OF THE 4 PAGES IS VERY LONG. DO NOT GIVE SHORT SUMMARIES.
-              3. Weave an educational challenge based on: ${currentSubject} deeply into the plot on the FINAL page. The characters must use this curriculum concept to solve a practical problem to advance. DO NOT just insert a random quiz; make it a narrative puzzle.
+              2. ABSOLUTE CRITICAL REQUIREMENT: EVERY SINGLE PAGE IN THE ARRAY MUST BE A MINIMUM OF 100 WORDS AND MAXIMUM OF 120 WORDS.
+              3. Create a reading comprehension question based STRICTLY on the story you just wrote on the FINAL page. The question's difficulty must match the Reading Level constraint. DO NOT ask external math or science questions; it must be about the text.
               4. State the question or puzzle clearly in the "question" field.
-              5. Provide 2 or 3 "choices" representing attempts to solve the problem.
-                 - At least one choice MUST be the correct educational application (set 'isCorrect' to true).
-                 - At least one choice MUST be an incorrect application (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
+              5. Provide 2 or 3 "choices" representing answers to the reading comprehension question.
+                 - At least one choice MUST be the correct reading comprehension answer (set 'isCorrect' to true).
+                 - At least one choice MUST be an incorrect answer (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
               6. Provide an "imagePrompt" field containing a short visual description of the scene to generate an 8-bit image.
               `;
             }
@@ -1019,7 +1029,7 @@
                   properties: {
                     pages: {
                       type: "ARRAY",
-                      description: "Array of exactly 4 strings representing pages of story text. Each string MUST be 200-250 words.",
+                      description: "Array of exactly 4 strings representing pages of story text. Each string MUST be 100-120 words.",
                       items: { type: "STRING" }
                     },
                     imagePrompt: { type: "STRING" },
