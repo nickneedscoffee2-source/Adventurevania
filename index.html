@@ -681,6 +681,154 @@
           );
         }
 
+        // --- FLAPPY BAT MINIGAME COMPONENT ---
+        const FlappyBatMinigame = () => {
+          const canvasRef = useRef(null);
+
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let animationFrameId;
+
+            let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+            let pipes = [];
+            let score = 0;
+            let gameOver = false;
+            let frameCount = 0;
+
+            const drawBat = (x, y, size) => {
+              ctx.fillStyle = '#ffb300'; // Golden sunset bat
+              ctx.fillRect(x, y + size/3, size, size/3); // body
+              if (Math.floor(frameCount / 8) % 2 === 0) {
+                ctx.fillRect(x - size/2, y, size/2, size/2); 
+                ctx.fillRect(x + size, y, size/2, size/2); 
+              } else {
+                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); 
+                ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+              }
+              ctx.fillStyle = '#ff2222'; 
+              ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
+            };
+
+            const update = () => {
+              if (gameOver) return;
+              bat.velocity += bat.gravity;
+              bat.y += bat.velocity;
+
+              if (bat.y > canvas.height - bat.size || bat.y < 0) {
+                gameOver = true;
+              }
+
+              if (frameCount % 110 === 0) {
+                const gap = 120;
+                const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
+                pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 45 });
+              }
+
+              pipes.forEach(p => {
+                p.x -= 2.5;
+                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
+                  if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
+                    gameOver = true;
+                  }
+                }
+                if (!p.passed && bat.x > p.x + p.width) {
+                  p.passed = true;
+                  score++;
+                }
+              });
+
+              pipes = pipes.filter(p => p.x + p.width > 0);
+              frameCount++;
+            };
+
+            const draw = () => {
+              ctx.fillStyle = '#1c0f0d'; // Warm dark background
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              pipes.forEach(p => {
+                ctx.fillStyle = '#d84315'; // Sunset brick orange
+                ctx.fillRect(p.x, 0, p.width, p.topHeight);
+                ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.strokeStyle = '#3e2723';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(p.x, 0, p.width, p.topHeight);
+                ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+              });
+
+              drawBat(bat.x, bat.y, bat.size);
+
+              ctx.fillStyle = 'white';
+              ctx.font = '16px "Press Start 2P", monospace';
+              ctx.fillText(`SCORE:${score}`, 10, 30);
+
+              if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ef4444';
+                ctx.textAlign = 'center';
+                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+                ctx.fillStyle = 'white';
+                ctx.font = '10px "Press Start 2P", monospace';
+                ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
+                ctx.textAlign = 'left';
+              }
+            };
+
+            const loop = () => {
+              update();
+              draw();
+              animationFrameId = window.requestAnimationFrame(loop);
+            };
+
+            loop();
+
+            const handleInput = (e) => {
+              if (e.type === 'keydown' && e.code === 'Space') {
+                e.preventDefault();
+              }
+              if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
+
+              if (gameOver) {
+                bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+                pipes = [];
+                score = 0;
+                gameOver = false;
+                frameCount = 0;
+              } else {
+                bat.velocity = bat.jump;
+              }
+            };
+
+            window.addEventListener('keydown', handleInput, { passive: false });
+            canvas.addEventListener('touchstart', handleInput, { passive: false });
+            canvas.addEventListener('mousedown', handleInput);
+
+            return () => {
+              window.cancelAnimationFrame(animationFrameId);
+              window.removeEventListener('keydown', handleInput);
+              canvas.removeEventListener('touchstart', handleInput);
+              canvas.removeEventListener('mousedown', handleInput);
+            };
+          }, []);
+
+          return (
+            <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
+              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
+                Play Flappy Bat while the AI writes your book!
+              </p>
+              <canvas 
+                ref={canvasRef} 
+                width={480} 
+                height={280} 
+                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full"
+              />
+              <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
+            </div>
+          );
+        };
+
         // --- MAIN APP ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
@@ -824,25 +972,40 @@
             } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
           };
 
+          // Initialize Firebase Auth compat listener safely
           useEffect(() => {
-            return () => { 
-              if (window.speechSynthesis) window.speechSynthesis.cancel(); 
-              if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            const initAuth = async () => {
+              if(!fbAuth) return;
+              try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
+                } else {
+                  await signInAnonymously(fbAuth);
+                }
+              } catch (err) { console.error("Auth Error", err); }
+            };
+            initAuth();
+            if (fbAuth) {
+              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+              return () => unsubscribe();
             }
           }, []);
 
+          // Scroll to bottom
           useEffect(() => {
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
           }, [currentNode, currentPageIndex, gameState]);
 
+          // Rotating Menu
           useEffect(() => {
             if(gameState !== 'menu') return;
             const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
             return () => clearInterval(imgInterval);
           }, [gameState]);
 
+          // Simulated Progress Bar
           useEffect(() => {
             let interval;
             if (gameState === 'loading') {
@@ -1026,22 +1189,6 @@
             const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
-
-          // --- TTS ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
 
           // Keyboard Listeners
           useEffect(() => {
