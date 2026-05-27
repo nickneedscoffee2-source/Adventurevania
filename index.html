@@ -314,31 +314,40 @@
           const sett = CATEGORIES.settings[setup.setting];
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
+          const level = setup.readingLevel;
 
-          const padSentence = (index) => {
-            const fillers = [
-              "The ground crumbles. Safe passages require calculating geometric coordinates.",
-              "Ancient runes spell out hidden routes. Deciphering spelling patterns holds the magic.",
-              "Unstable elements block the door. Balanced ecosystem attributes show the key.",
-              "A structural fault shifts. Understanding gravitational mass lets you cross."
+          let p1, p2, p3, p4, q, choices;
+
+          // Strongly responsive to Grade 1 vs advanced fallbacks
+          if (level === 0 || level === 1) {
+            p1 = `The sky is dark. ${char.name} walks into the ${sett.name}. It is very scary.`;
+            p2 = `There is a loud noise! The bad ${vill.name} is here.`;
+            p3 = `Oh no! The ${vill.name} wants to stop you from getting to the end.`;
+            p4 = `You must solve a fast puzzle to open the big door and win.`;
+            q = `Who made the loud noise?`;
+            choices = [
+              { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
+              { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" },
+              { text: `A sleeping cat`, isCorrect: false, isGameOver: true, gameOverMessage: "No, cats are quiet. You lose!" }
             ];
-            return fillers[index % fillers.length];
-          };
-
-          const p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}. ${padSentence(0)}`;
-          const p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}. ${padSentence(1)}`;
-          const p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight. ${padSentence(2)}`;
-          const p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap. ${padSentence(3)}`;
+          } else {
+            p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy.`;
+            p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures. You must stay vigilant to proceed with your quest to ${plot.name}.`;
+            p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
+            p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap.`;
+            q = `What is blocking the path forward?`;
+            choices = [
+              { text: `An iron gate`, isCorrect: true, isGameOver: false },
+              { text: `A magic shield`, isCorrect: false, isGameOver: true, gameOverMessage: "You touched the wrong shield and got zapped!" },
+              { text: `A sleeping dragon`, isCorrect: false, isGameOver: true, gameOverMessage: "You woke the dragon up!" }
+            ];
+          }
 
           return {
             pages: [p1, p2, p3, p4],
             imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
-            question: `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`,
-            choices: [
-              { text: `${dil.name}`, isCorrect: true, isGameOver: false },
-              { text: "Finding an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by ancient maps and fell into a trapdoor!" },
-              { text: "Stopping to take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You fell asleep and were captured by the monsters!" }
-            ].sort(() => Math.random() - 0.5)
+            question: q,
+            choices: choices.sort(() => Math.random() - 0.5)
           };
         };
 
@@ -1077,118 +1086,32 @@
 
           const triggerLightning = () => {
              setShowLightning(true);
-             const ctx = synthCtxRef.current;
-             if (ctx && !isMuted) {
-               try {
-                 const bufferSize = ctx.sampleRate * 1.5;
-                 const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-                 const data = buffer.getChannelData(0);
-                 for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                 const noiseNode = ctx.createBufferSource();
-                 noiseNode.buffer = buffer;
-                 const filterNode = ctx.createBiquadFilter();
-                 filterNode.type = 'lowpass';
-                 filterNode.frequency.setValueAtTime(600, ctx.currentTime);
-                 filterNode.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.2);
-                 const gainNode = ctx.createGain();
-                 gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
-                 gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
-                 noiseNode.connect(filterNode);
-                 filterNode.connect(gainNode);
-                 gainNode.connect(ctx.destination);
-                 noiseNode.start();
-               } catch(e) { console.warn(e); }
-             }
+             playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) {
-               setTimeout(() => {
-                 if (ctx && !isMuted) {
-                   try {
-                     if (ctx.state === 'suspended') ctx.resume();
-                     const now = ctx.currentTime;
-                     const voiceOsc = ctx.createOscillator();
-                     const subOsc = ctx.createOscillator();
-                     const finalGain = ctx.createGain();
-                     voiceOsc.type = 'triangle';
-                     subOsc.type = 'sine';
-                     voiceOsc.frequency.setValueAtTime(160, now);
-                     voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
-                     voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
-                     voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
-                     voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
-                     subOsc.frequency.setValueAtTime(80, now);
-                     subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
-                     subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
-                     subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
-                     subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
-                     const vibratoLFO = ctx.createOscillator();
-                     const vibratoGain = ctx.createGain();
-                     vibratoLFO.type = 'sine';
-                     vibratoLFO.frequency.setValueAtTime(5.8, now); 
-                     vibratoGain.gain.setValueAtTime(12, now); 
-                     vibratoLFO.connect(vibratoGain);
-                     vibratoGain.connect(voiceOsc.frequency);
-                     vibratoGain.connect(subOsc.frequency);
-                     const filter = ctx.createBiquadFilter();
-                     filter.type = 'bandpass';
-                     filter.Q.setValueAtTime(3.5, now);
-                     filter.frequency.setValueAtTime(400, now);
-                     filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
-                     filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
-                     finalGain.gain.setValueAtTime(0.0001, now);
-                     finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
-                     finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
-                     finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
-                     voiceOsc.connect(filter);
-                     subOsc.connect(filter);
-                     filter.connect(finalGain);
-                     finalGain.connect(ctx.destination);
-                     vibratoLFO.start(now);
-                     voiceOsc.start(now);
-                     subOsc.start(now);
-                     vibratoLFO.stop(now + 5.6);
-                     voiceOsc.stop(now + 5.6);
-                     subOsc.stop(now + 5.6);
-                   } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
-                 }
-               }, 1000);
-             } else {
-               setTimeout(() => {
-                 if (ctx && !isMuted) {
-                   try {
-                     const osc = ctx.createOscillator();
-                     const gain = ctx.createGain();
-                     osc.type = 'sine';
-                     const now = ctx.currentTime;
-                     osc.frequency.setValueAtTime(250, now);
-                     osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
-                     const lfo = ctx.createOscillator();
-                     lfo.type = 'sine';
-                     lfo.frequency.setValueAtTime(5, now);
-                     const lfoGain = ctx.createGain();
-                     lfoGain.gain.setValueAtTime(10, now);
-                     lfo.connect(lfoGain);
-                     lfoGain.connect(osc.frequency);
-                     lfo.start(now + 1.0);
-                     lfo.stop(now + 4.0);
-                     osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
-                     gain.gain.setValueAtTime(0.0001, now);
-                     gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
-                     gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
-                     osc.connect(gain);
-                     gain.connect(ctx.destination);
-                     osc.start(now);
-                     osc.stop(now + 4.0);
-                   } catch(e) { console.warn(e); }
-                 }
-               }, 800);
-             }
+             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
+             else setTimeout(playGhostHowl, 800);
           };
 
           useEffect(() => {
             const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
+
+          // --- TTS ---
+          const handleReadAloud = (text) => {
+            if (!window.speechSynthesis) return;
+            if (isSpeaking) {
+              window.speechSynthesis.cancel();
+              setIsSpeaking(false);
+              return;
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; 
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            setIsSpeaking(true);
+            window.speechSynthesis.speak(utterance);
+          };
 
           // Keyboard Listeners
           useEffect(() => {
@@ -1279,49 +1202,19 @@
             const plot = CATEGORIES.plots[currentSetup.plot];
             const dil = CATEGORIES.dilemmas[currentSetup.dilemma];
 
-            const wordCounts = ["40 to 50 words per page", "75 to 100 words per page", "100 to 120 words per page", "130 to 150 words per page"];
+            const wordCounts = ["40 to 50 words", "75 to 100 words", "100 to 120 words", "130 to 150 words"];
             const levelInstructions = [
-              `Grades 1-2 level. Very simple, phonetic decodable words. Pages: exactly ${wordCounts[0]}.`,
-              `Grades 3-4 level. Simple compound structures. Pages: exactly ${wordCounts[1]}.`,
-              `Grades 5-6 level. Vivid descriptions. Pages: exactly ${wordCounts[2]}.`,
-              `Grades 7-8 level. Sophisticated, atmospheric vocabulary. Pages: exactly ${wordCounts[3]}.`
+              `GRADE 1 LEVEL: Use ONLY very simple 3-4 word sentences. Use toddler words (e.g. big, bad, run, see, cat). NO big words!`,
+              `GRADE 3 LEVEL: Use simple sentences and basic vocabulary.`,
+              `GRADE 5 LEVEL: Use descriptive words and standard sentences.`,
+              `GRADE 8 LEVEL: Use highly advanced, atmospheric, spooky vocabulary.`
             ];
 
-            let historyContext = "";
-            if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Previous Choice ${i + 1}: Chosen Option: "${h.chosenAction}"`).join('\n');
-            }
+            let promptText = `Ch ${turnCount + 1}/10. Hero: ${char.name}. Bad: ${vill.name}. Place: ${sett.name}. Goal: ${plot.name}. ${turnCount===0 ? 'Intro story.' : `Prev choice: ${actionText}. Continue.`}
+            CRITICAL: ${levelInstructions[currentSetup.readingLevel]}
+            Return JSON: { "pages": [4 strings, exactly ${wordCounts[currentSetup.readingLevel]} each], "imagePrompt": "scene desc", "question": "reading comp question", "choices": [{"text":"", "isCorrect":true/false, "isGameOver":true/false, "gameOverMessage":""}] }. No markdown, use single quotes inside strings.`;
 
-            let promptText = `
-              Quest Chapter ${turnCount + 1} of 10.
-              - Hero: ${char.name}
-              - Boss: ${vill.name}
-              - Setting: ${sett.name}
-              - Quest Plot: ${plot.name}
-              - Danger: ${dil.name}
-              - Reading level instructions: ${levelInstructions[currentSetup.readingLevel]}
-              - Seed: ${currentSeed}_${turnCount}
-            `;
-
-            if (turnCount === 0) {
-              promptText += "\nSetup the plot, setting, and dilemma. Keep a kid-friendly Castlevania spooky tone.";
-            } else {
-              promptText += `\nPast History choices made:\n${historyContext}\nContinue story based on action: "${actionText}".`;
-            }
-
-            if (turnCount >= 9) {
-              promptText += "\nFINAL CHAPTER. Resolve the plot fully with a heroic win over the villain. set isVictory to true. Do not provide any more questions.";
-            } else {
-              promptText += `
-              \nCRITICAL REQUIREMENTS:
-              1. Return exactly 4 strings in 'pages' array. Page 1 sets scene. Page 2 adds tension. Page 3 has setting detail. Page 4 contains reading comp challenge.
-              2. Keep word counts exactly matching: ${wordCounts[currentSetup.readingLevel]} per page.
-              3. Create a reading comprehension question based on Chapter text, and 2-3 choices. One choice must be 'isCorrect: true', others incorrect with a 'gameOverMessage'.
-              4. 'imagePrompt' must be a short description (unrelated to images, just text scene).
-              `;
-            }
-
-            const systemInstruction = `You are a retro-gaming progressive CYOA writer. Output a single JSON block. Do NOT use markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside JSON text strings.`;
+            const systemInstruction = `You are an educational children's book author. Your most important rule is to strictly obey the requested reading level. Output a single JSON block. Do NOT use markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside JSON text strings.`;
 
             let success = false;
             let attempts = 0;
@@ -1332,7 +1225,7 @@
               try {
                 if (attempts > 1) await sleep(attempts * 1500); 
 
-                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${Math.random()}`;
+                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${currentSeed}_${attempts}`;
                 const response = await fetch(pollinationUrl);
                 if (!response.ok) throw new Error(`Status: ${response.status}`);
                 
@@ -1388,13 +1281,6 @@
             }
           };
 
-          const startGame = () => {
-            const currentKey = STEPS_KEYS[setupStep];
-            const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
-            setSetupData(finalSetup);
-            startGameWithData(finalSetup);
-          };
-
           const handleChoice = (choice) => {
             if (currentNode.question) {
               setTotalQuestions(prev => prev + 1);
@@ -1412,11 +1298,9 @@
               });
               setCurrentPageIndex(0);
               setGameState('gameover');
-              recordEngagement('GameOver');
             } else {
               if (turnCount + 1 >= 10) {
                  setGameState('victory');
-                 recordEngagement('Victory');
               } else {
                  generateStoryNode(choice.text);
               }
