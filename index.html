@@ -257,33 +257,13 @@
         };
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        let fbApp, fbAuth, fbDb, fbAppId;
+        let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
         let synthCtx = null; 
 
-        // Stable globally bound Compat wrappers
-        const initializeFirebaseApp = (config) => {
-          if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-            return firebase.initializeApp(config);
-          }
-          return null;
-        };
-        const getFirebaseAuth = () => {
-          if (typeof firebase !== 'undefined' && firebase.auth) {
-            return firebase.auth();
-          }
-          return null;
-        };
-        const getFirebaseFirestore = () => {
-          if (typeof firebase !== 'undefined' && firebase.firestore) {
-            return firebase.firestore();
-          }
-          return null;
-        };
-
-        // Custom Compat Polyfills
-        const doc = (db, ...paths) => db ? db.doc(paths.join('/')) : null;
-        const collection = (db, ...paths) => db ? db.collection(paths.join('/')) : null;
-        const setDoc = (docRef, data) => docRef ? docRef.set(data) : Promise.reject();
+        // Compat Wrappers to bridge Global Compatibility variables cleanly without ES module imports
+        const doc = (database, ...paths) => database ? database.doc(paths.join('/')) : null;
+        const collection = (database, ...paths) => database ? database.collection(paths.join('/')) : null;
+        const setDoc = (docRef, data) => docRef ? docRef.set(data) : Promise.reject(new Error("No Database Connection"));
         const getDoc = async (docRef) => {
           if (!docRef) return { exists: () => false };
           const snap = await docRef.get();
@@ -292,16 +272,16 @@
             data: () => snap.data()
           };
         };
-        const signInAnonymously = (auth) => auth ? auth.signInAnonymously() : Promise.reject();
-        const signInWithCustomToken = (auth, token) => auth ? auth.signInWithCustomToken(token) : Promise.reject();
-        const onAuthStateChanged = (auth, callback) => auth ? auth.onAuthStateChanged(callback) : () => {};
+        const signInAnonymously = (authRef) => authRef ? authRef.signInAnonymously() : Promise.reject(new Error("No Auth Connection"));
+        const signInWithCustomToken = (authRef, token) => authRef ? authRef.signInWithCustomToken(token) : Promise.reject(new Error("No Auth Connection"));
+        const onAuthStateChanged = (authRef, callback) => authRef ? authRef.onAuthStateChanged(callback) : () => {};
 
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          if (Object.keys(firebaseConfig).length > 0) {
-            fbApp = initializeFirebaseApp(firebaseConfig);
-            fbAuth = getFirebaseAuth();
-            fbDb = getFirebaseFirestore();
+          if (Object.keys(firebaseConfig).length > 0 && typeof firebase !== 'undefined') {
+            fbApp = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb = firebase.firestore();
             fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
           }
         } catch (e) {
@@ -584,8 +564,7 @@
           );
         };
 
-        // --- FLAPPY BAT MINIGAME FOR LOAD SCREEN ---
-        // Exposing globally-safe React reference context inside the Babel environment
+        // --- MAIN COMPONENT ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
@@ -747,6 +726,35 @@
             else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
             return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
           }, [isMuted, currentTrack, musicVolume]);
+
+          const triggerLightning = () => {
+             setShowLightning(true);
+             playThunderSynth();
+             setTimeout(() => setShowLightning(false), 500);
+             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
+             else setTimeout(playGhostHowl, 800);
+          };
+
+          useEffect(() => {
+            const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
+            return () => clearInterval(lightningInterval);
+          }, [isMuted, musicVolume]);
+
+          // --- TTS ---
+          const handleReadAloud = (text) => {
+            if (!window.speechSynthesis) return;
+            if (isSpeaking) {
+              window.speechSynthesis.cancel();
+              setIsSpeaking(false);
+              return;
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; 
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            setIsSpeaking(true);
+            window.speechSynthesis.speak(utterance);
+          };
 
           // Keyboard Listeners
           useEffect(() => {
@@ -1242,6 +1250,16 @@
             <React.Fragment>
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
+              
+              {/* Dynamic Animated Critters Layer */}
+              <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                {critters.map(crit => {
+                  if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
+                  return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
+                })}
+              </div>
+
+              {showLightning && <div className="lightning-overlay"></div>}
               
               <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
                 
