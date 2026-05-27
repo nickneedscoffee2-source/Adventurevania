@@ -256,8 +256,29 @@
           return CATEGORIES[CATEGORIES_KEYS[step]];
         };
 
-        // --- FIREBASE GLOBALS MAPPING FOR MODULAR API compatibility ---
+        // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
         let fbApp, fbAuth, fbDb, fbAppId;
+        let synthCtx = null; 
+
+        // Compat Bindings
+        const initializeApp = (config) => {
+          if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+            return firebase.initializeApp(config);
+          }
+          return null;
+        };
+        const getAuth = (app) => {
+          if (typeof firebase !== 'undefined' && firebase.auth) {
+            return firebase.auth();
+          }
+          return null;
+        };
+        const getFirestore = (app) => {
+          if (typeof firebase !== 'undefined' && firebase.firestore) {
+            return firebase.firestore();
+          }
+          return null;
+        };
 
         // Custom Compat Polyfills
         const doc = (db, ...paths) => db ? db.doc(paths.join('/')) : null;
@@ -278,211 +299,50 @@
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
           if (Object.keys(firebaseConfig).length > 0) {
-            fbApp = firebase.initializeApp(firebaseConfig);
-            fbAuth = firebase.auth();
-            fbDb = firebase.firestore();
+            fbApp = initializeApp(firebaseConfig);
+            fbAuth = getAuth(fbApp);
+            fbDb = getFirestore(fbApp);
             fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
           }
         } catch (e) {
           console.error("Firebase init failed:", e);
         }
 
-        // --- FLAPPY BAT MINIGAME COMPONENT ---
-        const FlappyBatMinigame = () => {
-          const canvasRef = useRef(null);
+        // --- DUAL-ENGINE COHERENT FALLBACK GENERATOR ---
+        const generateLocalNode = (turn, setup) => {
+          const char = CATEGORIES.characters[setup.character];
+          const vill = CATEGORIES.villains[setup.villain];
+          const sett = CATEGORIES.settings[setup.setting];
+          const plot = CATEGORIES.plots[setup.plot];
+          const dil = CATEGORIES.dilemmas[setup.dilemma];
+          const level = setup.readingLevel;
 
-          useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let animationFrameId;
+          const padSentence = (index) => {
+            const fillers = [
+              "The ground crumbles. Safe passages require calculating geometric coordinates.",
+              "Ancient runes spell out hidden routes. Deciphering spelling patterns holds the magic.",
+              "Unstable elements block the door. Balanced ecosystem attributes show the key.",
+              "A structural fault shifts. Understanding gravitational mass lets you cross."
+            ];
+            return fillers[index % fillers.length];
+          };
 
-            let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
-            let pipes = [];
-            let score = 0;
-            let gameOver = false;
-            let frameCount = 0;
+          const p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}. ${padSentence(0)}`;
+          const p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}. ${padSentence(1)}`;
+          const p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight. ${padSentence(2)}`;
+          const p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap. ${padSentence(3)}`;
 
-            const drawBat = (x, y, size) => {
-              ctx.fillStyle = '#ffb300'; // Golden sunset bat
-              ctx.fillRect(x, y + size/3, size, size/3); // body
-              if (Math.floor(frameCount / 8) % 2 === 0) {
-                ctx.fillRect(x - size/2, y, size/2, size/2); 
-                ctx.fillRect(x + size, y, size/2, size/2); 
-              } else {
-                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); 
-                ctx.fillRect(x + size, y + size/2, size/2, size/2); 
-              }
-              ctx.fillStyle = '#ff2222'; 
-              ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
-            };
-
-            const update = () => {
-              if (gameOver) return;
-              bat.velocity += bat.gravity;
-              bat.y += bat.velocity;
-
-              if (bat.y > canvas.height - bat.size || bat.y < 0) {
-                gameOver = true;
-              }
-
-              if (frameCount % 110 === 0) {
-                const gap = 120;
-                const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
-                pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 45 });
-              }
-
-              pipes.forEach(p => {
-                p.x -= 2.5;
-                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
-                  if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
-                    gameOver = true;
-                  }
-                }
-                if (!p.passed && bat.x > p.x + p.width) {
-                  p.passed = true;
-                  score++;
-                }
-              });
-
-              pipes = pipes.filter(p => p.x + p.width > 0);
-              frameCount++;
-            };
-
-            const draw = () => {
-              ctx.fillStyle = '#1c0f0d'; // Warm dark background
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-              pipes.forEach(p => {
-                ctx.fillStyle = '#d84315'; // Sunset brick orange
-                ctx.fillRect(p.x, 0, p.width, p.topHeight);
-                ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-                ctx.strokeStyle = '#3e2723';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(p.x, 0, p.width, p.topHeight);
-                ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-              });
-
-              drawBat(bat.x, bat.y, bat.size);
-
-              ctx.fillStyle = 'white';
-              ctx.font = '16px "Press Start 2P", monospace';
-              ctx.fillText(`SCORE:${score}`, 10, 30);
-
-              if (gameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#ef4444';
-                ctx.textAlign = 'center';
-                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
-                ctx.fillStyle = 'white';
-                ctx.font = '10px "Press Start 2P", monospace';
-                ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
-                ctx.textAlign = 'left';
-              }
-            };
-
-            const loop = () => {
-              update();
-              draw();
-              animationFrameId = window.requestAnimationFrame(loop);
-            };
-
-            loop();
-
-            const handleInput = (e) => {
-              if (e.type === 'keydown' && e.code === 'Space') {
-                e.preventDefault();
-              }
-              if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
-
-              if (gameOver) {
-                bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
-                pipes = [];
-                score = 0;
-                gameOver = false;
-                frameCount = 0;
-              } else {
-                bat.velocity = bat.jump;
-              }
-            };
-
-            window.addEventListener('keydown', handleInput, { passive: false });
-            canvas.addEventListener('touchstart', handleInput, { passive: false });
-            canvas.addEventListener('mousedown', handleInput);
-
-            return () => {
-              window.cancelAnimationFrame(animationFrameId);
-              window.removeEventListener('keydown', handleInput);
-              canvas.removeEventListener('touchstart', handleInput);
-              canvas.removeEventListener('mousedown', handleInput);
-            };
-          }, []);
-
-          return (
-            <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
-              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
-                Play Flappy Bat while the AI writes your book!
-              </p>
-              <canvas 
-                ref={canvasRef} 
-                width={480} 
-                height={280} 
-                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full"
-              />
-              <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
-            </div>
-          );
+          return {
+            pages: [p1, p2, p3, p4],
+            imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
+            question: `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`,
+            choices: [
+              { text: `${dil.name}`, isCorrect: true, isGameOver: false },
+              { text: "Finding an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by ancient maps and fell into a trapdoor!" },
+              { text: "Stopping to take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You fell asleep and were captured by the monsters!" }
+            ].sort(() => Math.random() - 0.5)
+          };
         };
-
-        // RetroBat component definition 
-        function RetroBat({ style }) {
-          const [wingFrame, setWingFrame] = useState(0);
-
-          useEffect(() => {
-            const frameTimer = setInterval(() => {
-              setWingFrame(f => (f === 0 ? 1 : 0));
-            }, 100);
-            return () => clearInterval(frameTimer);
-          }, []);
-
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                {/* Bat Body */}
-                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
-                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
-                {/* Red Eyes */}
-                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
-                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
-                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
-                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
-                  </g>
-                )}
-              </svg>
-            </div>
-          );
-        }
 
         // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
         const SunsetPixelArt = ({ setting, turn }) => {
@@ -689,72 +549,29 @@
           );
         };
 
-        // --- INTERACTIVE TEXT HIGHLIGHTER ---
-        const InteractiveText = ({ text, textSize }) => {
-          const [highlights, setHighlights] = useState([]);
-
-          useEffect(() => {
-            setHighlights([]);
-          }, [text]); 
-
-          const handleSelection = () => {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
-            const selectedText = selection.toString().trim();
-            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
-              setHighlights(prev => [...prev, selectedText]);
-            }
-          };
-
-          const removeHighlight = (phrase) => {
-            setHighlights(prev => prev.filter(h => h !== phrase));
-          };
-
-          const renderText = () => {
-            if (highlights.length === 0) return text;
-            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
-            const parts = text.split(regex);
-
-            return parts.map((part, i) => {
-              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
-              if (matched) {
-                return (
-                  <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
-                    {part}
-                  </mark>
-                );
-              }
-              return <span key={i}>{part}</span>;
-            });
-          };
-
-          return (
-            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
-              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
-                {renderText()}
-              </p>
-            </div>
-          );
-        };
-
         // --- MAIN APP ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
+          
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
+          
+          // STORY DATA (Progressive Chapter mode)
           const [currentNode, setCurrentNode] = useState(null);
           const [currentPageIndex, setCurrentPageIndex] = useState(0); 
           const [turnCount, setTurnCount] = useState(0); 
           const [storyHistory, setStoryHistory] = useState([]);
           const [sessionInitialNode, setSessionInitialNode] = useState(null); 
+          
           const [sessionSeed, setSessionSeed] = useState("");
           const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
+          
           const [sessionStartTime, setSessionStartTime] = useState(null);
           const [correctAnswers, setCorrectAnswers] = useState(0);
           const [totalQuestions, setTotalQuestions] = useState(0);
+
           const [menuImgIndex, setMenuImgIndex] = useState(0);
           const [showLightning, setShowLightning] = useState(false);
           const [musicVolume, setMusicVolume] = useState(0.3);
@@ -764,34 +581,51 @@
           const [critters, setCritters] = useState([]); 
           const [textSize, setTextSize] = useState(18); 
           const [isSpeaking, setIsSpeaking] = useState(false);
+
           const [loadingMsg, setLoadingMsg] = useState("");
           const [loadingProgress, setLoadingProgress] = useState(0);
           const [errorMsg, setErrorMsg] = useState("");
           const [confirmDialog, setConfirmDialog] = useState(null);
 
           const endOfStoryRef = useRef(null);
+
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
 
+          // Initialize Firebase Auth compat listener
           useEffect(() => {
-            return () => { 
-              if (window.speechSynthesis) window.speechSynthesis.cancel(); 
-              if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            const initAuth = async () => {
+              if(!fbAuth) return;
+              try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
+                } else {
+                  await signInAnonymously(fbAuth);
+                }
+              } catch (err) { console.error("Auth Error", err); }
+            };
+            initAuth();
+            if (fbAuth) {
+              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+              return () => unsubscribe();
             }
           }, []);
 
+          // Scroll to bottom
           useEffect(() => {
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
           }, [currentNode, currentPageIndex, gameState]);
 
+          // Rotating Menu
           useEffect(() => {
             if(gameState !== 'menu') return;
             const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
             return () => clearInterval(imgInterval);
           }, [gameState]);
 
+          // Simulated Progress Bar
           useEffect(() => {
             let interval;
             if (gameState === 'loading') {
@@ -1088,6 +922,19 @@
               }
             }
           };
+
+          const startGame = () => {
+            setTurnCount(0);
+            setStoryHistory([]);
+            setSessionStartTime(Date.now());
+            setCorrectAnswers(0);
+            setTotalQuestions(0);
+            const seed = Math.random().toString(36).substring(2, 10);
+            setSessionSeed(seed);
+            generateStoryNode(null, setupData, seed);
+          };
+
+          // --- RENDERERS ---
 
           const renderMenu = () => (
             <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
