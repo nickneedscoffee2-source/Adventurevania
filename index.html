@@ -23,7 +23,7 @@
         display: block;
         position: absolute;
         top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
         z-index: 50;
         background-size: 100% 2px, 3px 100%;
         pointer-events: none;
@@ -31,17 +31,17 @@
       
       .pixel-border {
         box-shadow: 
-          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
-          inset 4px 4px 0px 0px rgba(255,255,255,0.2),
-          0 0 0 4px #4A00E0,
+          inset -4px -4px 0px 0px rgba(0,0,0,0.6),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.15),
+          0 0 0 4px #D32F2F,
           0 0 0 8px #000;
       }
 
       .music-border {
         box-shadow: 
           inset -2px -2px 0px 0px rgba(0,0,0,0.5),
-          inset 2px 2px 0px 0px rgba(255,255,255,0.2),
-          0 0 0 2px #4ade80,
+          inset 2px 2px 0px 0px rgba(255,255,255,0.15),
+          0 0 0 2px #E65100,
           0 0 0 4px #000;
       }
       
@@ -51,8 +51,8 @@
         z-index: 49;
         position: fixed;
         pointer-events: none;
-        background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(138,43,226,0.2) 50%, rgba(0,0,0,0) 100%);
-        opacity: 0.1;
+        background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(230,81,0,0.1) 50%, rgba(0,0,0,0) 100%);
+        opacity: 0.15;
         animation: scanline 8s linear infinite;
       }
       
@@ -62,18 +62,18 @@
       }
 
       @keyframes lightning {
-        0% { background-color: rgba(255, 255, 255, 0); }
-        10% { background-color: rgba(255, 255, 255, 0.95); }
-        20% { background-color: rgba(255, 255, 255, 0); }
-        35% { background-color: rgba(255, 255, 255, 0.7); }
-        45% { background-color: rgba(255, 255, 255, 0); }
-        100% { background-color: rgba(255, 255, 255, 0); }
+        0% { background-color: rgba(255, 235, 204, 0); }
+        10% { background-color: rgba(255, 240, 217, 0.7); }
+        20% { background-color: rgba(255, 235, 204, 0); }
+        35% { background-color: rgba(255, 240, 217, 0.5); }
+        45% { background-color: rgba(255, 235, 204, 0); }
+        100% { background-color: rgba(255, 235, 204, 0); }
       }
 
       .lightning-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: 99;
-        animation: lightning 0.6s ease-out;
+        animation: lightning 0.7s ease-out;
       }
 
       /* Flight path animations for Bats and Spiders */
@@ -106,7 +106,7 @@
       .nes-btn {
         position: relative;
         display: inline-block;
-        background-color: #8E2DE2;
+        background-color: #B71C1C;
         color: white;
         padding: 8px 16px;
         font-family: 'Press Start 2P', cursive;
@@ -114,34 +114,42 @@
         text-transform: uppercase;
         cursor: pointer;
         box-shadow: 
-          inset -4px -4px 0px 0px rgba(0,0,0,0.4),
-          inset 4px 4px 0px 0px rgba(255,255,255,0.3);
+          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.25);
         transition: transform 0.1s;
       }
       .nes-btn:active {
         transform: scale(0.95);
         box-shadow: 
-          inset 4px 4px 0px 0px rgba(0,0,0,0.4),
-          inset -4px -4px 0px 0px rgba(255,255,255,0.3);
+          inset 4px 4px 0px 0px rgba(0,0,0,0.5),
+          inset -4px -4px 0px 0px rgba(255,255,255,0.25);
       }
-      .nes-btn.green { background-color: #4ade80; color: #064e3b; }
-      .nes-btn.red { background-color: #ef4444; color: #450a0a; }
+      .nes-btn.green { background-color: #E65100; color: #fff; }
+      .nes-btn.red { background-color: #3e2723; color: #ffab91; }
 
       /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 12px; }
-      ::-webkit-scrollbar-track { background: #000; border-left: 2px solid #4A00E0; }
-      ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
+      ::-webkit-scrollbar-track { background: #1a0f0d; border-left: 2px solid #E65100; }
+      ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
       
-      body { background-color: #050505; margin: 0; overflow-x: hidden; }
+      body { 
+        background: linear-gradient(135deg, #180907 0%, #2D140F 40%, #4D1A0F 75%, #180907 100%); 
+        margin: 0; 
+        overflow-x: hidden; 
+      }
       
       /* Music Slider styling */
-      input[type=range] { accent-color: #8E2DE2; }
+      input[type=range] { accent-color: #E65100; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
@@ -174,6 +182,16 @@
               { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
             ],
             bass: ["A2", "F2", "C2", "E2"]
+          },
+          {
+            name: "Creepy Crawly",
+            tempo: 140,
+            melody: [
+              { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
+              { note: "G#4", dur: 4 }, { note: "E4", dur: 4 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, 
+              { note: "C5", dur: 4 }, { note: "D5", dur: 4 }, { note: "E5", dur: 8 }
+            ],
+            bass: ["A2", "E2", "F2", "G2"]
           }
         ];
 
@@ -229,59 +247,22 @@
 
         const STEPS_KEYS = ["character", "villain", "setting", "plot", "dilemma", "readingLevel"];
 
+        // --- FIREBASE SETUP ---
+        let app, auth, db, appId;
+        try {
+          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+          if (Object.keys(firebaseConfig).length > 0) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+          }
+        } catch (e) {
+          console.error("Firebase init failed:", e);
+        }
+
         // --- UTILITIES ---
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Global Synth variables
-        let synthCtx = null;
-        let melodyInterval = null;
-
-        // Interactive SVG Bat component 
-        function RetroBat({ style }) {
-          const [wingFrame, setWingFrame] = useState(0);
-
-          useEffect(() => {
-            const frameTimer = setInterval(() => {
-              setWingFrame(f => (f === 0 ? 1 : 0));
-            }, 100);
-            return () => clearInterval(frameTimer);
-          }, []);
-
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                <rect x="14" y="5" width="4" height="6" fill="#151515" />
-                <rect x="15" y="3" width="2" height="2" fill="#151515" />
-                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
-                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="10" y="5" width="4" height="3" fill="#3a3a3a" />
-                    <rect x="6" y="6" width="4" height="4" fill="#3a3a3a" />
-                    <rect x="2" y="8" width="4" height="4" fill="#2d2d2d" />
-                    <rect x="0" y="10" width="2" height="3" fill="#2d2d2d" />
-                    <rect x="18" y="5" width="4" height="3" fill="#3a3a3a" />
-                    <rect x="22" y="6" width="4" height="4" fill="#3a3a3a" />
-                    <rect x="26" y="8" width="4" height="4" fill="#2d2d2d" />
-                    <rect x="30" y="10" width="2" height="3" fill="#2d2d2d" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="10" y="4" width="4" height="3" fill="#3a3a3a" />
-                    <rect x="6" y="2" width="4" height="4" fill="#3a3a3a" />
-                    <rect x="2" y="0" width="4" height="4" fill="#2d2d2d" />
-                    <rect x="0" y="0" width="2" height="2" fill="#2d2d2d" />
-                    <rect x="18" y="4" width="4" height="3" fill="#3a3a3a" />
-                    <rect x="22" y="2" width="4" height="4" fill="#3a3a3a" />
-                    <rect x="26" y="0" width="4" height="4" fill="#2d2d2d" />
-                    <rect x="30" y="0" width="2" height="2" fill="#2d2d2d" />
-                  </g>
-                )}
-              </svg>
-            </div>
-          );
-        }
 
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         const FlappyBatMinigame = () => {
@@ -300,7 +281,7 @@
             let frameCount = 0;
 
             const drawBat = (x, y, size) => {
-              ctx.fillStyle = '#8E2DE2';
+              ctx.fillStyle = '#ffb300'; // Golden sunset bat
               ctx.fillRect(x, y + size/3, size, size/3); // body
               if (Math.floor(frameCount / 8) % 2 === 0) {
                 ctx.fillRect(x - size/2, y, size/2, size/2); 
@@ -346,14 +327,14 @@
             };
 
             const draw = () => {
-              ctx.fillStyle = '#111';
+              ctx.fillStyle = '#1c0f0d'; // Warm dark background
               ctx.fillRect(0, 0, canvas.width, canvas.height);
 
               pipes.forEach(p => {
-                ctx.fillStyle = '#4ade80';
+                ctx.fillStyle = '#d84315'; // Sunset brick orange
                 ctx.fillRect(p.x, 0, p.width, p.topHeight);
                 ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-                ctx.strokeStyle = '#064e3b';
+                ctx.strokeStyle = '#3e2723';
                 ctx.lineWidth = 3;
                 ctx.strokeRect(p.x, 0, p.width, p.topHeight);
                 ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
@@ -366,7 +347,7 @@
               ctx.fillText(`SCORE:${score}`, 10, 30);
 
               if (gameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#ef4444';
                 ctx.textAlign = 'center';
@@ -417,19 +398,68 @@
 
           return (
             <div className="flex flex-col items-center w-full max-w-sm mx-auto h-full justify-center">
-              <p className="font-pixel text-[10px] text-green-400 mb-4 animate-pulse text-center leading-relaxed">
+              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
                 Play Flappy Bat while the AI writes your book!
               </p>
               <canvas 
                 ref={canvasRef} 
                 width={300} 
                 height={350} 
-                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(138,43,226,0.4)]"
+                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)]"
               />
-              <p className="font-terminal text-sm text-gray-500 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
+              <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
             </div>
           );
         };
+
+        // RetroBat component definition 
+        function RetroBat({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
+
+          useEffect(() => {
+            const frameTimer = setInterval(() => {
+              setWingFrame(f => (f === 0 ? 1 : 0));
+            }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
+
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                {/* Bat Body */}
+                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
+                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
+                {/* Red Eyes */}
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                
+                {wingFrame === 0 ? (
+                  <g>
+                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
+                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
+                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
+        }
 
         // --- ISOLATED IMAGE PANEL ---
         const ImagePanel = ({ prompt, turnCount }) => {
@@ -448,21 +478,18 @@
 
           if (!prompt) return <div className="w-full h-full bg-black"></div>;
 
-          const safePrompt = encodeURIComponent((prompt.substring(0, 300) + " 8-bit pixel art style retro video game screenshot castlevania spooky"));
-          const url = `https://image.pollinations.ai/prompt/${safePrompt}?width=800&height=800&nologo=true&seed=${turnCount}`;
-
           return (
-            <div className="w-full h-full relative overflow-hidden bg-black">
+            <div className="w-full h-full relative overflow-hidden bg-[#180907]">
               {!loaded && !hasError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a0f0d] z-10">
                   <span className="text-4xl animate-bounce mb-4">🦇</span>
-                  <span className="font-pixel text-[10px] md:text-xs text-purple-400 animate-pulse text-center px-4 leading-relaxed">
+                  <span className="font-pixel text-[10px] md:text-xs text-amber-500 animate-pulse text-center px-4 leading-relaxed">
                     Painting Scene...
                   </span>
                 </div>
               )}
               {hasError ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a0f0d] z-10">
                   <span className="text-4xl mb-4 opacity-50">🖼️</span>
                   <span className="font-pixel text-[10px] text-gray-500 text-center px-4">
                     The magical painting faded.
@@ -471,8 +498,8 @@
               ) : (
                 <img 
                   ref={imgRef}
-                  key={url} 
-                  src={url}
+                  key={`${prompt}-${turnCount}`}
+                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " retro pixel art style castlevania warm sunset red glow")}?width=800&height=800&nologo=true&seed=${turnCount}`}
                   alt="Scene"
                   className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setLoaded(true)}
@@ -528,7 +555,7 @@
                 return (
                   <mark 
                     key={i} 
-                    className="bg-yellow-400 text-black px-1 rounded cursor-pointer transition-colors hover:bg-red-400" 
+                    className="bg-amber-400 text-black px-1 rounded cursor-pointer transition-colors hover:bg-orange-400" 
                     title="Click to remove highlight"
                     onClick={() => removeHighlight(matchedHighlight)}
                   >
@@ -546,7 +573,7 @@
                 <div className="flex justify-end mb-2">
                   <button 
                     onClick={() => setHighlights([])} 
-                    className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-red-900 !px-2 !py-1 !text-[8px]"
+                    className="nes-btn !bg-amber-950 !text-amber-200 hover:!bg-red-950 !px-2 !py-1 !text-[8px]"
                   >
                     Clear Highlights
                   </button>
@@ -560,8 +587,8 @@
               >
                 {renderText()}
               </p>
-              <p className="font-pixel text-[8px] text-gray-500 mt-2 text-right opacity-70">
-                Tip: Highlight text with your mouse or finger to mark keywords!
+              <p className="font-pixel text-[8px] text-amber-600/80 mt-2 text-right">
+                Highlight text with your mouse/finger to highlight key details!
               </p>
             </div>
           );
@@ -569,7 +596,9 @@
 
         // --- MAIN COMPONENT ---
         function Adventurevania() {
+          // --- ALL STATE DECLARATIONS AT TOP TO PREVENT TEMPORAL DEAD ZONE HOISTING ERRORS ---
           const [gameState, setGameState] = useState('menu'); 
+          
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
@@ -605,8 +634,15 @@
 
           const endOfStoryRef = useRef(null);
 
+          // SAFE CHIP INTERVAL REFERENCE: Ref keeps track of Web Audio synthesis intervals across re-renders
+          const synthCtxRef = useRef(null);
+          const melodyIntervalRef = useRef(null);
+
           useEffect(() => {
-            return () => { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+            return () => { 
+              if (window.speechSynthesis) window.speechSynthesis.cancel(); 
+              if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            }
           }, []);
 
           // Scroll to bottom
@@ -657,6 +693,7 @@
 
           // --- SYNTH AUDIO ---
           const playSynthNote = (freq, type, duration, volMod) => {
+            const synthCtx = synthCtxRef.current;
             if (!synthCtx || isMuted || !freq) return;
             try {
               if (synthCtx.state === 'suspended') synthCtx.resume();
@@ -675,12 +712,12 @@
           };
 
           const startSynthEngine = () => {
-            if (melodyInterval) clearInterval(melodyInterval);
-            if (!synthCtx) synthCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            if (!synthCtxRef.current) synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
             const track = SYNTH_TRACKS[currentTrack];
             const stepDuration = 60 / track.tempo / 2; 
             let step = 0;
-            melodyInterval = setInterval(() => {
+            melodyIntervalRef.current = setInterval(() => {
               if (isMuted) return;
               if (step % 4 === 0) {
                 const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
@@ -701,6 +738,7 @@
           };
 
           const playThunderSynth = () => {
+            const synthCtx = synthCtxRef.current;
             if (!synthCtx || isMuted) return;
             try {
               const bufferSize = synthCtx.sampleRate * 1.5;
@@ -724,6 +762,7 @@
           };
 
           const playGhostHowl = () => {
+            const synthCtx = synthCtxRef.current;
             if (!synthCtx || isMuted) return;
             try {
               const osc = synthCtx.createOscillator();
@@ -753,6 +792,7 @@
           };
 
           const playRealisticWolfHowl = () => {
+            const synthCtx = synthCtxRef.current;
             if (!synthCtx || isMuted) return;
             try {
               if (synthCtx.state === 'suspended') synthCtx.resume();
@@ -805,8 +845,8 @@
 
           useEffect(() => {
             if (!isMuted) startSynthEngine();
-            else if (melodyInterval) { clearInterval(melodyInterval); melodyInterval = null; }
-            return () => { if (melodyInterval) clearInterval(melodyInterval); };
+            else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
+            return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
           }, [isMuted, currentTrack, musicVolume]);
 
           const triggerLightning = () => {
@@ -1001,9 +1041,30 @@
               
               const nodeData = JSON.parse(jsonText);
               
+              // CRITICAL PAGE RECONSTRUCTION GUARD: Safely repairs any format anomalies returned by open LLMs
               if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
-                 if (nodeData.storyText) nodeData.pages = [nodeData.storyText];
-                 else throw new Error("Invalid page structure returned.");
+                 if (nodeData.storyText) {
+                   const segments = nodeData.storyText.split("\n\n").filter(t => t.trim().length > 10);
+                   if (segments.length >= 4) {
+                     nodeData.pages = segments.slice(0, 4);
+                   } else {
+                     nodeData.pages = [
+                       nodeData.storyText,
+                       "You proceed cautiously through the dim golden sunset glow...",
+                       "Every sound is amplified inside the ancient walls...",
+                       "Now, you must solve a puzzle to open the path ahead."
+                     ];
+                   }
+                 } else if (nodeData.storyPages && Array.isArray(nodeData.storyPages)) {
+                   nodeData.pages = nodeData.storyPages;
+                 } else {
+                   throw new Error("Game Master returned an invalid book format.");
+                 }
+              }
+
+              // Double check correct array length
+              while (nodeData.pages.length < 4) {
+                nodeData.pages.push("You continue exploring the warm sunset corridors...");
               }
 
               setCurrentNode(nodeData);
@@ -1065,14 +1126,15 @@
 
           const renderMenu = () => (
             <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative">
-              <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-2">
+              <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
                  <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
+                 <div className="absolute inset-0 bg-[#E65100]/25 mix-blend-color-burn"></div>
                  <div className="absolute inset-0 bg-black/40"></div>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
-                    <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-purple-500 tracking-wider drop-shadow-[0_0_15px_rgba(138,43,226,1)] w-full text-center break-words leading-tight">
+                    <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-amber-500 tracking-wider drop-shadow-[0_0_15px_rgba(230,81,0,1)] w-full text-center break-words leading-tight">
                       ADVENTUREVANIA
                     </h1>
-                    <p className="font-terminal text-green-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(74,222,128,1)]">A Reading Quest</p>
+                    <p className="font-terminal text-orange-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(230,81,0,1)]">A Reading Quest</p>
                  </div>
               </div>
 
@@ -1082,8 +1144,8 @@
                 </button>
 
                 <div className="flex flex-col gap-2 w-full text-left mt-2">
-                    <label className="font-pixel text-[8px] md:text-[10px] text-gray-400 text-center">Student Identification:</label>
-                    <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500" />
+                    <label className="font-pixel text-[8px] md:text-[10px] text-orange-400 text-center">Student Identification:</label>
+                    <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-[#1c0f0d] border-2 border-red-950 text-orange-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-orange-500" />
                 </div>
               </div>
             </div>
@@ -1101,31 +1163,44 @@
             const current = steps[setupStep];
 
             return (
-              <div className="flex flex-col h-full p-4 md:p-8">
-                <div className="flex justify-between items-center mb-6 border-b-4 border-purple-900 pb-4 shrink-0">
-                  <h2 className="font-pixel text-xl md:text-2xl text-green-400">{current.title}</h2>
-                  <span className="font-pixel text-xs text-gray-500">Step {setupStep + 1}/6</span>
+              <div className="flex flex-col h-full p-4 md:p-6 justify-between overflow-hidden">
+                <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
+                  <h2 className="font-pixel text-sm md:text-lg text-orange-400 leading-relaxed">{current.title}</h2>
+                  <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
                 </div>
 
-                <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-24 pr-2">
-                  {current.data.map((item, idx) => {
-                    const isSelected = setupFocusIndex === idx;
-                    return (
-                      <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_25px_rgba(74,222,128,0.7)]' : 'bg-black hover:bg-gray-800'}`} style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : {}}>
-                        <div className="text-4xl mb-2">{item.icon}</div>
-                        <h3 className="font-pixel text-[10px] md:text-xs text-white mb-2 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
-                        <p className="font-terminal text-gray-400 text-sm md:text-lg leading-tight hidden md:block">{item.desc}</p>
-                      </div>
-                    );
-                  })}
+                {/* SCROLL CONTAINER: Prevents content from clipping or pushing past lower boundaries */}
+                <div className="flex-grow overflow-y-auto pr-2 max-h-[55vh] md:max-h-[62vh]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
+                    {current.data.map((item, idx) => {
+                      const isSelected = setupFocusIndex === idx;
+                      return (
+                        <div 
+                          key={idx} 
+                          onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} 
+                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
+                          style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}
+                        >
+                          <div className="text-3xl mb-1">{item.icon}</div>
+                          <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
+                          <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="flex justify-between mt-6 pt-4 items-center shrink-0">
-                  <div className="font-pixel text-[8px] text-gray-500 hidden md:block">Use Arrow Keys & Enter</div>
+                <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
+                  <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
                   <div className="flex gap-4">
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
                     {setupStep < 5 ? (
-                      <button className="nes-btn green" onClick={() => { const currentKey = STEPS_KEYS[setupStep]; setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex})); setSetupFocusIndex(0); setSetupStep(setupStep + 1); }}>Next</button>
+                      <button className="nes-btn green" onClick={() => { 
+                        const currentKey = STEPS_KEYS[setupStep]; 
+                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex})); 
+                        setSetupFocusIndex(0); 
+                        setSetupStep(setupStep + 1); 
+                      }}>Next</button>
                     ) : (
                       <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
                     )}
@@ -1138,21 +1213,130 @@
           const renderLoading = () => (
             <div className="flex flex-col md:flex-row h-full w-full">
               {/* Left Side Progress Bar */}
-              <div className="w-full md:w-1/3 p-8 flex flex-col items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-purple-900 bg-gray-950">
+              <div className="w-full md:w-1/3 p-8 flex flex-col items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-red-950 bg-stone-950">
                 <div className="text-6xl animate-bounce mb-6">👻</div>
-                <h2 className="font-pixel text-lg md:text-xl text-purple-400 leading-relaxed text-center mb-8">{loadingMsg}</h2>
+                <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-8">{loadingMsg}</h2>
                 <div className="w-full max-w-xs h-6 bg-black pixel-border relative overflow-hidden">
-                  <div className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
+                  <div className="absolute top-0 left-0 h-full bg-orange-600 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
                 </div>
-                <p className="font-terminal text-xl text-green-400 mt-2">{Math.floor(Math.min(loadingProgress, 99))}%</p>
+                <p className="font-terminal text-xl text-orange-400 mt-2">{Math.floor(Math.min(loadingProgress, 99))}%</p>
               </div>
 
               {/* Right Side Minigame */}
-              <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#0a0a0a]">
+              <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807]">
                 <FlappyBatMinigame />
               </div>
             </div>
           );
+
+          const renderGameArea = () => {
+            if (!currentNode && !errorMsg) return renderLoading();
+            
+            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+
+            return (
+              <div className="flex flex-col md:flex-row h-full w-full bg-[#180907] relative overflow-hidden">
+                <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
+                  <div className="flex justify-between items-center bg-[#2d140f] p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
+                    <div className="font-pixel text-[10px] md:text-sm text-amber-500 flex items-center gap-2 animate-pulse">
+                       🗺️ Chapter: {turnCount + 1}/10
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-4">
+                      {/* Responsive Text Size Slider */}
+                      <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
+                        <span className="font-pixel text-[8px] text-gray-400">A</span>
+                        <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
+                        <span className="font-pixel text-[12px] text-gray-400">A</span>
+                      </div>
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'restart', message: "Are you sure you want to restart this adventure from the beginning?" }); }}>
+                        <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
+                      </button>
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'quit', message: "Are you sure you want to quit to the main menu?" }); }}>
+                        <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
+                    {storyHistory.map((hist, idx) => (
+                      <React.Fragment key={idx}>
+                        {renderStoryNode(hist.node, true, hist.chosenAction)}
+                      </React.Fragment>
+                    ))}
+                    {renderStoryNode(currentNode, false)}
+
+                    {errorMsg && (
+                      <div className="bg-[#5d120d] border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
+                        <div>{errorMsg}</div>
+                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                      </div>
+                    )}
+                    <div ref={endOfStoryRef} />
+                  </div>
+
+                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#2D140F]/95 p-3 md:p-4 border-t-4 border-red-950 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
+                      {!isAtLastPage ? (
+                        <div className="flex w-full max-w-md gap-4">
+                          {currentPageIndex > 0 && (
+                            <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                               ⬅️ Back
+                            </button>
+                          )}
+                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(230,81,0,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                             Next Page 📖 (Enter)
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex w-full max-w-4xl justify-start mb-2">
+                             <button className="nes-btn !bg-stone-900 !text-orange-400 hover:!bg-stone-800 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                               ⬅️ Back to Page {currentPageIndex}
+                             </button>
+                          </div>
+                          <p className="font-pixel text-[9px] text-amber-500/80 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
+                          <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
+                            {currentNode?.choices?.map((choice, idx) => {
+                              const isFocused = focusedChoice === idx;
+                              return (
+                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
+                                  <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-amber-300 font-bold' : ''}`}>{choice.text}</span>
+                                  <span className={`${isFocused ? 'opacity-100 text-orange-500' : 'opacity-0'} shrink-0`}>▶</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {gameState === 'gameover' && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#3e2723]/95 p-6 border-t-4 border-[#B71C1C] z-10 text-center flex flex-col items-center gap-4">
+                       <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
+                       <div className="flex flex-col md:flex-row gap-4">
+                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentNode(sessionInitialNode); setTurnCount(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
+                         <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
+                       </div>
+                    </div>
+                  )}
+
+                  {gameState === 'victory' && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#1b5e20]/95 p-8 border-t-4 border-yellow-500 z-10 text-center">
+                       <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
+                       <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
+                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* RIGHT PANE - Visual Content */}
+                <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
+                    <ImagePanel prompt={currentNode?.imagePrompt} turnCount={turnCount} />
+                </div>
+              </div>
+            );
+          };
 
           const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
             if (!node || !node.pages) return null;
@@ -1197,124 +1381,16 @@
             );
           };
 
-          const renderGameArea = () => {
-            if (!currentNode && !errorMsg) return renderLoading();
-            
-            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
-
-            return (
-              <div className="flex flex-col md:flex-row h-full w-full bg-[#050505] relative overflow-hidden">
-                <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
-                  <div className="flex justify-between items-center bg-gray-900 p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
-                    <div className="font-pixel text-[10px] md:text-sm text-purple-400 flex items-center gap-2">
-                       🗺️ Chapter: {turnCount + 1}/10
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-4">
-                      <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
-                        <span className="font-pixel text-[8px] text-gray-400">A</span>
-                        <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
-                        <span className="font-pixel text-[12px] text-gray-400">A</span>
-                      </div>
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'restart', message: "Are you sure you want to restart this adventure from the beginning?" }); }}>
-                        <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
-                      </button>
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'quit', message: "Are you sure you want to quit to the main menu?" }); }}>
-                        <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
-                    {storyHistory.map((hist, idx) => (
-                      <React.Fragment key={idx}>
-                        {renderStoryNode(hist.node, true, hist.chosenAction)}
-                      </React.Fragment>
-                    ))}
-                    {renderStoryNode(currentNode, false)}
-
-                    {errorMsg && (
-                      <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
-                        <div>{errorMsg}</div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
-                      </div>
-                    )}
-                    <div ref={endOfStoryRef} />
-                  </div>
-
-                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
-                      {!isAtLastPage ? (
-                        <div className="flex w-full max-w-md gap-4">
-                          {currentPageIndex > 0 && (
-                            <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                               ⬅️ Back
-                            </button>
-                          )}
-                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                             Next Page 📖 (Enter)
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex w-full max-w-4xl justify-start mb-2">
-                             <button className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-gray-700 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
-                               ⬅️ Back to Page {currentPageIndex}
-                             </button>
-                          </div>
-                          <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
-                          <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
-                            {currentNode?.choices?.map((choice, idx) => {
-                              const isFocused = focusedChoice === idx;
-                              return (
-                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
-                                  <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
-                                  <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {gameState === 'gameover' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-6 border-t-4 border-red-600 z-10 text-center flex flex-col items-center gap-4">
-                       <h2 className="font-pixel text-2xl md:text-3xl text-red-400 flex items-center justify-center gap-4">💀 GAME OVER 💀</h2>
-                       <div className="flex flex-col md:flex-row gap-4">
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentNode(sessionInitialNode); setTurnCount(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
-                         <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
-                       </div>
-                    </div>
-                  )}
-
-                  {gameState === 'victory' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-green-900/95 p-8 border-t-4 border-green-600 z-10 text-center">
-                       <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
-                       <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* RIGHT PANE - Visual Content */}
-                <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-purple-800 relative order-1 md:order-2">
-                    <ImagePanel prompt={currentNode?.imagePrompt} turnCount={turnCount} />
-                </div>
-              </div>
-            );
-          };
-
           // Audio Player Overlay UI
           const renderAudioPlayer = () => (
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
-                  <button onClick={() => { if(isMuted) { if (synthCtx && synthCtx.state === 'suspended') synthCtx.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
+                  <button onClick={() => { if(isMuted) { if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') synthCtxRef.current.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
                     {isMuted ? '🔇' : '🔊'}
                   </button>
                   <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
                 </div>
-                <select className="bg-gray-900 text-green-400 font-pixel text-[8px] p-1 border border-purple-800 outline-none cursor-pointer" value={currentTrack} onChange={(e) => setCurrentTrack(parseInt(e.target.value))}>
+                <select className="bg-gray-950 text-orange-400 font-pixel text-[8px] p-1 border border-red-950 outline-none cursor-pointer" value={currentTrack} onChange={(e) => setCurrentTrack(parseInt(e.target.value))}>
                   {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
                 </select>
              </div>
@@ -1335,13 +1411,13 @@
 
               {showLightning && <div className="lightning-overlay"></div>}
               
-              <div className="h-[100dvh] bg-[#050505] md:p-6 flex items-center justify-center relative">
+              <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
                 
                 {/* Modal Overlays */}
                 {confirmDialog && (
                   <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-                    <div className="pixel-border bg-gray-900 p-6 md:p-8 text-center max-w-sm w-full">
-                      <h3 className="font-pixel text-yellow-400 mb-4 text-xl">Are you sure?</h3>
+                    <div className="pixel-border bg-[#2d140f] p-6 md:p-8 text-center max-w-sm w-full">
+                      <h3 className="font-pixel text-orange-400 mb-4 text-xl">Are you sure?</h3>
                       <p className="font-terminal text-xl text-white mb-8 leading-relaxed">
                         {confirmDialog.message}
                       </p>
@@ -1366,7 +1442,7 @@
                   </div>
                 )}
 
-                <div className="w-full max-w-6xl h-full md:h-[95vh] bg-black md:pixel-border relative overflow-hidden flex flex-col justify-between">
+                <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
                   <div className="flex-grow overflow-hidden relative">
