@@ -12,6 +12,11 @@
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Firebase Compat Bundles (Stable Globals) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
     <style>
       @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
       
@@ -123,11 +128,7 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
+    <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
@@ -249,6 +250,42 @@
         };
 
         const STEPS_KEYS = ["character", "villain", "setting", "plot", "dilemma", "readingLevel"];
+        const CATEGORIES_KEYS = ["characters", "villains", "settings", "plots", "dilemmas", "readingLevels"];
+
+        const getActiveCategoryList = (step) => {
+          return CATEGORIES[CATEGORIES_KEYS[step]];
+        };
+
+        // --- FIREBASE GLOBALS MAPPING FOR MODULAR API compatibility ---
+        let fbApp, fbAuth, fbDb, fbAppId;
+
+        // Custom Compat Polyfills
+        const doc = (db, ...paths) => db ? db.doc(paths.join('/')) : null;
+        const collection = (db, ...paths) => db ? db.collection(paths.join('/')) : null;
+        const setDoc = (docRef, data) => docRef ? docRef.set(data) : Promise.reject();
+        const getDoc = async (docRef) => {
+          if (!docRef) return { exists: () => false };
+          const snap = await docRef.get();
+          return {
+            exists: () => snap.exists,
+            data: () => snap.data()
+          };
+        };
+        const signInAnonymously = (auth) => auth ? auth.signInAnonymously() : Promise.reject();
+        const signInWithCustomToken = (auth, token) => auth ? auth.signInWithCustomToken(token) : Promise.reject();
+        const onAuthStateChanged = (auth, callback) => auth ? auth.onAuthStateChanged(callback) : () => {};
+
+        try {
+          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+          if (Object.keys(firebaseConfig).length > 0) {
+            fbApp = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb = firebase.firestore();
+            fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+          }
+        } catch (e) {
+          console.error("Firebase init failed:", e);
+        }
 
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         const FlappyBatMinigame = () => {
@@ -464,13 +501,13 @@
             // 1. SKY GRADIENT based on sunset progression stage (turn 0 to 9)
             let skyColors = [];
             if (turn === 0) {
-              skyColors = ['#fc9838', '#fc7460', '#bc447c']; // bright rich orange to dark magenta
+              skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
             } else if (turn >= 1 && turn <= 3) {
-              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; // brilliant deep orange to purple
+              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
             } else if (turn >= 4 && turn <= 6) {
-              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; // twilight purple/indigo
+              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
             } else {
-              skyColors = ['#180040', '#000028', '#000010', '#000000']; // midnight deep blue-black
+              skyColors = ['#180040', '#000028', '#000010', '#000000']; 
             }
 
             const step = h / skyColors.length;
@@ -701,58 +738,6 @@
           );
         };
 
-        // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        let fbApp, fbAuth, fbDb, fbAppId;
-        let synthCtx = null; 
-
-        try {
-          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          if (Object.keys(firebaseConfig).length > 0) {
-            fbApp = initializeApp(firebaseConfig);
-            fbAuth = getAuth(fbApp);
-            fbDb = getFirestore(fbApp);
-            fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
-          }
-        } catch (e) {
-          console.error("Firebase init failed:", e);
-        }
-
-        // --- DUAL-ENGINE COHERENT FALLBACK GENERATOR ---
-        const generateLocalNode = (turn, setup) => {
-          const char = CATEGORIES.characters[setup.character];
-          const vill = CATEGORIES.villains[setup.villain];
-          const sett = CATEGORIES.settings[setup.setting];
-          const plot = CATEGORIES.plots[setup.plot];
-          const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
-
-          const padSentence = (index) => {
-            const fillers = [
-              "The ground crumbles. Safe passages require calculating geometric coordinates.",
-              "Ancient runes spell out hidden routes. Deciphering spelling patterns holds the magic.",
-              "Unstable elements block the door. Balanced ecosystem attributes show the key.",
-              "A structural fault shifts. Understanding gravitational mass lets you cross."
-            ];
-            return fillers[index % fillers.length];
-          };
-
-          const p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}. ${padSentence(0)}`;
-          const p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}. ${padSentence(1)}`;
-          const p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight. ${padSentence(2)}`;
-          const p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap. ${padSentence(3)}`;
-
-          return {
-            pages: [p1, p2, p3, p4],
-            imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
-            question: `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`,
-            choices: [
-              { text: `${dil.name}`, isCorrect: true, isGameOver: false },
-              { text: "Finding an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by ancient maps and fell into a trapdoor!" },
-              { text: "Stopping to take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You fell asleep and were captured by the monsters!" }
-            ].sort(() => Math.random() - 0.5)
-          };
-        };
-
         // --- MAIN APP ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
@@ -883,8 +868,8 @@
               if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { e.preventDefault(); }
 
               if (gameState === 'setup') {
-                 const currentDataKey = STEPS_KEYS[setupStep];
-                 const numOptions = CATEGORIES[currentDataKey].length;
+                 const currentDataList = getActiveCategoryList(setupStep);
+                 const numOptions = currentDataList.length;
 
                  if (e.key === 'ArrowRight') {
                    setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
@@ -895,8 +880,9 @@
                  } else if (e.key === 'ArrowUp') {
                    setSetupFocusIndex(prev => Math.max(prev - 5, 0));
                  } else if (e.key === 'Enter') {
+                   const currentKey = STEPS_KEYS[setupStep];
                    setSetupData(prev => {
-                     const nextSetup = { ...prev, [currentDataKey]: setupFocusIndex };
+                     const nextSetup = { ...prev, [currentKey]: setupFocusIndex };
                      if (setupStep === 5) {
                         startGameWithData(nextSetup);
                      }
@@ -1130,62 +1116,59 @@
             </div>
           );
 
-          const renderSetup = () => (
-            <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
-              <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
-                <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
-                  {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
-                </h2>
-                <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
-              </div>
+          const renderSetup = () => {
+            const currentDataList = getActiveCategoryList(setupStep);
+            const currentKey = STEPS_KEYS[setupStep];
 
-              {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
-              <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
-                  {setupStep === 5 ? (
-                    CATEGORIES.readingLevels.map((item, idx) => {
+            return (
+              <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
+                <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
+                  <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
+                    {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
+                  </h2>
+                  <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
+                </div>
+
+                {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
+                <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
+                    {currentDataList.map((item, idx) => {
+                      const isSelected = setupData[currentKey] === idx;
                       const isFocused = setupFocusIndex === idx;
                       return (
-                        <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, readingLevel: idx}); }} className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}>
+                        <div 
+                          key={idx} 
+                          onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [currentKey]: idx}); }} 
+                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
+                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
+                        >
                           <div className="text-3xl mb-1">{item.icon}</div>
                           <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
                           <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
                         </div>
                       );
-                    })
-                  ) : (
-                    CATEGORIES[Object.keys(CATEGORIES)[setupStep]].map((item, idx) => {
-                      const isFocused = setupFocusIndex === idx;
-                      return (
-                        <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [STEPS_KEYS[setupStep]]: idx}); }} className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}>
-                          <div className="text-3xl mb-1">{item.icon}</div>
-                          <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
-                          <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
-                        </div>
-                      );
-                    })
-                  )}
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
-                <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
-                <div className="flex gap-4">
-                  {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
-                  {setupStep < 5 ? (
-                    <button className="nes-btn green" onClick={() => { 
-                      const currentKey = STEPS_KEYS[setupStep];
-                      setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                      setSetupStep(setupStep + 1); 
-                      setSetupFocusIndex(0);
-                    }}>Next</button>
-                  ) : (
-                    <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
-                  )}
+                <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
+                  <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
+                  <div className="flex gap-4">
+                    {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
+                    {setupStep < 5 ? (
+                      <button className="nes-btn green" onClick={() => { 
+                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                        setSetupStep(setupStep + 1); 
+                        setSetupFocusIndex(0);
+                      }}>Next</button>
+                    ) : (
+                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
+            );
+          };
 
           const renderLoading = () => (
             <div className="flex flex-col h-full w-full bg-[#180907]">
