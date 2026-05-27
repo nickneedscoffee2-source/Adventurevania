@@ -572,6 +572,43 @@
           console.error("Firebase init failed:", e);
         }
 
+        // --- DUAL-ENGINE COHERENT FALLBACK GENERATOR ---
+        const generateLocalNode = (turn, setup) => {
+          const char = CATEGORIES.characters[setup.character];
+          const vill = CATEGORIES.villains[setup.villain];
+          const sett = CATEGORIES.settings[setup.setting];
+          const plot = CATEGORIES.plots[setup.plot];
+          const dil = CATEGORIES.dilemmas[setup.dilemma];
+          const level = setup.readingLevel;
+
+          const wordCounts = ["40 to 50", "75 to 100", "100 to 120", "130 to 150"];
+          const padSentence = (index) => {
+            const fillers = [
+              "The ground crumbles. Safe passages require calculating geometric coordinates.",
+              "Ancient runes spell out hidden routes. Deciphering spelling patterns holds the magic.",
+              "Unstable elements block the door. Balanced ecosystem attributes show the key.",
+              "A structural fault shifts. Understanding gravitational mass lets you cross."
+            ];
+            return fillers[index % fillers.length];
+          };
+
+          const p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}. ${padSentence(0)}`;
+          const p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}. ${padSentence(1)}`;
+          const p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight. ${padSentence(2)}`;
+          const p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap. ${padSentence(3)}`;
+
+          return {
+            pages: [p1, p2, p3, p4],
+            imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
+            question: `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`,
+            choices: [
+              { text: `${dil.name}`, isCorrect: true, isGameOver: false },
+              { text: "Finding an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by ancient maps and fell into a trapdoor!" },
+              { text: "Stopping to take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You fell asleep and were captured by the monsters!" }
+            ].sort(() => Math.random() - 0.5)
+          };
+        };
+
         // --- MAIN COMPONENT ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
@@ -702,7 +739,10 @@
 
           const startSynthEngine = () => {
             if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
-            if (!synthCtxRef.current) synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            if (!synthCtxRef.current) {
+              synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+              synthCtx = synthCtxRef.current; // sync with global reference
+            }
             const track = SYNTH_TRACKS[currentTrack];
             const stepDuration = 60 / track.tempo / 2; 
             let step = 0;
@@ -739,7 +779,7 @@
               const filterNode = ctx.createBiquadFilter();
               filterNode.type = 'lowpass';
               filterNode.frequency.setValueAtTime(600, ctx.currentTime);
-              filterNode.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 1.2);
+              filterNode.frequency.exponentialRampToTime(30, ctx.currentTime + 1.2);
               const gainNode = ctx.createGain();
               gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
               gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
@@ -886,10 +926,17 @@
                  } else if (e.key === 'ArrowUp') {
                    setSetupFocusIndex(prev => Math.max(prev - 5, 0));
                  } else if (e.key === 'Enter') {
-                   setSetupData(prev => ({...prev, [currentDataKey]: setupFocusIndex}));
-                   setSetupFocusIndex(0); 
-                   if (setupStep < 5) setSetupStep(prev => prev + 1);
-                   else startGame();
+                   setSetupData(prev => {
+                     const nextSetup = { ...prev, [currentDataKey]: setupFocusIndex };
+                     if (setupStep === 5) {
+                        startGameWithData(nextSetup);
+                     }
+                     return nextSetup;
+                   });
+                   if (setupStep < 5) {
+                     setSetupStep(prev => prev + 1);
+                     setSetupFocusIndex(0); 
+                   }
                  }
               } else if (gameState === 'story' && !errorMsg) {
                  const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
@@ -920,27 +967,17 @@
 
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
+          }, [gameState, setupStep, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData]);
 
-          const recordEngagement = async (outcome) => {
-            if (!SPREADSHEET_WEB_APP_URL) return; 
-            const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
-            const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
-            const trackingData = {
-              timestamp: new Date().toISOString(),
-              playerName: playerName || "Anonymous Player",
-              character: CATEGORIES.characters[setupData.character].name,
-              villain: CATEGORIES.villains[setupData.villain].name,
-              outcome: outcome,
-              turnsSurvived: turnCount,
-              totalQuestionsAttempted: totalQuestions,
-              correctAnswers: correctAnswers,
-              comprehensionScore: compScore + "%",
-              timeSpentSeconds: timeSpentSecs
-            };
-            try {
-              await fetch(SPREADSHEET_WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(trackingData) });
-            } catch (err) { console.error("Error sending analytics:", err); }
+          const startGameWithData = (finalSetup) => {
+            setTurnCount(0);
+            setStoryHistory([]);
+            setSessionStartTime(Date.now());
+            setCorrectAnswers(0);
+            setTotalQuestions(0);
+            const seed = Math.random().toString(36).substring(2, 10);
+            setSessionSeed(seed);
+            generateStoryNode(null, finalSetup, seed);
           };
 
           // --- PROGRESSIVE STORY ENGINE ---
@@ -1026,24 +1063,20 @@
             while (attempts < 3 && !success) {
               attempts++;
               try {
-                const response = await fetch(POLLINATIONS_TEXT_URL, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    messages: [
-                      { role: "system", content: "You must only respond with raw, valid JSON. Do not wrap your response in markdown code blocks. Use single quotes for dialogue inside the JSON strings." },
-                      { role: "user", content: `System instructions: ${systemInstruction}\n\nUser request: ${promptText}` }
-                    ],
-                    jsonMode: true
-                  })
-                });
+                // FIXED: Implementing exponential backoff sleep to bypass 429 status code floods
+                if (attempts > 1) {
+                  await sleep(attempts * 1500); 
+                }
+
+                // FIXED: Changed fetch structure to a robust GET format with unique seed query parameter to clear Edge caches
+                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${Math.random()}`;
                 
+                const response = await fetch(pollinationUrl);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 let jsonText = await response.text();
                 jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
                 
-                // Robust extraction of JSON object boundaries
                 const startIdx = jsonText.indexOf('{');
                 const endIdx = jsonText.lastIndexOf('}');
                 if (startIdx !== -1 && endIdx !== -1) {
@@ -1075,7 +1108,6 @@
                    }
                 }
 
-                // Double check correct array length
                 while (nodeData.pages.length < 4) {
                   nodeData.pages.push("You continue exploring the warm sunset corridors...");
                 }
@@ -1092,10 +1124,19 @@
               }
             }
 
-            // If it failed all attempts, show error
+            // FIXED: Automatically triggers local generator fallback on hard network blockages to secure un-interrupted student gameplay
             if (!success) {
-              setErrorMsg(`The magical connection was lost after multiple attempts: ${lastError}. Please click 'Try Again' to reconnect.`);
-              setGameState('story');
+              console.warn("API fully unavailable. Launching secure offline generator...");
+              try {
+                const localNode = generateLocalNode(turnCount, currentSetup);
+                setCurrentNode(localNode);
+                if (turnCount === 0) setSessionInitialNode(localNode);
+                setCurrentPageIndex(0);
+                setGameState('story');
+              } catch (localErr) {
+                setErrorMsg(`The magical connection was lost, and fallback system failed: ${localErr.message}`);
+                setGameState('story');
+              }
             }
           };
 
@@ -1189,13 +1230,14 @@
                 <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
                     {current.data.map((item, idx) => {
-                      const isSelected = setupFocusIndex === idx;
+                      const isSelected = setupData[current.key] === idx;
+                      const isFocused = setupFocusIndex === idx;
                       return (
                         <div 
                           key={idx} 
                           onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} 
-                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
-                          style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}
+                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
+                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
                         >
                           <div className="text-3xl mb-1">{item.icon}</div>
                           <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
@@ -1212,10 +1254,8 @@
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
                     {setupStep < 5 ? (
                       <button className="nes-btn green" onClick={() => { 
-                        const currentKey = STEPS_KEYS[setupStep];
-                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                        setSetupFocusIndex(0);
                         setSetupStep(setupStep + 1); 
+                        setSetupFocusIndex(0);
                       }}>Next</button>
                     ) : (
                       <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
@@ -1457,10 +1497,11 @@
                   </div>
                 )}
 
+                {/* FIXED: Changed flex-grow container parameters to solve flexbox calculation issues */}
                 <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
-                  <div className="flex-grow overflow-hidden relative">
+                  <div className="flex-grow h-full flex flex-col overflow-hidden relative">
                     {gameState === 'menu' && renderMenu()}
                     {gameState === 'setup' && renderSetup()}
                     {gameState === 'loading' && renderLoading()}
