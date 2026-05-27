@@ -23,7 +23,7 @@
         display: block;
         position: absolute;
         top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 255, 0, 0.06));
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
         z-index: 50;
         background-size: 100% 2px, 3px 100%;
         pointer-events: none;
@@ -146,6 +146,18 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
+
+      /* Story Book Columns */
+      .story-columns {
+        column-count: 1;
+        column-gap: 2rem;
+      }
+      @media (min-width: 768px) {
+        .story-columns {
+          column-count: 2;
+          column-rule: 2px dashed #4A00E0;
+        }
+      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -162,10 +174,10 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
-        const apiKey = ""; 
-        const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=" + apiKey;
+        // NEW METHOD: We use Pollinations Text API. It is 100% keyless, free, and unrestricted!
+        const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
         
-        // GOOGLE APPS SCRIPT WEB APP URL 
+        // GOOGLE APPS SCRIPT WEB APP URL (Writes session logs & total books read)
         const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
 
         const MENU_IMAGES = [
@@ -319,7 +331,7 @@
           }
         };
 
-        // Global Synth variables to prevent garbage collection / redundant triggers
+        // Global Synth variables
         let synthCtx = null;
         let melodyInterval = null;
 
@@ -379,7 +391,6 @@
         }
 
         // --- NEW ISOLATED IMAGE PANEL ---
-        // This stops images from re-rendering in the history map by isolating the current image fetch!
         const ImagePanel = ({ prompt, turnCount }) => {
           const [loaded, setLoaded] = useState(false);
           const [hasError, setHasError] = useState(false);
@@ -509,10 +520,8 @@
 
         // --- MAIN COMPONENT ---
         function Adventurevania() {
-          const [user, setUser] = useState(null);
+          // --- ALL STATE DECLARATIONS AT TOP TO PREVENT TEMPORAL DEAD ZONE HOISTING ERRORS ---
           const [gameState, setGameState] = useState('menu'); 
-          
-          // Game Data State
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
@@ -520,16 +529,14 @@
           const [currentNode, setCurrentNode] = useState(null);
           const [currentPageIndex, setCurrentPageIndex] = useState(0);
           const [turnCount, setTurnCount] = useState(0);
-          const [sessionInitialNode, setSessionInitialNode] = useState(null); // Keep starting node for 'Restart Same Adventure'
+          const [sessionInitialNode, setSessionInitialNode] = useState(null); 
           const [sessionSeed, setSessionSeed] = useState("");
           const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
           
-          // Analytics & Tracking State
           const [sessionStartTime, setSessionStartTime] = useState(null);
           const [correctAnswers, setCorrectAnswers] = useState(0);
           const [totalQuestions, setTotalQuestions] = useState(0);
 
-          // Aesthetic & Nav State
           const [menuImgIndex, setMenuImgIndex] = useState(0);
           const [showLightning, setShowLightning] = useState(false);
           const [musicVolume, setMusicVolume] = useState(0.3);
@@ -537,30 +544,16 @@
           const [currentTrack, setCurrentTrack] = useState(0);
           const [focusedChoice, setFocusedChoice] = useState(0);
           const [critters, setCritters] = useState([]); 
-          const [textSize, setTextSize] = useState(18); // Default text size for reading
-
-          // Audio TTS State
+          const [textSize, setTextSize] = useState(18); 
           const [isSpeaking, setIsSpeaking] = useState(false);
+
+          const [loadingMsg, setLoadingMsg] = useState("");
+          const [errorMsg, setErrorMsg] = useState("");
 
           const endOfStoryRef = useRef(null);
 
-          // Initialize Firebase Auth
+          // Cleanup TTS on unmount
           useEffect(() => {
-            const initAuth = async () => {
-              if(!auth) return;
-              try {
-                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-                  await signInWithCustomToken(auth, window.__initial_auth_token);
-                } else {
-                  await signInAnonymously(auth);
-                }
-              } catch (err) { console.error("Auth Error", err); }
-            };
-            initAuth();
-            if (auth) {
-              const unsubscribe = onAuthStateChanged(auth, setUser);
-              return () => unsubscribe();
-            }
             return () => {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
             }
@@ -969,11 +962,6 @@
           };
 
           // --- API LOGIC ---
-          const [loadingMsg, setLoadingMsg] = useState("");
-          const [loadCodeInput, setLoadCodeInput] = useState("");
-          const [saveCode, setSaveCode] = useState(null);
-          const [errorMsg, setErrorMsg] = useState("");
-
           const generateStoryNode = async (actionText = null) => {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
@@ -991,17 +979,17 @@
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
             const wordCounts = [
-              "40 to 50 words per page",
-              "75 to 100 words per page",
-              "100 to 120 words per page",
-              "130 to 150 words per page"
+              "between 40 and 50 words per page",
+              "between 75 and 100 words per page",
+              "between 100 and 120 words per page",
+              "between 130 and 150 words per page"
             ];
 
             const levelInstructions = [
               `Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words (e.g., big, run, dark, sad). Sentences must be very short and phonetic. Length: ${wordCounts[0]}. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.`,
-              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary (e.g., spooky, shadows, suddenly). Length: ${wordCounts[1]}. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.`,
-              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language, varied sentence structures, and more complex words (e.g., treacherous, echoing, architecture). Length: ${wordCounts[2]}. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.`,
-              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary (e.g., cacophony, malevolent, macabre, reverberate). Length: ${wordCounts[3]}. Reading Comprehension: Ask a complex analytical question about themes or subtle clues.`
+              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary. Length: ${wordCounts[1]}. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.`,
+              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language and varied sentence structures. Length: ${wordCounts[2]}. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.`,
+              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary. Length: ${wordCounts[3]}. Reading Comprehension: Ask a complex analytical question about themes or subtle clues.`
             ];
 
             let historyContext = "";
@@ -1033,7 +1021,7 @@
               promptText += `
               \nREQUIREMENTS FOR THIS TURN:
               1. Write a continuous story segment that progresses the plot forward.
-              2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). CRITICAL: Each page MUST contain different text. Do NOT repeat paragraphs. Page 1 should setup the situation. Page 2 should escalate the tension. Page 3 should introduce a specific obstacle. Page 4 should present the educational puzzle.
+              2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). CRITICAL: Each page MUST contain different text. Do NOT repeat paragraphs. Page 1 should setup the situation. Page 2 should escalate the tension. Page 3 should introduce a specific obstacle. Page 4 should present the puzzle.
               3. EACH individual page MUST be exactly ${wordCounts[setupData.readingLevel]}. Use pacing and descriptions to strictly reach this count.
               4. Create a reading comprehension question based STRICTLY on the story you just wrote on the FINAL page. The question's difficulty must match the Reading Level constraint. DO NOT ask external math or science questions; it must be about the text.
               5. State the question or puzzle clearly in the "question" field.
@@ -1046,60 +1034,37 @@
 
             const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.`;
 
-            const fullApiUrl = `${GEMINI_URL}`;
-
-            const payload = {
-              contents: [{ parts: [{ text: promptText }] }],
-              systemInstruction: { parts: [{ text: systemInstruction }] },
-              generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                  type: "OBJECT",
-                  properties: {
-                    pages: {
-                      type: "ARRAY",
-                      description: `Array of exactly 4 strings representing sequential pages of story text. Each string MUST be distinct and follow length rules.`,
-                      items: { type: "STRING" }
-                    },
-                    imagePrompt: { type: "STRING" },
-                    question: { type: "STRING" },
-                    choices: {
-                      type: "ARRAY",
-                      items: {
-                        type: "OBJECT",
-                        properties: {
-                          text: { type: "STRING" },
-                          isCorrect: { type: "BOOLEAN" },
-                          isGameOver: { type: "BOOLEAN" },
-                          gameOverMessage: { type: "STRING" }
-                        }
-                      }
-                    },
-                    isVictory: { type: "BOOLEAN" }
-                  }
-                }
-              }
-            };
+            // INCREDIBLE WORKAROUND: Instead of Gemini with restricted keys, we use Pollinations free API.
+            // It completely supports Llama 3 / Mistral and returns free unlimited text without authentication!
+            const pollinationPrompt = `System instructions: ${systemInstruction}\n\nUser request: ${promptText}`;
 
             try {
-              const response = await fetchWithRetry(fullApiUrl, {
+              const response = await fetch(POLLINATIONS_TEXT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                  messages: [
+                    { role: "system", content: "You must only respond with raw, valid JSON. Do not wrap your response in markdown code blocks like ```json." },
+                    { role: "user", content: pollinationPrompt }
+                  ],
+                  jsonMode: true
+                })
               });
 
-              if (!response.candidates || response.candidates.length === 0) {
-                 throw new Error("Empty Response from AI");
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
               }
 
-              let jsonText = response.candidates[0].content.parts[0].text;
+              let jsonText = await response.text();
+              
+              // Clean markdown if it leaked
               jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
               
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
                 jsonText = jsonMatch[0];
               } else {
-                throw new Error("Invalid format returned by Game Engine");
+                throw new Error("Invalid JSON structure returned.");
               }
               
               const nodeData = JSON.parse(jsonText);
@@ -1119,8 +1084,8 @@
                 setGameState('story');
               }
             } catch (err) {
-              console.warn("API Error:", err.message);
-              setErrorMsg("The magical connection was lost. " + err.message);
+              console.error("Pollination Engine Error:", err);
+              setErrorMsg(`Summoning Error: ${err.message}. Please try again.`);
               setGameState('story');
             }
           };
@@ -1158,57 +1123,10 @@
             generateStoryNode();
           };
 
-          // --- SAVING & LOADING (FIRESTORE) ---
-          const saveGame = async () => {
-            if (!user || !db) return setErrorMsg("Must be connected to magical servers to save.");
-            setLoadingMsg("Saving to the Crypt...");
-            try {
-              let code;
-              let isUnique = false;
-              while(!isUnique) {
-                code = Math.floor(1000 + Math.random() * 9000).toString();
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
-                const docSnap = await getDoc(docRef);
-                if(!docSnap.exists()) isUnique = true;
-              }
-
-              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', code);
-              await setDoc(docRef, {
-                setupData, storyHistory, currentNode, turnCount, gameState, sessionSeed, sessionInitialNode, playerName, timestamp: new Date().toISOString()
-              });
-              setSaveCode(code);
-            } catch (e) {
-              setErrorMsg("Failed to save your progress!");
-            }
-          };
-
-          const loadGame = async () => {
-            if (!user || !db) return;
-            if (loadCodeInput.length !== 4) return setErrorMsg("Code must be 4 digits.");
-            setGameState('loading'); setLoadingMsg("Searching the Archives..."); setErrorMsg("");
-            try {
-              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'adventurevania_saves', loadCodeInput);
-              const docSnap = await getDoc(docRef);
-              if (docSnap.exists()) {
-                const data = docSnap.data();
-                setSetupData(data.setupData); setStoryHistory(data.storyHistory);
-                setCurrentNode(data.currentNode); setTurnCount(data.turnCount);
-                setSessionSeed(data.sessionSeed || "");
-                setSessionInitialNode(data.sessionInitialNode || data.currentNode);
-                if (data.playerName) setPlayerName(data.playerName);
-                setCurrentPageIndex(0);
-                setGameState(data.gameState === 'gameover' ? 'gameover' : (data.gameState === 'victory' ? 'victory' : 'story'));
-                setSaveCode(null); setSessionStartTime(Date.now()); 
-              } else {
-                setErrorMsg("No adventure found with that code."); setGameState('menu');
-              }
-            } catch (e) { setErrorMsg("Error accessing the archives."); setGameState('menu'); }
-          };
-
           // --- RENDERERS ---
 
           const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8">
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative">
               
               <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-2">
                  <img 
@@ -1230,19 +1148,6 @@
                 <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
                   ▶️ Press Enter to Start
                 </button>
-                
-                <div className="pixel-border bg-gray-900 p-4 md:p-6 flex flex-col gap-3 md:gap-4">
-                  <p className="font-pixel text-[10px] text-gray-300">Resume Adventure</p>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" maxLength="4" placeholder="0000" value={loadCodeInput}
-                      onChange={(e) => setLoadCodeInput(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-black border-2 border-purple-800 text-green-400 font-pixel text-center p-2 outline-none focus:border-green-400"
-                    />
-                    <button className="nes-btn green" onClick={loadGame}>Load</button>
-                  </div>
-                  {errorMsg && <p className="font-terminal text-red-500 text-xl">{errorMsg}</p>}
-                </div>
 
                 <div className="flex flex-col gap-2 w-full text-left mt-2">
                     <label className="font-pixel text-[8px] md:text-[10px] text-gray-400 text-center">Student Identification:</label>
@@ -1257,8 +1162,8 @@
                       className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500"
                     />
                 </div>
-
               </div>
+              {errorMsg && <p className="font-terminal text-red-500 text-xl">{errorMsg}</p>}
             </div>
           );
 
@@ -1321,58 +1226,6 @@
             );
           };
 
-          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node || !node.pages) return null;
-            
-            const isAtLastPage = currentPageIndex === node.pages.length - 1;
-            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
-            const showChallenge = isHistory || isAtLastPage;
-
-            return (
-              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
-                <div className="pixel-border bg-black p-4 md:p-6 relative">
-                  
-                  {/* Decorative Corners */}
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
-
-                  <div className="w-full">
-                     {/* Interactive Highlightable Component Replaces Simple Paragraph */}
-                     <HighlightableText text={textToDisplay} textSize={textSize} />
-                  </div>
-
-                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {showChallenge && node.question && (
-                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
-                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
-                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* TTS Read Aloud Button */}
-                    {!isHistory && (
-                      <button 
-                        onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} 
-                        className="nes-btn shrink-0"
-                      >
-                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {isHistory && chosenAction && (
-                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
-                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
-                  </div>
-                )}
-              </div>
-            );
-          };
-
           const renderGameArea = () => {
             if (!currentNode && !errorMsg) {
               return renderLoading();
@@ -1404,39 +1257,23 @@
 
                       <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
                         if(window.confirm("Are you sure you want to restart this adventure from the beginning?")) {
-                          setCurrentNode(sessionInitialNode);
                           setTurnCount(0);
                           setStoryHistory([]);
                           setCurrentPageIndex(0);
                           setCorrectAnswers(0);
                           setTotalQuestions(0);
                           setGameState('story');
+                          generateStoryNode();
                         }
                       }}>
                         <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
                       </button>
 
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={saveGame} disabled={gameState === 'gameover'}>
-                        <span className="text-xl md:text-2xl drop-shadow-md">💾</span> <span className="hidden md:inline">Save</span>
-                      </button>
                       <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
                         <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
                       </button>
                     </div>
                   </div>
-
-                  {saveCode && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-                      <div className="pixel-border bg-gray-900 p-8 text-center max-w-sm w-full">
-                        <h3 className="font-pixel text-green-400 mb-4">Adventure Saved!</h3>
-                        <p className="font-terminal text-2xl text-white mb-6">Write down this magic code to resume later:</p>
-                        <div className="text-6xl font-pixel text-yellow-400 bg-black p-6 pixel-border mb-8 inline-block tracking-widest">
-                          {saveCode}
-                        </div>
-                        <button className="nes-btn w-full" onClick={() => setSaveCode(null)}>Continue</button>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
                     {storyHistory.map((hist, idx) => (
