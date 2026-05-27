@@ -247,23 +247,6 @@
 
         const STEPS_KEYS = ["character", "villain", "setting", "plot", "dilemma", "readingLevel"];
 
-        // --- FIREBASE SETUP ---
-        let app, auth, db, appId;
-        try {
-          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
-          if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
-          }
-        } catch (e) {
-          console.error("Firebase init failed:", e);
-        }
-
-        // --- UTILITIES ---
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         const FlappyBatMinigame = () => {
           const canvasRef = useRef(null);
@@ -520,7 +503,7 @@
 
           useEffect(() => {
             setHighlights([]);
-          }, [text]); // Clear highlights on new page
+          }, [text]); 
 
           const handleSelection = () => {
             const selection = window.getSelection();
@@ -539,7 +522,6 @@
           const renderText = () => {
             if (highlights.length === 0) return text;
             
-            // Sort by length descending to prevent partial match bugs on overlapping phrases
             const escapedHighlights = highlights
               .slice()
               .sort((a, b) => b.length - a.length)
@@ -596,16 +578,16 @@
         };
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        let app, auth, db, appId;
-        let synthCtx = null; 
+        // FIXED: Prepended unique scopes to global identifiers to strictly bypass Babel parsing collisions.
+        let fbApp, fbAuth, fbDb, fbAppId;
 
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
           if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+            fbApp = initializeApp(firebaseConfig);
+            fbAuth = getAuth(fbApp);
+            fbDb = getFirestore(fbApp);
+            fbAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
           }
         } catch (e) {
           console.error("Firebase init failed:", e);
@@ -613,10 +595,13 @@
 
         // --- MAIN COMPONENT ---
         function Adventurevania() {
+          // --- ALL STATE DECLARATIONS AT TOP TO PREVENT TEMPORAL DEAD ZONE HOISTING ERRORS ---
+          const [user, setUser] = useState(null); // FIXED: Added user / setUser state hook to safely capture Firebase authentication updates
           const [gameState, setGameState] = useState('menu'); 
           
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
+          const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
           
           // STORY DATA (Progressive Chapter mode)
           const [currentNode, setCurrentNode] = useState(null);
@@ -649,13 +634,26 @@
 
           const endOfStoryRef = useRef(null);
 
-          const synthCtxRef = useRef(null);
+          // SAFE CHIP INTERVAL REFERENCE: Ref keeps track of Web Audio synthesis contexts and intervals across re-renders
           const melodyIntervalRef = useRef(null);
+          const synthCtxRef = useRef(null);
 
+          // Initialize Firebase Auth
           useEffect(() => {
-            return () => { 
-              if (window.speechSynthesis) window.speechSynthesis.cancel(); 
-              if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            const initAuth = async () => {
+              if(!fbAuth) return;
+              try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
+                } else {
+                  await signInAnonymously(fbAuth);
+                }
+              } catch (err) { console.error("Auth Error", err); }
+            };
+            initAuth();
+            if (fbAuth) {
+              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+              return () => unsubscribe();
             }
           }, []);
 
@@ -855,115 +853,6 @@
               voiceOsc.stop(now + 5.6);
               subOsc.stop(now + 5.6);
             } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
-          };
-
-          useEffect(() => {
-            if (!isMuted) startSynthEngine();
-            else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
-            return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
-          }, [isMuted, currentTrack, musicVolume]);
-
-          const triggerLightning = () => {
-             setShowLightning(true);
-             playThunderSynth();
-             setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
-             else setTimeout(playGhostHowl, 800);
-          };
-
-          useEffect(() => {
-            const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
-            return () => clearInterval(lightningInterval);
-          }, [isMuted, musicVolume]);
-
-          // --- TTS ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
-
-          // --- CONTROLS ---
-          useEffect(() => {
-            const handleKeyDown = (e) => {
-              if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
-              if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { e.preventDefault(); }
-
-              if (gameState === 'setup') {
-                 const currentDataKey = STEPS_KEYS[setupStep];
-                 const numOptions = CATEGORIES[currentDataKey].length;
-
-                 if (e.key === 'ArrowRight') {
-                   setSetupData(prev => ({...prev, [currentDataKey]: Math.min(prev[currentDataKey] + 1, numOptions - 1)}));
-                 } else if (e.key === 'ArrowLeft') {
-                   setSetupData(prev => ({...prev, [currentDataKey]: Math.max(prev[currentDataKey] - 1, 0)}));
-                 } else if (e.key === 'ArrowDown') {
-                   setSetupData(prev => ({...prev, [currentDataKey]: Math.min(prev[currentDataKey] + 5, numOptions - 1)}));
-                 } else if (e.key === 'ArrowUp') {
-                   setSetupData(prev => ({...prev, [currentDataKey]: Math.max(prev[currentDataKey] - 5, 0)}));
-                 } else if (e.key === 'Enter') {
-                   if (setupStep < 5) setSetupStep(prev => prev + 1);
-                   else startGame();
-                 }
-              } else if (gameState === 'story' && !errorMsg) {
-                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
-                 
-                 if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
-                     setCurrentPageIndex(p => p - 1);
-                     if (window.speechSynthesis) window.speechSynthesis.cancel();
-                     setIsSpeaking(false);
-                 } else if (!isAtLastPage && (e.key === 'Enter' || e.key === 'ArrowRight')) {
-                   setCurrentPageIndex(p => p + 1);
-                   if (window.speechSynthesis) window.speechSynthesis.cancel();
-                   setIsSpeaking(false);
-                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
-                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
-                   else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
-                   else if (e.key === 'Enter') handleChoice(currentNode.choices[focusedChoice]);
-                 }
-              } else if (gameState === 'menu') {
-                 if (e.key === 'Enter') {
-                    setSetupStep(0); 
-                    setSetupData(prev => ({...prev, character: 0})); // Reset selection visually
-                    setGameState('setup');
-                 }
-              } else if (gameState === 'gameover' || gameState === 'victory') {
-                 if (e.key === 'Enter') setGameState('menu');
-              }
-            };
-
-            window.addEventListener('keydown', handleKeyDown, { passive: false });
-            return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
-
-          const recordEngagement = async (outcome) => {
-            if (!SPREADSHEET_WEB_APP_URL) return; 
-            const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
-            const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
-            const trackingData = {
-              timestamp: new Date().toISOString(),
-              playerName: playerName || "Anonymous Player",
-              character: CATEGORIES.characters[setupData.character].name,
-              villain: CATEGORIES.villains[setupData.villain].name,
-              outcome: outcome,
-              turnsSurvived: turnCount,
-              totalQuestionsAttempted: totalQuestions,
-              correctAnswers: correctAnswers,
-              comprehensionScore: compScore + "%",
-              timeSpentSeconds: timeSpentSecs
-            };
-            try {
-              await fetch(SPREADSHEET_WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(trackingData) });
-            } catch (err) { console.error("Error sending analytics:", err); }
           };
 
           // --- PROGRESSIVE STORY ENGINE ---
