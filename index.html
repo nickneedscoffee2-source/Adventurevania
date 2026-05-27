@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
+    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
     <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
 
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+      @import url('[https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap](https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap)');
       
       .font-pixel { font-family: 'Press Start 2P', cursive; }
       .font-terminal { font-family: 'VT323', monospace; }
@@ -76,28 +76,6 @@
         animation: lightning 0.7s ease-out;
       }
 
-      /* Flight path animations for Bats and Spiders */
-      @keyframes batFlyRight {
-        0%   { left: -15vw; transform: translateY(0); }
-        100% { left: 115vw; transform: translateY(-8vh); }
-      }
-      @keyframes batFlyLeft {
-        0%   { left: 115vw; transform: translateY(0) scaleX(-1); }
-        100% { left: -15vw; transform: translateY(-8vh) scaleX(-1); }
-      }
-      @keyframes spiderCrawlRight {
-        0%   { left: -20vw; }
-        40%  { left: 45vw; }
-        60%  { left: 45vw; } /* Pause in place */
-        100% { left: 120vw; }
-      }
-      @keyframes spiderCrawlLeft {
-        0%   { left: 120vw; transform: scaleX(-1); }
-        40%  { left: 45vw; transform: scaleX(-1); }
-        60%  { left: 45vw; transform: scaleX(-1); } /* Pause in place */
-        100% { left: -20vw; transform: scaleX(-1); }
-      }
-
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
@@ -146,20 +124,20 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { initializeApp } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)';
+        import { getFirestore, doc, setDoc, getDoc } from '[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)';
 
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
-        const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
-        const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
+        const POLLINATIONS_TEXT_URL = "[https://text.pollinations.ai/](https://text.pollinations.ai/)";
+        const SPREADSHEET_WEB_APP_URL = "[https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec](https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec)"; 
 
         const MENU_IMAGES = [
-          "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
-          "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
-          "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
+          "[https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1](https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1)",
+          "[https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2](https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2)",
+          "[https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3](https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3)"
         ];
 
         const SYNTH_TRACKS = [
@@ -408,7 +386,7 @@
 
           return (
             <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+              <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 32 16" className="w-24 h-12">
                 {/* Bat Body */}
                 <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
                 <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
@@ -578,8 +556,8 @@
         };
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        // FIXED: Prepended unique scopes to global identifiers to strictly bypass Babel parsing collisions.
         let fbApp, fbAuth, fbDb, fbAppId;
+        let synthCtx = null; 
 
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
@@ -595,8 +573,7 @@
 
         // --- MAIN COMPONENT ---
         function Adventurevania() {
-          // --- ALL STATE DECLARATIONS AT TOP TO PREVENT TEMPORAL DEAD ZONE HOISTING ERRORS ---
-          const [user, setUser] = useState(null); // FIXED: Added user / setUser state hook to safely capture Firebase authentication updates
+          const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
           
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
@@ -634,7 +611,6 @@
 
           const endOfStoryRef = useRef(null);
 
-          // SAFE CHIP INTERVAL REFERENCE: Ref keeps track of Web Audio synthesis contexts and intervals across re-renders
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
 
@@ -853,6 +829,117 @@
               voiceOsc.stop(now + 5.6);
               subOsc.stop(now + 5.6);
             } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
+          };
+
+          useEffect(() => {
+            if (!isMuted) startSynthEngine();
+            else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
+            return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
+          }, [isMuted, currentTrack, musicVolume]);
+
+          const triggerLightning = () => {
+             setShowLightning(true);
+             playThunderSynth();
+             setTimeout(() => setShowLightning(false), 500);
+             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
+             else setTimeout(playGhostHowl, 800);
+          };
+
+          useEffect(() => {
+            const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
+            return () => clearInterval(lightningInterval);
+          }, [isMuted, musicVolume]);
+
+          // --- TTS ---
+          const handleReadAloud = (text) => {
+            if (!window.speechSynthesis) return;
+            if (isSpeaking) {
+              window.speechSynthesis.cancel();
+              setIsSpeaking(false);
+              return;
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; 
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            setIsSpeaking(true);
+            window.speechSynthesis.speak(utterance);
+          };
+
+          // --- CONTROLS & SELECTION ARROWS ---
+          useEffect(() => {
+            const handleKeyDown = (e) => {
+              if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
+              if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) { e.preventDefault(); }
+
+              if (gameState === 'setup') {
+                 const currentDataKey = STEPS_KEYS[setupStep];
+                 const numOptions = CATEGORIES[currentDataKey].length;
+
+                 if (e.key === 'ArrowRight') {
+                   setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
+                 } else if (e.key === 'ArrowLeft') {
+                   setSetupFocusIndex(prev => Math.max(prev - 1, 0));
+                 } else if (e.key === 'ArrowDown') {
+                   setSetupFocusIndex(prev => Math.min(prev + 5, numOptions - 1));
+                 } else if (e.key === 'ArrowUp') {
+                   setSetupFocusIndex(prev => Math.max(prev - 5, 0));
+                 } else if (e.key === 'Enter') {
+                   setSetupData(prev => ({...prev, [currentDataKey]: setupFocusIndex}));
+                   setSetupFocusIndex(0); 
+                   if (setupStep < 5) setSetupStep(prev => prev + 1);
+                   else startGame();
+                 }
+              } else if (gameState === 'story' && !errorMsg) {
+                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+                 
+                 if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
+                     setCurrentPageIndex(p => p - 1);
+                     if (window.speechSynthesis) window.speechSynthesis.cancel();
+                     setIsSpeaking(false);
+                 } else if (!isAtLastPage && (e.key === 'Enter' || e.key === 'ArrowRight')) {
+                   setCurrentPageIndex(p => p + 1);
+                   if (window.speechSynthesis) window.speechSynthesis.cancel();
+                   setIsSpeaking(false);
+                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
+                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
+                   else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
+                   else if (e.key === 'Enter') handleChoice(currentNode.choices[focusedChoice]);
+                 }
+              } else if (gameState === 'menu') {
+                 if (e.key === 'Enter') {
+                    setSetupStep(0); 
+                    setSetupFocusIndex(0);
+                    setGameState('setup');
+                 }
+              } else if (gameState === 'gameover' || gameState === 'victory') {
+                 if (e.key === 'Enter') setGameState('menu');
+              }
+            };
+
+            window.addEventListener('keydown', handleKeyDown, { passive: false });
+            return () => window.removeEventListener('keydown', handleKeyDown);
+          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
+
+          const recordEngagement = async (outcome) => {
+            if (!SPREADSHEET_WEB_APP_URL) return; 
+            const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
+            const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
+            const trackingData = {
+              timestamp: new Date().toISOString(),
+              playerName: playerName || "Anonymous Player",
+              character: CATEGORIES.characters[setupData.character].name,
+              villain: CATEGORIES.villains[setupData.villain].name,
+              outcome: outcome,
+              turnsSurvived: turnCount,
+              totalQuestionsAttempted: totalQuestions,
+              correctAnswers: correctAnswers,
+              comprehensionScore: compScore + "%",
+              timeSpentSeconds: timeSpentSecs
+            };
+            try {
+              await fetch(SPREADSHEET_WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(trackingData) });
+            } catch (err) { console.error("Error sending analytics:", err); }
           };
 
           // --- PROGRESSIVE STORY ENGINE ---
@@ -1097,15 +1184,15 @@
                   <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
                 </div>
 
-                {/* Fluid Scrolling Container */}
+                {/* Fluid Scrolling Container - No hard max-height limits to prevent clipping */}
                 <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
                     {current.data.map((item, idx) => {
-                      const isSelected = setupData[current.key] === idx;
+                      const isSelected = setupFocusIndex === idx;
                       return (
                         <div 
                           key={idx} 
-                          onClick={() => { setSetupData({...setupData, [current.key]: idx}); }} 
+                          onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} 
                           className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isSelected ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
                           style={isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}
                         >
@@ -1123,7 +1210,12 @@
                   <div className="flex gap-4">
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
                     {setupStep < 5 ? (
-                      <button className="nes-btn green" onClick={() => { setSetupStep(setupStep + 1); }}>Next</button>
+                      <button className="nes-btn green" onClick={() => { 
+                        const currentKey = STEPS_KEYS[setupStep];
+                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                        setSetupFocusIndex(0);
+                        setSetupStep(setupStep + 1); 
+                      }}>Next</button>
                     ) : (
                       <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
                     )}
