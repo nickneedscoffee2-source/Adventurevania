@@ -470,16 +470,18 @@
         // This stops images from re-rendering in the history map by isolating the current image fetch!
         const ImagePanel = ({ prompt, turnCount }) => {
           const [loaded, setLoaded] = useState(false);
+          const [hasError, setHasError] = useState(false);
           
           useEffect(() => {
             setLoaded(false);
+            setHasError(false);
           }, [prompt, turnCount]);
 
           if (!prompt) return <div className="w-full h-full bg-black"></div>;
 
           return (
             <div className="w-full h-full relative overflow-hidden bg-black">
-              {!loaded && (
+              {!loaded && !hasError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
                   <span className="text-4xl animate-bounce mb-4">🦇</span>
                   <span className="font-pixel text-[10px] md:text-xs text-purple-400 animate-pulse text-center px-4 leading-relaxed">
@@ -487,14 +489,108 @@
                   </span>
                 </div>
               )}
-              <img 
-                src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=800&nologo=true&seed=${turnCount}`}
-                alt="Scene"
-                className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-                onLoad={() => setLoaded(true)}
-                onError={(e) => { e.target.style.display = 'none'; }}
-                style={{ imageRendering: 'pixelated' }}
-              />
+              {hasError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                  <span className="text-4xl mb-4 opacity-50">🖼️</span>
+                  <span className="font-pixel text-[10px] text-gray-500 text-center px-4">
+                    The magical painting faded.
+                  </span>
+                </div>
+              ) : (
+                <img 
+                  key={`${prompt}-${turnCount}`}
+                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=800&nologo=true&seed=${turnCount}`}
+                  alt="Scene"
+                  className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setLoaded(true)}
+                  onError={(e) => { 
+                    setLoaded(true); 
+                    setHasError(true);
+                  }}
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              )}
+            </div>
+          );
+        };
+
+        // --- INTERACTIVE TEXT HIGHLIGHTER ---
+        const HighlightableText = ({ text, textSize }) => {
+          const [highlights, setHighlights] = useState([]);
+
+          useEffect(() => {
+            setHighlights([]);
+          }, [text]); // Clear highlights on new page
+
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
+              setHighlights(prev => [...prev, selectedText]);
+            }
+          };
+
+          const removeHighlight = (phraseToRemove) => {
+            setHighlights(prev => prev.filter(h => h !== phraseToRemove));
+          };
+
+          const renderText = () => {
+            if (highlights.length === 0) return text;
+            
+            // Sort by length descending to prevent partial match bugs on overlapping phrases
+            const escapedHighlights = highlights
+              .slice()
+              .sort((a, b) => b.length - a.length)
+              .map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+              
+            const regex = new RegExp(`(${escapedHighlights.join('|')})`, 'gi');
+            const parts = text.split(regex);
+
+            return parts.map((part, i) => {
+              const lowerPart = part.toLowerCase();
+              const matchedHighlight = highlights.find(h => h.toLowerCase() === lowerPart);
+              
+              if (matchedHighlight) {
+                return (
+                  <mark 
+                    key={i} 
+                    className="bg-yellow-400 text-black px-1 rounded cursor-pointer transition-colors hover:bg-red-400" 
+                    title="Click to remove highlight"
+                    onClick={() => removeHighlight(matchedHighlight)}
+                  >
+                    {part}
+                  </mark>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            });
+          };
+
+          return (
+            <div className="relative w-full">
+              {highlights.length > 0 && (
+                <div className="flex justify-end mb-2">
+                  <button 
+                    onClick={() => setHighlights([])} 
+                    className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-red-900 !px-2 !py-1 !text-[8px]"
+                  >
+                    Clear Highlights
+                  </button>
+                </div>
+              )}
+              <p 
+                className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap mb-4" 
+                style={{ fontSize: `${textSize}px` }}
+                onMouseUp={handleSelection}
+                onTouchEnd={handleSelection}
+              >
+                {renderText()}
+              </p>
+              <p className="font-pixel text-[8px] text-gray-500 mt-2 text-right opacity-70">
+                Tip: Highlight text with your mouse or finger to mark keywords!
+              </p>
             </div>
           );
         };
@@ -1334,9 +1430,8 @@
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
 
                   <div className="w-full">
-                    <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap mb-4" style={{ fontSize: `${textSize}px` }}>
-                      {textToDisplay}
-                    </p>
+                     {/* Interactive Highlightable Component Replaces Simple Paragraph */}
+                     <HighlightableText text={textToDisplay} textSize={textSize} />
                   </div>
 
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
