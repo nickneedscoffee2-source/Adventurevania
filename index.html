@@ -185,35 +185,60 @@
             { name: "Word Weaver", icon: "📖", desc: "Casts spells using vocabulary." },
             { name: "Eco-Ranger", icon: "🌿", desc: "Controls plants and knows nature." },
             { name: "Time Traveler", icon: "⏳", desc: "Expert on historical events." },
-            { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." }
+            { name: "Gravity Kid", icon: "🍎", desc: "Manipulates physics and forces." },
+            { name: "Beast Tamer", icon: "🦁", desc: "Understands all animal life." },
+            { name: "The Alchemist", icon: "🧪", desc: "Mixes matter and states of chemistry." },
+            { name: "Cartographer", icon: "🗺️", desc: "Never gets lost, reads any map." },
+            { name: "The Tinkerer", icon: "⚙️", desc: "Builds simple machines on the fly." },
+            { name: "Codebreaker", icon: "🔍", desc: "Solves logic puzzles and ciphers." }
           ],
           villains: [
             { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
             { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
             { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
             { name: "Time Lich", icon: "💀", desc: "Erases important history." },
-            { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." }
+            { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
+            { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
+            { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
+            { name: "Map-Mangler", icon: "🌪️", desc: "Scrambles the continents." },
+            { name: "Multiplication Mummy", icon: "🧻", desc: "Traps you in tangles of times tables." },
+            { name: "Punc. Poltergeist", icon: "🎭", desc: "Ends sentences prematurely!" }
           ],
           settings: [
             { name: "Haunted Library", icon: "🏛️", desc: "Books fly off the shelves here." },
             { name: "Castle of Calculus", icon: "🏰", desc: "A fortress built on math." },
             { name: "Primeval Forest", icon: "🌲", desc: "Dark woods full of science." },
             { name: "Ancient Pyramids", icon: "🏜️", desc: "Social studies in the sand." },
-            { name: "Abandoned Lab", icon: "🏭", desc: "Where chemistry went wrong." }
+            { name: "Abandoned Lab", icon: "🏭", desc: "Where chemistry went wrong." },
+            { name: "Spooky Swamp", icon: "🐊", desc: "Murky and full of biology." },
+            { name: "Ghost Town", icon: "🏚️", desc: "An empty historical settlement." },
+            { name: "Clockwork Tower", icon: "🕰️", desc: "A giant machine of gears." },
+            { name: "Forgotten Museum", icon: "🖼️", desc: "Artifacts come alive at night." },
+            { name: "Creepy Carnival", icon: "🎪", desc: "Rollercoasters of physics." }
           ],
           plots: [
             { name: "Find the Lost Artifact", icon: "💎", desc: "Recover the ancient treasure." },
             { name: "Rescue the Mayor", icon: "👑", desc: "The town leader is kidnapped!" },
             { name: "Stop the Machine", icon: "💣", desc: "Halt the villain's contraption." },
             { name: "Solve the Mystery", icon: "🧩", desc: "Find out who is haunting town." },
-            { name: "Escape the Maze", icon: "🌀", desc: "Find your way out of the labyrinth." }
+            { name: "Escape the Maze", icon: "🌀", desc: "Find your way out of the labyrinth." },
+            { name: "Restore the Timeline", icon: "🕰️", desc: "Fix history before it's gone." },
+            { name: "Cure the Curse", icon: "💊", desc: "Heal the townsfolk's ailments." },
+            { name: "Find Hidden Treasure", icon: "💰", desc: "Follow the clues to the gold." },
+            { name: "Defend the Castle", icon: "🛡️", desc: "Hold off the monster invasion." },
+            { name: "Expose the Monster", icon: "🔦", desc: "Pull off the villain's mask!" }
           ],
           dilemmas: [
             { name: "Running Out of Time", icon: "⏰", desc: "The clock is ticking down fast." },
             { name: "Hopelessly Lost", icon: "🧭", desc: "You have no idea where you are." },
             { name: "Ignored Warning", icon: "⚠️", desc: "You shouldn't have opened that door." },
             { name: "Lost Magic Tool", icon: "🚫", desc: "Your primary weapon is gone." },
-            { name: "Betrayed by Friend", icon: "🐍", desc: "Someone wasn't who they seemed." }
+            { name: "Betrayed by Friend", icon: "🐍", desc: "Someone wasn't who they seemed." },
+            { name: "Trapped in Room", icon: "🚪", desc: "The walls are closing in." },
+            { name: "Sudden Storm", icon: "🌩️", desc: "Extreme weather strikes." },
+            { name: "Weakness Revealed", icon: "👁️", desc: "The villain knows how to beat you." },
+            { name: "Missing Pieces", icon: "🧩", desc: "You don't have all the clues." },
+            { name: "Accused of Crime", icon: "⚖️", desc: "The town thinks YOU did it!" }
           ],
           readingLevels: [
             { name: "Early Primary", icon: "🧸", desc: "Grades 1-2 reading level." },
@@ -422,61 +447,213 @@
           );
         }
 
-        // --- ISOLATED IMAGE PANEL ---
-        const ImagePanel = ({ prompt, turnCount }) => {
-          const [loaded, setLoaded] = useState(false);
-          const [hasError, setHasError] = useState(false);
-          const imgRef = useRef(null);
-          
-          useEffect(() => {
-            if (imgRef.current && imgRef.current.complete) {
-              setLoaded(true);
-            } else {
-              setLoaded(false);
-            }
-            setHasError(false);
-          }, [prompt, turnCount]);
+        // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
+        const SunsetPixelArt = ({ setting, turn }) => {
+          const canvasRef = useRef(null);
 
-          if (!prompt) return <div className="w-full h-full bg-black"></div>;
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, w, h);
+
+            // 1. SKY GRADIENT based on sunset progression stage (turn 0 to 9)
+            let skyColors = [];
+            if (turn === 0) {
+              skyColors = ['#fc9838', '#fc7460', '#bc447c']; // bright rich orange to dark magenta
+            } else if (turn >= 1 && turn <= 3) {
+              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; // brilliant deep orange to purple
+            } else if (turn >= 4 && turn <= 6) {
+              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; // twilight purple/indigo
+            } else {
+              skyColors = ['#180040', '#000028', '#000010', '#000000']; // midnight deep blue-black
+            }
+
+            const step = h / skyColors.length;
+            skyColors.forEach((color, i) => {
+              ctx.fillStyle = color;
+              ctx.fillRect(0, i * step, w, step);
+            });
+
+            // 2. SUNSTAGE & CELESTIALS
+            if (turn < 7) {
+              const sunY = 60 + turn * 18;
+              const sunSize = 32;
+              
+              ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
+              ctx.beginPath();
+              ctx.arc(w/2, sunY, sunSize + 16, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.fillStyle = '#ffeb3b';
+              ctx.beginPath();
+              ctx.arc(w/2, sunY, sunSize, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.fillStyle = '#ffffff';
+              for (let i = 0; i < 20; i++) {
+                const rx = (Math.sin(i * 99) * 0.5 + 0.5) * w;
+                const ry = (Math.cos(i * 33) * 0.5 + 0.5) * (h - 100);
+                ctx.fillRect(Math.floor(rx), Math.floor(ry), 2, 2);
+              }
+
+              const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
+              const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
+              ctx.fillStyle = moonGlow;
+              ctx.beginPath();
+              ctx.arc(w - 70, 60, 26, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.fillStyle = moonColor;
+              ctx.beginPath();
+              ctx.arc(w - 70, 60, 18, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            // 3. MOUNTAIN SILHOUETTE
+            ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            ctx.lineTo(0, h - 80);
+            ctx.lineTo(w * 0.2, h - 120);
+            ctx.lineTo(w * 0.4, h - 70);
+            ctx.lineTo(w * 0.6, h - 105);
+            ctx.lineTo(w * 0.8, h - 80);
+            ctx.lineTo(w, h - 130);
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fill();
+
+            // 4. SETTING SILHOUETTES
+            ctx.fillStyle = '#100504';
+            ctx.fillRect(0, h - 40, w, 40);
+            ctx.fillStyle = '#3e2723';
+            ctx.fillRect(0, h - 40, w, 4);
+            ctx.fillStyle = '#000000';
+
+            switch(setting) {
+              case 0:
+                ctx.fillRect(10, 0, 30, h);
+                ctx.fillRect(w - 40, 0, 30, h);
+                ctx.fillStyle = '#ffeb3b';
+                ctx.fillRect(120, h - 140, 12, 6);
+                ctx.fillRect(w - 150, h - 180, 14, 8);
+                break;
+              case 1:
+                ctx.fillRect(30, h - 220, 60, 180);
+                ctx.fillRect(200, h - 180, 50, 140);
+                ctx.beginPath();
+                ctx.moveTo(30, h - 220);
+                ctx.lineTo(60, h - 270);
+                ctx.lineTo(90, h - 220);
+                ctx.fill();
+                break;
+              case 2:
+                const drawTree = (tx, ty) => {
+                  ctx.fillRect(tx + 12, ty, 6, h - ty);
+                  ctx.beginPath();
+                  ctx.moveTo(tx, ty + 60);
+                  ctx.lineTo(tx + 15, ty);
+                  ctx.lineTo(tx + 30, ty + 60);
+                  ctx.fill();
+                  ctx.beginPath();
+                  tx -= 5;
+                  ctx.moveTo(tx, ty + 120);
+                  ctx.lineTo(tx + 20, ty + 40);
+                  ctx.lineTo(tx + 40, ty + 120);
+                  ctx.fill();
+                };
+                drawTree(40, h - 240);
+                drawTree(w - 90, h - 260);
+                break;
+              case 3:
+                ctx.beginPath();
+                ctx.moveTo(w/2 - 120, h - 40);
+                ctx.lineTo(w/2, h - 190);
+                ctx.lineTo(w/2 + 120, h - 40);
+                ctx.closePath();
+                ctx.fill();
+                break;
+              case 4:
+                ctx.fillRect(20, h - 160, 20, 120);
+                ctx.fillRect(w - 50, h - 190, 30, 150);
+                ctx.fillStyle = '#00e676';
+                ctx.fillRect(25, h - 120, 4, 4);
+                ctx.fillStyle = '#ff1744';
+                ctx.fillRect(25, h - 100, 4, 4);
+                break;
+              case 5:
+                ctx.fillRect(0, h - 50, w, 20);
+                ctx.fillRect(40, h - 180, 12, 140);
+                ctx.fillRect(w - 80, h - 200, 14, 160);
+                break;
+              case 6:
+                ctx.fillRect(20, h - 170, 80, 130);
+                ctx.fillRect(w - 110, h - 190, 90, 150);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(w/2 - 3, h - 100, 6, 40);
+                ctx.fillRect(w/2 - 12, h - 90, 24, 6);
+                break;
+              case 7:
+                ctx.beginPath();
+                ctx.arc(80, h - 160, 45, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+              case 8:
+                ctx.fillRect(60, h - 120, 40, 80);
+                ctx.fillRect(w - 100, h - 140, 40, 100);
+                ctx.beginPath();
+                ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+              case 9:
+                ctx.beginPath();
+                ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                ctx.lineWidth = 2;
+                for (let a = 0; a < 8; a++) {
+                  const angle = (a * Math.PI) / 4;
+                  ctx.beginPath();
+                  ctx.moveTo(w/2, h - 150);
+                  ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70);
+                  ctx.stroke();
+                }
+                break;
+            }
+
+            ctx.fillStyle = '#000000';
+            for (let i = 0; i < 4; i++) {
+              const bx = (Math.sin(i * 45 + turn) * 0.5 + 0.5) * (w - 60) + 30;
+              const by = (Math.cos(i * 12 + turn) * 0.3 + 0.3) * (h - 140) + 20;
+              ctx.fillRect(bx, by, 8, 4);
+              ctx.fillRect(bx - 6, by - 3, 4, 3);
+              ctx.fillRect(bx + 10, by - 3, 4, 3);
+            }
+
+          }, [setting, turn]);
 
           return (
-            <div className="w-full h-full relative overflow-hidden bg-[#180907]">
-              {!loaded && !hasError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a0f0d] z-10">
-                  <span className="text-4xl animate-bounce mb-4">🦇</span>
-                  <span className="font-pixel text-[10px] md:text-xs text-amber-500 animate-pulse text-center px-4 leading-relaxed">
-                    Painting Scene...
-                  </span>
-                </div>
-              )}
-              {hasError ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a0f0d] z-10">
-                  <span className="text-4xl mb-4 opacity-50">🖼️</span>
-                  <span className="font-pixel text-[10px] text-gray-500 text-center px-4">
-                    The magical painting faded.
-                  </span>
-                </div>
-              ) : (
-                <img 
-                  ref={imgRef}
-                  key={`${prompt}-${turnCount}`}
-                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " retro pixel art style castlevania warm sunset red glow")}?width=800&height=800&nologo=true&seed=${turnCount}`}
-                  alt="Scene"
-                  className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setLoaded(true)}
-                  onError={() => { 
-                    setLoaded(true); 
-                    setHasError(true);
-                  }}
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
-            </div>
+            <canvas 
+              ref={canvasRef} 
+              width={500} 
+              height={500} 
+              className="w-full h-full object-cover transition-opacity duration-1000"
+              style={{ imageRendering: 'pixelated' }}
+            />
           );
         };
 
         // --- INTERACTIVE TEXT HIGHLIGHTER ---
-        const HighlightableText = ({ text, textSize }) => {
+        const InteractiveText = ({ text, textSize }) => {
           const [highlights, setHighlights] = useState([]);
 
           useEffect(() => {
@@ -486,40 +663,27 @@
           const handleSelection = () => {
             const selection = window.getSelection();
             if (!selection || selection.isCollapsed) return;
-            
             const selectedText = selection.toString().trim();
             if (selectedText.length > 1 && !highlights.includes(selectedText)) {
               setHighlights(prev => [...prev, selectedText]);
             }
           };
 
-          const removeHighlight = (phraseToRemove) => {
-            setHighlights(prev => prev.filter(h => h !== phraseToRemove));
+          const removeHighlight = (phrase) => {
+            setHighlights(prev => prev.filter(h => h !== phrase));
           };
 
           const renderText = () => {
             if (highlights.length === 0) return text;
-            
-            const escapedHighlights = highlights
-              .slice()
-              .sort((a, b) => b.length - a.length)
-              .map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-              
-            const regex = new RegExp(`(${escapedHighlights.join('|')})`, 'gi');
+            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
             const parts = text.split(regex);
 
             return parts.map((part, i) => {
-              const lowerPart = part.toLowerCase();
-              const matchedHighlight = highlights.find(h => h.toLowerCase() === lowerPart);
-              
-              if (matchedHighlight) {
+              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+              if (matched) {
                 return (
-                  <mark 
-                    key={i} 
-                    className="bg-amber-400 text-black px-1 rounded cursor-pointer transition-colors hover:bg-orange-400" 
-                    title="Click to remove highlight"
-                    onClick={() => removeHighlight(matchedHighlight)}
-                  >
+                  <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
                     {part}
                   </mark>
                 );
@@ -529,34 +693,15 @@
           };
 
           return (
-            <div className="relative w-full">
-              {highlights.length > 0 && (
-                <div className="flex justify-end mb-2">
-                  <button 
-                    onClick={() => setHighlights([])} 
-                    className="nes-btn !bg-amber-950 !text-amber-200 hover:!bg-red-950 !px-2 !py-1 !text-[8px]"
-                  >
-                    Clear Highlights
-                  </button>
-                </div>
-              )}
-              <p 
-                className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap mb-4" 
-                style={{ fontSize: `${textSize}px` }}
-                onMouseUp={handleSelection}
-                onTouchEnd={handleSelection}
-              >
+            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
                 {renderText()}
-              </p>
-              <p className="font-pixel text-[8px] text-amber-600/80 mt-2 text-right">
-                Highlight text with your mouse/finger to highlight key details!
               </p>
             </div>
           );
         };
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
-        // FIXED: Prepended unique scopes to global identifiers to strictly bypass Babel parsing collisions.
         let fbApp, fbAuth, fbDb, fbAppId;
         let synthCtx = null; 
 
@@ -581,7 +726,6 @@
           const dil = CATEGORIES.dilemmas[setup.dilemma];
           const level = setup.readingLevel;
 
-          const wordCounts = ["40 to 50", "75 to 100", "100 to 120", "130 to 150"];
           const padSentence = (index) => {
             const fillers = [
               "The ground crumbles. Safe passages require calculating geometric coordinates.",
@@ -609,29 +753,23 @@
           };
         };
 
-        // --- MAIN COMPONENT ---
+        // --- MAIN APP ---
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
-          
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
-          
-          // STORY DATA (Progressive Chapter mode)
           const [currentNode, setCurrentNode] = useState(null);
           const [currentPageIndex, setCurrentPageIndex] = useState(0); 
           const [turnCount, setTurnCount] = useState(0); 
           const [storyHistory, setStoryHistory] = useState([]);
           const [sessionInitialNode, setSessionInitialNode] = useState(null); 
-          
           const [sessionSeed, setSessionSeed] = useState("");
           const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
-          
           const [sessionStartTime, setSessionStartTime] = useState(null);
           const [correctAnswers, setCorrectAnswers] = useState(0);
           const [totalQuestions, setTotalQuestions] = useState(0);
-
           const [menuImgIndex, setMenuImgIndex] = useState(0);
           const [showLightning, setShowLightning] = useState(false);
           const [musicVolume, setMusicVolume] = useState(0.3);
@@ -641,51 +779,34 @@
           const [critters, setCritters] = useState([]); 
           const [textSize, setTextSize] = useState(18); 
           const [isSpeaking, setIsSpeaking] = useState(false);
-
           const [loadingMsg, setLoadingMsg] = useState("");
           const [loadingProgress, setLoadingProgress] = useState(0);
           const [errorMsg, setErrorMsg] = useState("");
           const [confirmDialog, setConfirmDialog] = useState(null);
 
           const endOfStoryRef = useRef(null);
-
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
 
-          // Initialize Firebase Auth
           useEffect(() => {
-            const initAuth = async () => {
-              if(!fbAuth) return;
-              try {
-                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
-                } else {
-                  await signInAnonymously(fbAuth);
-                }
-              } catch (err) { console.error("Auth Error", err); }
-            };
-            initAuth();
-            if (fbAuth) {
-              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
-              return () => unsubscribe();
+            return () => { 
+              if (window.speechSynthesis) window.speechSynthesis.cancel(); 
+              if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
             }
           }, []);
 
-          // Scroll to bottom
           useEffect(() => {
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
           }, [currentNode, currentPageIndex, gameState]);
 
-          // Rotating Menu
           useEffect(() => {
             if(gameState !== 'menu') return;
             const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
             return () => clearInterval(imgInterval);
           }, [gameState]);
 
-          // Simulated Progress Bar
           useEffect(() => {
             let interval;
             if (gameState === 'loading') {
@@ -699,23 +820,6 @@
             }
             return () => clearInterval(interval);
           }, [gameState]);
-
-          // Critter Spawner
-          useEffect(() => {
-            let timeoutId;
-            const spawnCritter = () => {
-              const id = Date.now();
-              const isBat = Math.random() > 0.5;
-              const direction = Math.random() > 0.5 ? 'Right' : 'Left';
-              const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
-              const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
-              setCritters(prev => [...prev, { id, isBat, style: { top: `${top}vh`, animation } }]);
-              setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, 12500);
-              timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
-            };
-            timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
-            return () => clearTimeout(timeoutId);
-          }, []);
 
           // --- SYNTH AUDIO ---
           const playSynthNote = (freq, type, duration, volMod) => {
@@ -741,7 +845,7 @@
             if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
             if (!synthCtxRef.current) {
               synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              synthCtx = synthCtxRef.current; // sync with global reference
+              synthCtx = synthCtxRef.current; 
             }
             const track = SYNTH_TRACKS[currentTrack];
             const stepDuration = 60 / track.tempo / 2; 
@@ -766,148 +870,13 @@
             }, stepDuration * 1000);
           };
 
-          const playThunderSynth = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              const bufferSize = ctx.sampleRate * 1.5;
-              const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-              const data = buffer.getChannelData(0);
-              for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-              const noiseNode = ctx.createBufferSource();
-              noiseNode.buffer = buffer;
-              const filterNode = ctx.createBiquadFilter();
-              filterNode.type = 'lowpass';
-              filterNode.frequency.setValueAtTime(600, ctx.currentTime);
-              filterNode.frequency.exponentialRampToTime(30, ctx.currentTime + 1.2);
-              const gainNode = ctx.createGain();
-              gainNode.gain.setValueAtTime(musicVolume * 1.2, ctx.currentTime);
-              gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
-              noiseNode.connect(filterNode);
-              filterNode.connect(gainNode);
-              gainNode.connect(ctx.destination);
-              noiseNode.start();
-            } catch(e) { console.warn(e); }
-          };
-
-          const playGhostHowl = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.type = 'sine';
-              const now = ctx.currentTime;
-              osc.frequency.setValueAtTime(250, now);
-              osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
-              const lfo = ctx.createOscillator();
-              lfo.type = 'sine';
-              lfo.frequency.setValueAtTime(5, now);
-              const lfoGain = ctx.createGain();
-              lfoGain.gain.setValueAtTime(10, now);
-              lfo.connect(lfoGain);
-              lfoGain.connect(osc.frequency);
-              lfo.start(now + 1.0);
-              lfo.stop(now + 4.0);
-              osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
-              gain.gain.setValueAtTime(0.0001, now);
-              gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
-              gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.start(now);
-              osc.stop(now + 4.0);
-            } catch(e) { console.warn(e); }
-          };
-
-          const playRealisticWolfHowl = () => {
-            const ctx = synthCtxRef.current;
-            if (!ctx || isMuted) return;
-            try {
-              if (ctx.state === 'suspended') ctx.resume();
-              const now = ctx.currentTime;
-              const voiceOsc = ctx.createOscillator();
-              const subOsc = ctx.createOscillator();
-              const finalGain = ctx.createGain();
-              voiceOsc.type = 'triangle';
-              subOsc.type = 'sine';
-              voiceOsc.frequency.setValueAtTime(160, now);
-              voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
-              voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
-              voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
-              voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
-              subOsc.frequency.setValueAtTime(80, now);
-              subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
-              subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
-              subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
-              subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
-              const vibratoLFO = ctx.createOscillator();
-              const vibratoGain = ctx.createGain();
-              vibratoLFO.type = 'sine';
-              vibratoLFO.frequency.setValueAtTime(5.8, now); 
-              vibratoGain.gain.setValueAtTime(12, now); 
-              vibratoLFO.connect(vibratoGain);
-              vibratoGain.connect(voiceOsc.frequency);
-              vibratoGain.connect(subOsc.frequency);
-              const filter = ctx.createBiquadFilter();
-              filter.type = 'bandpass';
-              filter.Q.setValueAtTime(3.5, now);
-              filter.frequency.setValueAtTime(400, now);
-              filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
-              filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
-              finalGain.gain.setValueAtTime(0.0001, now);
-              finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
-              finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
-              finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
-              voiceOsc.connect(filter);
-              subOsc.connect(filter);
-              filter.connect(finalGain);
-              finalGain.connect(ctx.destination);
-              vibratoLFO.start(now);
-              voiceOsc.start(now);
-              subOsc.start(now);
-              vibratoLFO.stop(now + 5.6);
-              voiceOsc.stop(now + 5.6);
-              subOsc.stop(now + 5.6);
-            } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
-          };
-
           useEffect(() => {
             if (!isMuted) startSynthEngine();
             else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
             return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
           }, [isMuted, currentTrack, musicVolume]);
 
-          const triggerLightning = () => {
-             setShowLightning(true);
-             playThunderSynth();
-             setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
-             else setTimeout(playGhostHowl, 800);
-          };
-
-          useEffect(() => {
-            const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
-            return () => clearInterval(lightningInterval);
-          }, [isMuted, musicVolume]);
-
-          // --- TTS ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
-
-          // --- CONTROLS & SELECTION ARROWS ---
+          // Keyboard Listeners
           useEffect(() => {
             const handleKeyDown = (e) => {
               if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
@@ -960,8 +929,6 @@
                     setSetupFocusIndex(0);
                     setGameState('setup');
                  }
-              } else if (gameState === 'gameover' || gameState === 'victory') {
-                 if (e.key === 'Enter') setGameState('menu');
               }
             };
 
@@ -980,7 +947,6 @@
             generateStoryNode(null, finalSetup, seed);
           };
 
-          // --- PROGRESSIVE STORY ENGINE ---
           const generateStoryNode = async (actionText = null, overrideSetupData = null, overrideSeed = null) => {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
@@ -1000,61 +966,49 @@
             const plot = CATEGORIES.plots[currentSetup.plot];
             const dil = CATEGORIES.dilemmas[currentSetup.dilemma];
 
-            const wordCounts = [
-              "40 to 50 words per page",
-              "75 to 100 words per page",
-              "100 to 120 words per page",
-              "130 to 150 words per page"
-            ];
-
+            const wordCounts = ["40 to 50 words per page", "75 to 100 words per page", "100 to 120 words per page", "130 to 150 words per page"];
             const levelInstructions = [
-              `Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words. Sentences must be very short and phonetic. Length: ${wordCounts[0]}. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.`,
-              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary. Length: ${wordCounts[1]}. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.`,
-              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language and varied sentence structures. Length: ${wordCounts[2]}. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.`,
-              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary. Length: ${wordCounts[3]}. Reading Comprehension: Ask a complex analytical question about themes or subtle clues.`
+              `Grades 1-2 level. Very simple, phonetic decodable words. Pages: exactly ${wordCounts[0]}.`,
+              `Grades 3-4 level. Simple compound structures. Pages: exactly ${wordCounts[1]}.`,
+              `Grades 5-6 level. Vivid descriptions. Pages: exactly ${wordCounts[2]}.`,
+              `Grades 7-8 level. Sophisticated, atmospheric vocabulary. Pages: exactly ${wordCounts[3]}.`
             ];
 
             let historyContext = "";
             if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Chapter ${i + 1}: Player chose action "${h.chosenAction}".`).join('\n');
+              historyContext = storyHistory.map((h, i) => `Previous Choice ${i + 1}: Chosen Option: "${h.chosenAction}"`).join('\n');
             }
 
             let promptText = `
-              Generate Chapter ${turnCount + 1} of 10 for the dynamic reading quest 'Adventurevania'.
-              
-              Game Setup:
-              - Player Character: ${char.name} (${char.desc})
-              - Villain: ${vill.name} (${vill.desc})
-              - Setting: ${sett.name} (${sett.desc})
-              - Main Plot: ${plot.name}
-              - Central Dilemma: ${dil.name}
-              - Reading Level constraints: ${levelInstructions[currentSetup.readingLevel]}
-              - Randomizer Seed: ${currentSeed}_${turnCount}
+              Quest Chapter ${turnCount + 1} of 10.
+              - Hero: ${char.name}
+              - Boss: ${vill.name}
+              - Setting: ${sett.name}
+              - Quest Plot: ${plot.name}
+              - Danger: ${dil.name}
+              - Reading level instructions: ${levelInstructions[currentSetup.readingLevel]}
+              - Seed: ${currentSeed}_${turnCount}
             `;
 
             if (turnCount === 0) {
-              promptText += "\nThis is the BEGINNING of the story. Page 1 must introduce the character, the setting, the villain's plot, and the central dilemma. Set the spooky but kid-friendly tone.";
+              promptText += "\nSetup the plot, setting, and dilemma. Keep a kid-friendly Castlevania spooky tone.";
             } else {
-              promptText += `\nPast History:\n${historyContext}\n\nDO NOT repeat any previous challenges, concepts, or questions. Create an entirely new obstacle.\nThe player previously chose this action: "${actionText}". Page 1 must continue the story directly from this choice.`;
+              promptText += `\nPast History choices made:\n${historyContext}\nContinue story based on action: "${actionText}".`;
             }
 
             if (turnCount >= 9) {
-              promptText += "\nThis is the FINAL CHAPTER (Chapter 10). Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
+              promptText += "\nFINAL CHAPTER. Resolve the plot fully with a heroic win over the villain. set isVictory to true. Do not provide any more questions.";
             } else {
               promptText += `
-              \nREQUIREMENTS:
-              1. Write EXACTLY 4 distinct, sequential "pages" (strings in the "pages" array). Do NOT repeat paragraphs. Page 1 setups the new scene. Page 2 escalates the tension. Page 3 introduces an obstacle. Page 4 should present the puzzle.
-              2. EACH individual page MUST be exactly ${wordCounts[currentSetup.readingLevel]}.
-              3. Create a reading comprehension question based STRICTLY on the story you just wrote on Page 4 of this chapter. The question's difficulty must match the Reading Level constraint. It must be about the text.
-              4. State the question clearly in the "question" field.
-              5. Provide 2 or 3 "choices" representing answers to the reading comprehension question.
-                 - One choice MUST be correct (set 'isCorrect' to true).
-                 - The other choices MUST be incorrect (set 'isCorrect' to false). If chosen, it leads to a funny 'gameOverMessage'. Set 'isGameOver' to true.
-              6. Provide an "imagePrompt" field containing an 8-bit style visual description of the scene.
+              \nCRITICAL REQUIREMENTS:
+              1. Return exactly 4 strings in 'pages' array. Page 1 sets scene. Page 2 adds tension. Page 3 has setting detail. Page 4 contains reading comp challenge.
+              2. Keep word counts exactly matching: ${wordCounts[currentSetup.readingLevel]} per page.
+              3. Create a reading comprehension question based on Chapter text, and 2-3 choices. One choice must be 'isCorrect: true', others incorrect with a 'gameOverMessage'.
+              4. 'imagePrompt' must be a short description (unrelated to images, just text scene).
               `;
             }
 
-            const systemInstruction = `You are a verbose fantasy author. You MUST output a single valid JSON object containing exactly: "pages" (array of 4 strings), "imagePrompt" (string), "question" (string), "choices" (array of choices with 'text', 'isCorrect', 'isGameOver', 'gameOverMessage'), and "isVictory" (boolean). Do not wrap response in markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside the text strings, as it will break the JSON formatting.`;
+            const systemInstruction = `You are a retro-gaming progressive CYOA writer. Output a single JSON block. Do NOT use markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside JSON text strings.`;
 
             let success = false;
             let attempts = 0;
@@ -1063,16 +1017,11 @@
             while (attempts < 3 && !success) {
               attempts++;
               try {
-                // FIXED: Implementing exponential backoff sleep to bypass 429 status code floods
-                if (attempts > 1) {
-                  await sleep(attempts * 1500); 
-                }
+                if (attempts > 1) await sleep(attempts * 1500); 
 
-                // FIXED: Changed fetch structure to a robust GET format with unique seed query parameter to clear Edge caches
                 const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${Math.random()}`;
-                
                 const response = await fetch(pollinationUrl);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
                 
                 let jsonText = await response.text();
                 jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1082,34 +1031,22 @@
                 if (startIdx !== -1 && endIdx !== -1) {
                   jsonText = jsonText.substring(startIdx, endIdx + 1);
                 } else {
-                  throw new Error("Invalid JSON structure boundaries.");
+                  throw new Error("Formatting Bounds Error");
                 }
                 
                 const nodeData = JSON.parse(jsonText);
                 
-                // CRITICAL PAGE RECONSTRUCTION GUARD
                 if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
                    if (nodeData.storyText) {
                      const segments = nodeData.storyText.split("\n\n").filter(t => t.trim().length > 10);
-                     if (segments.length >= 4) {
-                       nodeData.pages = segments.slice(0, 4);
-                     } else {
-                       nodeData.pages = [
-                         nodeData.storyText,
-                         "You proceed cautiously through the dim golden sunset glow...",
-                         "Every sound is amplified inside the ancient walls...",
-                         "Now, you must solve a puzzle to open the path ahead."
-                       ];
-                     }
-                   } else if (nodeData.storyPages && Array.isArray(nodeData.storyPages)) {
-                     nodeData.pages = nodeData.storyPages;
+                     nodeData.pages = segments.length >= 4 ? segments.slice(0, 4) : [nodeData.storyText, "You walk carefully into the dim red sunset glow...", "Your footsteps echo against dusty walls...", "You must solve a mystery to proceed."];
                    } else {
-                     throw new Error("Game Master returned an invalid book format.");
+                     throw new Error("Invalid structure.");
                    }
                 }
 
                 while (nodeData.pages.length < 4) {
-                  nodeData.pages.push("You continue exploring the warm sunset corridors...");
+                  nodeData.pages.push("You carefully explore the quiet sunset hallways...");
                 }
 
                 setCurrentNode(nodeData);
@@ -1119,14 +1056,12 @@
                 success = true;
                 
               } catch (err) {
-                console.warn(`Pollination Engine Error (Attempt ${attempts}):`, err.message);
+                console.warn(`Engine Error (Attempt ${attempts}):`, err.message);
                 lastError = err.message;
               }
             }
 
-            // FIXED: Automatically triggers local generator fallback on hard network blockages to secure un-interrupted student gameplay
             if (!success) {
-              console.warn("API fully unavailable. Launching secure offline generator...");
               try {
                 const localNode = generateLocalNode(turnCount, currentSetup);
                 setCurrentNode(localNode);
@@ -1168,21 +1103,8 @@
             }
           };
 
-          const startGame = () => {
-            setTurnCount(0);
-            setStoryHistory([]);
-            setSessionStartTime(Date.now());
-            setCorrectAnswers(0);
-            setTotalQuestions(0);
-            const seed = Math.random().toString(36).substring(2, 10);
-            setSessionSeed(seed);
-            generateStoryNode(null, setupData, seed);
-          };
-
-          // --- RENDERERS ---
-
           const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative">
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
               <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
                  <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
                  <div className="absolute inset-0 bg-[#E65100]/25 mix-blend-color-burn"></div>
@@ -1208,63 +1130,62 @@
             </div>
           );
 
-          const renderSetup = () => {
-            const steps = [
-              { title: "Select Your Hero", key: "character", data: CATEGORIES.characters },
-              { title: "Choose the Villain", key: "villain", data: CATEGORIES.villains },
-              { title: "Pick a Setting", key: "setting", data: CATEGORIES.settings },
-              { title: "Select the Plot", key: "plot", data: CATEGORIES.plots },
-              { title: "Choose a Dilemma", key: "dilemma", data: CATEGORIES.dilemmas },
-              { title: "Reading Difficulty", key: "readingLevel", data: CATEGORIES.readingLevels }
-            ];
-            const current = steps[setupStep];
+          const renderSetup = () => (
+            <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
+              <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
+                <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
+                  {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
+                </h2>
+                <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
+              </div>
 
-            return (
-              <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden">
-                <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
-                  <h2 className="font-pixel text-sm md:text-lg text-orange-400 leading-relaxed">{current.title}</h2>
-                  <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
-                </div>
-
-                {/* Fluid Scrolling Container - No hard max-height limits to prevent clipping */}
-                <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
-                    {current.data.map((item, idx) => {
-                      const isSelected = setupData[current.key] === idx;
+              {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
+              <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
+                  {setupStep === 5 ? (
+                    CATEGORIES.readingLevels.map((item, idx) => {
                       const isFocused = setupFocusIndex === idx;
                       return (
-                        <div 
-                          key={idx} 
-                          onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} 
-                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
-                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
-                        >
+                        <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, readingLevel: idx}); }} className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}>
                           <div className="text-3xl mb-1">{item.icon}</div>
                           <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
                           <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
                         </div>
                       );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
-                  <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
-                  <div className="flex gap-4">
-                    {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
-                    {setupStep < 5 ? (
-                      <button className="nes-btn green" onClick={() => { 
-                        setSetupStep(setupStep + 1); 
-                        setSetupFocusIndex(0);
-                      }}>Next</button>
-                    ) : (
-                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
-                    )}
-                  </div>
+                    })
+                  ) : (
+                    CATEGORIES[Object.keys(CATEGORIES)[setupStep]].map((item, idx) => {
+                      const isFocused = setupFocusIndex === idx;
+                      return (
+                        <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [STEPS_KEYS[setupStep]]: idx}); }} className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : {}}>
+                          <div className="text-3xl mb-1">{item.icon}</div>
+                          <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
+                          <p className="font-terminal text-orange-200/80 text-xs md:text-sm leading-tight hidden md:block">{item.desc}</p>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
-            );
-          };
+
+              <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
+                <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
+                <div className="flex gap-4">
+                  {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
+                  {setupStep < 5 ? (
+                    <button className="nes-btn green" onClick={() => { 
+                      const currentKey = STEPS_KEYS[setupStep];
+                      setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                      setSetupStep(setupStep + 1); 
+                      setSetupFocusIndex(0);
+                    }}>Next</button>
+                  ) : (
+                    <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
 
           const renderLoading = () => (
             <div className="flex flex-col h-full w-full bg-[#180907]">
@@ -1286,7 +1207,6 @@
 
           const renderGameArea = () => {
             if (!currentNode && !errorMsg) return renderLoading();
-            
             const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
 
             return (
@@ -1297,7 +1217,6 @@
                        🗺️ Chapter: {turnCount + 1}/10
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
-                      {/* Responsive Text Size Slider */}
                       <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
                         <span className="font-pixel text-[8px] text-gray-400">A</span>
                         <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
@@ -1385,9 +1304,9 @@
                   )}
                 </div>
                 
-                {/* RIGHT PANE - Visual Content */}
+                {/* RIGHT PANE - Custom procedural Sunset scene (Offline ready, zero AI delay!) */}
                 <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
-                    <ImagePanel prompt={currentNode?.imagePrompt} turnCount={turnCount} />
+                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} />
                 </div>
               </div>
             );
@@ -1395,7 +1314,6 @@
 
           const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
             if (!node || !node.pages) return null;
-            
             const isAtLastPage = currentPageIndex === node.pages.length - 1;
             const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
             const showChallenge = isHistory || isAtLastPage;
@@ -1409,7 +1327,7 @@
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
 
                   <div className="w-full">
-                     <HighlightableText text={textToDisplay} textSize={textSize} />
+                     <InteractiveText text={textToDisplay} textSize={textSize} />
                   </div>
 
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -1436,7 +1354,6 @@
             );
           };
 
-          // Audio Player Overlay UI
           const renderAudioPlayer = () => (
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
@@ -1456,19 +1373,8 @@
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
               
-              {/* Dynamic Animated Critters Layer */}
-              <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-                {critters.map(crit => {
-                  if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
-                  return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
-                })}
-              </div>
-
-              {showLightning && <div className="lightning-overlay"></div>}
-              
               <div className="h-[100dvh] p-2 md:p-6 flex items-center justify-center relative">
                 
-                {/* Modal Overlays */}
                 {confirmDialog && (
                   <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
                     <div className="pixel-border bg-[#2d140f] p-6 md:p-8 text-center max-w-sm w-full">
@@ -1497,7 +1403,6 @@
                   </div>
                 )}
 
-                {/* FIXED: Changed flex-grow container parameters to solve flexbox calculation issues */}
                 <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
