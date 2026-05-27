@@ -154,7 +154,11 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
@@ -279,8 +283,19 @@
           ]
         };
 
-        // --- UTILITIES ---
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        // --- FIREBASE SETUP ---
+        let app, auth, db, appId;
+        try {
+          const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
+          if (Object.keys(firebaseConfig).length > 0) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'adventurevania-default';
+          }
+        } catch (e) {
+          console.error("Firebase init failed:", e);
+        }
 
         // Global Synth variables
         let synthCtx = null;
@@ -507,6 +522,7 @@
 
           const [loadingMsg, setLoadingMsg] = useState("");
           const [errorMsg, setErrorMsg] = useState("");
+          const [confirmDialog, setConfirmDialog] = useState(null); // Custom modal for Restart/Quit
 
           const endOfStoryRef = useRef(null);
 
@@ -820,10 +836,10 @@
             window.speechSynthesis.speak(utterance);
           };
 
-          // Keyboard Navigation controls
+          // Keyboard Navigation controls with browser event cancellation
           useEffect(() => {
             const handleKeyDown = (e) => {
-              if(document.activeElement.tagName === "INPUT") return;
+              if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
 
               if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
                 e.preventDefault();
@@ -887,7 +903,7 @@
 
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted]);
+          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
 
           // --- ANALYTICS FUNCTION ---
           const recordEngagement = async (outcome) => {
@@ -990,9 +1006,24 @@
               `;
             }
 
-            const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.`;
+            const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.
+            
+YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
+{
+  "pages": ["Text for page 1", "Text for page 2", "Text for page 3", "Text for page 4"],
+  "imagePrompt": "Visual description of the scene",
+  "question": "The reading comprehension question",
+  "choices": [
+    {
+      "text": "Answer 1",
+      "isCorrect": true,
+      "isGameOver": false,
+      "gameOverMessage": ""
+    }
+  ],
+  "isVictory": false
+}`;
 
-            // POST WORKAROUND: Safely transmits complex prompt data in JSON payload to bypass school-level WAF/firewall GET request query blockages.
             try {
               const response = await fetch(POLLINATIONS_TEXT_URL, {
                 method: 'POST',
@@ -1018,23 +1049,44 @@
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
                 jsonText = jsonMatch[0];
-              } else {
-                throw new Error("Invalid JSON structure returned by pollination services.");
               }
               
-              const nodeData = JSON.parse(jsonText);
+              let nodeData;
+              try {
+                nodeData = JSON.parse(jsonText);
+              } catch (e) {
+                console.error("JSON Parse failed:", jsonText);
+                throw new Error("Game Master sent scrambled thoughts.");
+              }
               
-              if (!nodeData.pages && nodeData.storyText) {
-                 nodeData.pages = [nodeData.storyText];
+              // Safely handle if the AI slightly modifies the schema structure
+              if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
+                 if (nodeData.storyText) nodeData.pages = [nodeData.storyText];
+                 else nodeData.pages = [
+                    "A mysterious fog fills the room, obscuring your vision.",
+                    "The air grows colder with every step you take.",
+                    "You hear a faint whispering sound echoing off the walls.",
+                    "You must decide your next move carefully to survive."
+                 ];
+              }
+
+              if (!nodeData.choices || !Array.isArray(nodeData.choices)) {
+                 nodeData.choices = [{text: "Keep moving forward", isCorrect: true, isGameOver: false}];
               }
               
               setCurrentNode(nodeData);
               if (turnCount === 0) setSessionInitialNode(nodeData); 
               setCurrentPageIndex(0); 
-              setGameState('story');
+              
+              if (nodeData.isVictory) {
+                setGameState('victory');
+                recordEngagement('Victory');
+              } else {
+                setGameState('story');
+              }
             } catch (err) {
               console.warn("Pollination Engine Error:", err.message);
-              setErrorMsg(`The magical connection was lost: ${err.message}. Please click 'Try Again' to reconnect.`);
+              setErrorMsg(`The magical connection was lost: ${err.message}`);
               setGameState('story');
             }
           };
@@ -1111,7 +1163,6 @@
                       className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500"
                     />
                 </div>
-
               </div>
             </div>
           );
@@ -1205,7 +1256,6 @@
                       </div>
                     )}
                     
-                    {/* TTS Read Aloud Button */}
                     {!isHistory && (
                       <button 
                         onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} 
@@ -1273,20 +1323,20 @@
                       </div>
 
                       <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
-                        if(window.confirm("Are you sure you want to restart this adventure from the beginning?")) {
-                          setTurnCount(0);
-                          setStoryHistory([]);
-                          setCurrentPageIndex(0);
-                          setCorrectAnswers(0);
-                          setTotalQuestions(0);
-                          setGameState('story');
-                          generateStoryNode();
-                        }
+                        setConfirmDialog({
+                          type: 'restart',
+                          message: "Are you sure you want to restart this adventure from the beginning?"
+                        });
                       }}>
                         <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
                       </button>
 
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {if(confirm("Quit to menu?")) setGameState('menu')}}>
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
+                        setConfirmDialog({
+                          type: 'quit',
+                          message: "Are you sure you want to quit to the main menu?"
+                        });
+                      }}>
                         <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
                       </button>
                     </div>
@@ -1384,15 +1434,13 @@
                        </h2>
                        <div className="flex flex-col md:flex-row gap-4">
                          <button className="nes-btn text-xs md:text-sm green" onClick={() => {
-                            if(window.confirm("Are you sure you want to restart this adventure?")) {
-                              setCurrentNode(sessionInitialNode);
-                              setTurnCount(0);
-                              setStoryHistory([]);
-                              setCurrentPageIndex(0);
-                              setCorrectAnswers(0);
-                              setTotalQuestions(0);
-                              setGameState('story');
-                            }
+                            setCurrentNode(sessionInitialNode);
+                            setTurnCount(0);
+                            setStoryHistory([]);
+                            setCurrentPageIndex(0);
+                            setCorrectAnswers(0);
+                            setTotalQuestions(0);
+                            setGameState('story');
                          }}>Restart This Adventure</button>
                          <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
                        </div>
@@ -1483,6 +1531,36 @@
               {showLightning && <div className="lightning-overlay"></div>}
               
               <div className="h-[100dvh] bg-[#050505] md:p-6 flex items-center justify-center relative">
+                
+                {/* Modal Overlays */}
+                {confirmDialog && (
+                  <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+                    <div className="pixel-border bg-gray-900 p-6 md:p-8 text-center max-w-sm w-full">
+                      <h3 className="font-pixel text-yellow-400 mb-4 text-xl">Are you sure?</h3>
+                      <p className="font-terminal text-xl text-white mb-8 leading-relaxed">
+                        {confirmDialog.message}
+                      </p>
+                      <div className="flex gap-4 justify-center">
+                        <button className="nes-btn green flex-1" onClick={() => {
+                          if (confirmDialog.type === 'restart') {
+                            setCurrentNode(sessionInitialNode);
+                            setTurnCount(0);
+                            setStoryHistory([]);
+                            setCurrentPageIndex(0);
+                            setCorrectAnswers(0);
+                            setTotalQuestions(0);
+                            setGameState('story');
+                          } else if (confirmDialog.type === 'quit') {
+                            setGameState('menu');
+                          }
+                          setConfirmDialog(null);
+                        }}>Yes</button>
+                        <button className="nes-btn red flex-1" onClick={() => setConfirmDialog(null)}>No</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="w-full max-w-6xl h-full md:h-[95vh] bg-black md:pixel-border relative overflow-hidden flex flex-col justify-between">
                   {renderAudioPlayer()}
 
