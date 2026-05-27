@@ -98,19 +98,6 @@
         100% { left: -20vw; transform: scaleX(-1); }
       }
 
-      /* Rapid wing flutter keyframes */
-      @keyframes wingFlapLeft {
-        0% { transform: scaleY(1); }
-        100% { transform: scaleY(-0.4) translateY(2px); }
-      }
-      @keyframes wingFlapRight {
-        0% { transform: scaleY(1); }
-        100% { transform: scaleY(-0.4) translateY(2px); }
-      }
-      
-      .wing-l { transform-origin: 16px 8px; animation: wingFlapLeft 0.08s infinite alternate ease-in-out; }
-      .wing-r { transform-origin: 16px 8px; animation: wingFlapRight 0.08s infinite alternate ease-in-out; }
-
       .critter {
         position: fixed; pointer-events: none; z-index: 80; 
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
@@ -162,10 +149,7 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
-        // We use Pollinations Text API. It is 100% keyless, free, and unrestricted!
         const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
-        
-        // GOOGLE APPS SCRIPT WEB APP URL (Writes session logs & total books read)
         const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
 
         const MENU_IMAGES = [
@@ -174,7 +158,6 @@
           "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
         ];
 
-        // Web Audio Synthesizer Presets Composition - 3 High-Quality Spooky Tracks
         const SYNTH_TRACKS = [
           {
             name: "Simon's Theme",
@@ -297,11 +280,162 @@
           console.error("Firebase init failed:", e);
         }
 
+        // --- UTILITIES ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
         // Global Synth variables
         let synthCtx = null;
         let melodyInterval = null;
 
-        // Interactive SVG Bat component that toggles wings natively in React state for reliable fluttering
+        // --- FLAPPY BAT MINIGAME COMPONENT ---
+        const FlappyBatMinigame = () => {
+          const canvasRef = useRef(null);
+
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let animationFrameId;
+
+            let bat = { x: 50, y: 150, velocity: 0, gravity: 0.35, jump: -6.5, size: 16 };
+            let pipes = [];
+            let score = 0;
+            let gameOver = false;
+            let frameCount = 0;
+
+            const drawBat = (x, y, size) => {
+              ctx.fillStyle = '#8E2DE2';
+              ctx.fillRect(x, y + size/3, size, size/3); // body
+              if (Math.floor(frameCount / 8) % 2 === 0) {
+                ctx.fillRect(x - size/2, y, size/2, size/2); // wing up
+                ctx.fillRect(x + size, y, size/2, size/2); 
+              } else {
+                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); // wing down
+                ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+              }
+              ctx.fillStyle = '#ff2222'; // eyes
+              ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
+            };
+
+            const update = () => {
+              if (gameOver) return;
+              bat.velocity += bat.gravity;
+              bat.y += bat.velocity;
+
+              if (bat.y > canvas.height - bat.size || bat.y < 0) {
+                gameOver = true;
+              }
+
+              if (frameCount % 110 === 0) {
+                const gap = 120;
+                const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
+                pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 35 });
+              }
+
+              pipes.forEach(p => {
+                p.x -= 2.2;
+                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
+                  if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
+                    gameOver = true;
+                  }
+                }
+                if (!p.passed && bat.x > p.x + p.width) {
+                  p.passed = true;
+                  score++;
+                }
+              });
+
+              pipes = pipes.filter(p => p.x + p.width > 0);
+              frameCount++;
+            };
+
+            const draw = () => {
+              ctx.fillStyle = '#111';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              pipes.forEach(p => {
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(p.x, 0, p.width, p.topHeight);
+                ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.strokeStyle = '#064e3b';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(p.x, 0, p.width, p.topHeight);
+                ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+              });
+
+              drawBat(bat.x, bat.y, bat.size);
+
+              ctx.fillStyle = 'white';
+              ctx.font = '16px "Press Start 2P", monospace';
+              ctx.fillText(`SCORE:${score}`, 10, 30);
+
+              if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ef4444';
+                ctx.textAlign = 'center';
+                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+                ctx.fillStyle = 'white';
+                ctx.font = '10px "Press Start 2P", monospace';
+                ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
+                ctx.textAlign = 'left';
+              }
+            };
+
+            const loop = () => {
+              update();
+              draw();
+              animationFrameId = window.requestAnimationFrame(loop);
+            };
+
+            loop();
+
+            const handleInput = (e) => {
+              if (e.type === 'keydown' && e.code === 'Space') {
+                e.preventDefault();
+              }
+              if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
+
+              if (gameOver) {
+                bat = { x: 50, y: 150, velocity: 0, gravity: 0.35, jump: -6.5, size: 16 };
+                pipes = [];
+                score = 0;
+                gameOver = false;
+                frameCount = 0;
+              } else {
+                bat.velocity = bat.jump;
+              }
+            };
+
+            window.addEventListener('keydown', handleInput, { passive: false });
+            canvas.addEventListener('touchstart', handleInput, { passive: false });
+            canvas.addEventListener('mousedown', handleInput);
+
+            return () => {
+              window.cancelAnimationFrame(animationFrameId);
+              window.removeEventListener('keydown', handleInput);
+              canvas.removeEventListener('touchstart', handleInput);
+              canvas.removeEventListener('mousedown', handleInput);
+            };
+          }, []);
+
+          return (
+            <div className="flex flex-col items-center mt-6 w-full max-w-sm mx-auto">
+              <p className="font-pixel text-[10px] text-green-400 mb-4 animate-pulse text-center leading-relaxed">
+                Play Flappy Bat while the AI writes your book!
+              </p>
+              <canvas 
+                ref={canvasRef} 
+                width={300} 
+                height={350} 
+                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(138,43,226,0.4)]"
+              />
+              <p className="font-terminal text-sm text-gray-500 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
+            </div>
+          );
+        };
+
+        // Interactive SVG Bat component 
         function RetroBat({ style }) {
           const [wingFrame, setWingFrame] = useState(0);
 
@@ -323,28 +457,22 @@
                 <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
                 
                 {wingFrame === 0 ? (
-                  /* Wings Down Frame */
                   <g>
-                    {/* Left Wing */}
                     <rect x="10" y="5" width="4" height="3" fill="#3a3a3a" />
                     <rect x="6" y="6" width="4" height="4" fill="#3a3a3a" />
                     <rect x="2" y="8" width="4" height="4" fill="#2d2d2d" />
                     <rect x="0" y="10" width="2" height="3" fill="#2d2d2d" />
-                    {/* Right Wing */}
                     <rect x="18" y="5" width="4" height="3" fill="#3a3a3a" />
                     <rect x="22" y="6" width="4" height="4" fill="#3a3a3a" />
                     <rect x="26" y="8" width="4" height="4" fill="#2d2d2d" />
                     <rect x="30" y="10" width="2" height="3" fill="#2d2d2d" />
                   </g>
                 ) : (
-                  /* Wings Up Frame */
                   <g>
-                    {/* Left Wing */}
                     <rect x="10" y="4" width="4" height="3" fill="#3a3a3a" />
                     <rect x="6" y="2" width="4" height="4" fill="#3a3a3a" />
                     <rect x="2" y="0" width="4" height="4" fill="#2d2d2d" />
                     <rect x="0" y="0" width="2" height="2" fill="#2d2d2d" />
-                    {/* Right Wing */}
                     <rect x="18" y="4" width="4" height="3" fill="#3a3a3a" />
                     <rect x="22" y="2" width="4" height="4" fill="#3a3a3a" />
                     <rect x="26" y="0" width="4" height="4" fill="#2d2d2d" />
@@ -356,23 +484,26 @@
           );
         }
 
-        // --- NEW ISOLATED IMAGE PANEL ---
-        const ImagePanel = ({ prompt, turnCount }) => {
+        // --- ISOLATED IMAGE PANEL ---
+        const ImagePanel = ({ prompt, chapterCount }) => {
           const [loaded, setLoaded] = useState(false);
           const [hasError, setHasError] = useState(false);
           const imgRef = useRef(null);
           
           useEffect(() => {
-            // Race-condition check: if the image loaded from cache instantly before layout effects
             if (imgRef.current && imgRef.current.complete) {
               setLoaded(true);
             } else {
               setLoaded(false);
             }
             setHasError(false);
-          }, [prompt, turnCount]);
+          }, [prompt, chapterCount]);
 
           if (!prompt) return <div className="w-full h-full bg-black"></div>;
+
+          // Clean string to prevent breaking URLs
+          const safePrompt = encodeURIComponent((prompt.substring(0, 300) + " 8-bit pixel art style retro video game screenshot castlevania spooky"));
+          const url = `https://image.pollinations.ai/prompt/${safePrompt}?width=800&height=800&nologo=true&seed=${chapterCount}`;
 
           return (
             <div className="w-full h-full relative overflow-hidden bg-black">
@@ -394,8 +525,8 @@
               ) : (
                 <img 
                   ref={imgRef}
-                  key={`${prompt}-${turnCount}`}
-                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=800&nologo=true&seed=${turnCount}`}
+                  key={url} // Using URL as key forces React to fully unmount and recreate the image, preventing hang bugs
+                  src={url}
                   alt="Scene"
                   className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setLoaded(true)}
@@ -495,14 +626,17 @@
         function Adventurevania() {
           // --- ALL STATE DECLARATIONS AT TOP ---
           const [gameState, setGameState] = useState('menu'); 
+          
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
           const [setupFocusIndex, setSetupFocusIndex] = useState(0); 
+          
+          // STORY DATA (Pre-generated 10 Chapters)
+          const [fullStory, setFullStory] = useState(null); 
+          const [currentChapterIndex, setCurrentChapterIndex] = useState(0); 
+          const [currentPageIndex, setCurrentPageIndex] = useState(0); 
           const [storyHistory, setStoryHistory] = useState([]);
-          const [currentNode, setCurrentNode] = useState(null);
-          const [currentPageIndex, setCurrentPageIndex] = useState(0);
-          const [turnCount, setTurnCount] = useState(0);
-          const [sessionInitialNode, setSessionInitialNode] = useState(null); 
+          
           const [sessionSeed, setSessionSeed] = useState("");
           const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
           
@@ -522,7 +656,7 @@
 
           const [loadingMsg, setLoadingMsg] = useState("");
           const [errorMsg, setErrorMsg] = useState("");
-          const [confirmDialog, setConfirmDialog] = useState(null); // Custom modal for Restart/Quit
+          const [confirmDialog, setConfirmDialog] = useState(null);
 
           const endOfStoryRef = useRef(null);
 
@@ -538,7 +672,7 @@
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
-          }, [currentNode, currentPageIndex, gameState]);
+          }, [currentChapterIndex, currentPageIndex, gameState]);
 
           // Rotating Menu Backgrounds
           useEffect(() => {
@@ -610,12 +744,10 @@
 
           const startSynthEngine = () => {
             if (melodyInterval) clearInterval(melodyInterval);
-            if (!synthCtx) {
-              synthCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!synthCtx) synthCtx = new (window.AudioContext || window.webkitAudioContext)();
             
             const track = SYNTH_TRACKS[currentTrack];
-            const stepDuration = 60 / track.tempo / 2; // eighth notes
+            const stepDuration = 60 / track.tempo / 2; 
             let step = 0;
 
             melodyInterval = setInterval(() => {
@@ -624,9 +756,7 @@
               // Play Bassline
               if (step % 4 === 0) {
                 const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
-                if (NOTE_FREQ[bassNote]) {
-                  playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
-                }
+                if (NOTE_FREQ[bassNote]) playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
               }
 
               // Play Melody Sequence
@@ -655,21 +785,16 @@
               const bufferSize = synthCtx.sampleRate * 1.5;
               const buffer = synthCtx.createBuffer(1, bufferSize, synthCtx.sampleRate);
               const data = buffer.getChannelData(0);
-              for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-              }
+              for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
               const noiseNode = synthCtx.createBufferSource();
               noiseNode.buffer = buffer;
-              
               const filterNode = synthCtx.createBiquadFilter();
               filterNode.type = 'lowpass';
               filterNode.frequency.setValueAtTime(600, synthCtx.currentTime);
               filterNode.frequency.exponentialRampToValueAtTime(30, synthCtx.currentTime + 1.2);
-              
               const gainNode = synthCtx.createGain();
               gainNode.gain.setValueAtTime(musicVolume * 1.2, synthCtx.currentTime);
               gainNode.gain.exponentialRampToValueAtTime(0.0001, synthCtx.currentTime + 1.4);
-              
               noiseNode.connect(filterNode);
               filterNode.connect(gainNode);
               gainNode.connect(synthCtx.destination);
@@ -679,19 +804,15 @@
             }
           };
 
-          // Synthesized Ghostly Howl
           const playGhostHowl = () => {
             if (!synthCtx || isMuted) return;
             try {
               const osc = synthCtx.createOscillator();
               const gain = synthCtx.createGain();
               osc.type = 'sine';
-
               const now = synthCtx.currentTime;
-              
               osc.frequency.setValueAtTime(250, now);
               osc.frequency.exponentialRampToValueAtTime(450, now + 1.5);
-              
               const lfo = synthCtx.createOscillator();
               lfo.type = 'sine';
               lfo.frequency.setValueAtTime(5, now);
@@ -701,50 +822,37 @@
               lfoGain.connect(osc.frequency);
               lfo.start(now + 1.0);
               lfo.stop(now + 4.0);
-              
               osc.frequency.exponentialRampToValueAtTime(280, now + 3.5);
-
               gain.gain.setValueAtTime(0.0001, now);
               gain.gain.exponentialRampToValueAtTime(musicVolume * 0.8, now + 1.5);
               gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
-
               osc.connect(gain);
               gain.connect(synthCtx.destination);
               osc.start(now);
               osc.stop(now + 4.0);
-            } catch(e) { 
-              console.warn(e); 
-            }
+            } catch(e) { console.warn(e); }
           };
 
-          // Professional Synthesized Realistic Wolf Howl
           const playRealisticWolfHowl = () => {
             if (!synthCtx || isMuted) return;
             try {
               if (synthCtx.state === 'suspended') synthCtx.resume();
-              
               const now = synthCtx.currentTime;
-              
               const voiceOsc = synthCtx.createOscillator();
               const subOsc = synthCtx.createOscillator();
               const finalGain = synthCtx.createGain();
-              
               voiceOsc.type = 'triangle';
               subOsc.type = 'sine';
-
-              // Majestic soaring pitch envelope of a wild wolf howling at the moon
               voiceOsc.frequency.setValueAtTime(160, now);
               voiceOsc.frequency.exponentialRampToValueAtTime(390, now + 0.8);
               voiceOsc.frequency.exponentialRampToValueAtTime(440, now + 2.0);
               voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 4.5);
               voiceOsc.frequency.exponentialRampToValueAtTime(110, now + 5.5);
-
               subOsc.frequency.setValueAtTime(80, now);
               subOsc.frequency.exponentialRampToValueAtTime(195, now + 0.8);
               subOsc.frequency.exponentialRampToValueAtTime(220, now + 2.0);
               subOsc.frequency.exponentialRampToValueAtTime(140, now + 4.5);
               subOsc.frequency.exponentialRampToValueAtTime(55, now + 5.5);
-
               const vibratoLFO = synthCtx.createOscillator();
               const vibratoGain = synthCtx.createGain();
               vibratoLFO.type = 'sine';
@@ -753,61 +861,41 @@
               vibratoLFO.connect(vibratoGain);
               vibratoGain.connect(voiceOsc.frequency);
               vibratoGain.connect(subOsc.frequency);
-
               const filter = synthCtx.createBiquadFilter();
               filter.type = 'bandpass';
               filter.Q.setValueAtTime(3.5, now);
               filter.frequency.setValueAtTime(400, now);
               filter.frequency.exponentialRampToValueAtTime(800, now + 1.2);
               filter.frequency.exponentialRampToValueAtTime(350, now + 4.5);
-
               finalGain.gain.setValueAtTime(0.0001, now);
               finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.9, now + 1.0);
               finalGain.gain.exponentialRampToValueAtTime(musicVolume * 0.7, now + 3.0);
               finalGain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
-
               voiceOsc.connect(filter);
               subOsc.connect(filter);
               filter.connect(finalGain);
               finalGain.connect(synthCtx.destination);
-
               vibratoLFO.start(now);
               voiceOsc.start(now);
               subOsc.start(now);
-              
               vibratoLFO.stop(now + 5.6);
               voiceOsc.stop(now + 5.6);
               subOsc.stop(now + 5.6);
-            } catch(e) {
-              console.warn("Synth Wolf Howl failed:", e);
-            }
+            } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
           };
 
           useEffect(() => {
-            if (!isMuted) {
-              startSynthEngine();
-            } else {
-              if (melodyInterval) {
-                clearInterval(melodyInterval);
-                melodyInterval = null;
-              }
-            }
-            return () => {
-              if (melodyInterval) clearInterval(melodyInterval);
-            };
+            if (!isMuted) startSynthEngine();
+            else if (melodyInterval) { clearInterval(melodyInterval); melodyInterval = null; }
+            return () => { if (melodyInterval) clearInterval(melodyInterval); };
           }, [isMuted, currentTrack, musicVolume]);
 
-          // Lightning Effect & Mixed Howls
           const triggerLightning = () => {
              setShowLightning(true);
              playThunderSynth();
              setTimeout(() => setShowLightning(false), 500);
-             
-             if (Math.random() > 0.5) {
-               setTimeout(playRealisticWolfHowl, 1000);
-             } else {
-               setTimeout(playGhostHowl, 800);
-             }
+             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
+             else setTimeout(playGhostHowl, 800);
           };
 
           useEffect(() => {
@@ -817,30 +905,26 @@
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
 
-          // --- TTS FUNCTIONALITY ---
+          // --- TTS ---
           const handleReadAloud = (text) => {
             if (!window.speechSynthesis) return;
-            
             if (isSpeaking) {
               window.speechSynthesis.cancel();
               setIsSpeaking(false);
               return;
             }
-            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 0.9; 
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
-            
             setIsSpeaking(true);
             window.speechSynthesis.speak(utterance);
           };
 
-          // Keyboard Navigation controls with browser event cancellation
+          // --- NAVIGATION & CONTROLS ---
           useEffect(() => {
             const handleKeyDown = (e) => {
               if(document.activeElement.tagName === "INPUT" || confirmDialog !== null) return;
-
               if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.key)) {
                 e.preventDefault();
               }
@@ -848,32 +932,25 @@
               if (gameState === 'setup') {
                  const setupKeysList = ['characters', 'villains', 'settings', 'plots', 'dilemmas', 'readingLevels'];
                  const stateKeysList = ['character', 'villain', 'setting', 'plot', 'dilemma', 'readingLevel'];
-                 
                  const currentDataKey = setupKeysList[setupStep];
                  const numOptions = CATEGORIES[currentDataKey].length;
 
-                 if (e.key === 'ArrowRight') {
-                   setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
-                 } else if (e.key === 'ArrowLeft') {
-                   setSetupFocusIndex(prev => Math.max(prev - 1, 0));
-                 } else if (e.key === 'ArrowDown') {
-                   setSetupFocusIndex(prev => Math.min(prev + 5, numOptions - 1));
-                 } else if (e.key === 'ArrowUp') {
-                   setSetupFocusIndex(prev => Math.max(prev - 5, 0));
-                 } else if (e.key === 'Enter') {
+                 if (e.key === 'ArrowRight') setSetupFocusIndex(prev => Math.min(prev + 1, numOptions - 1));
+                 else if (e.key === 'ArrowLeft') setSetupFocusIndex(prev => Math.max(prev - 1, 0));
+                 else if (e.key === 'ArrowDown') setSetupFocusIndex(prev => Math.min(prev + 5, numOptions - 1));
+                 else if (e.key === 'ArrowUp') setSetupFocusIndex(prev => Math.max(prev - 5, 0));
+                 else if (e.key === 'Enter') {
                    const currentKey = stateKeysList[setupStep];
                    setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
                    setSetupFocusIndex(0); 
-                   if (setupStep < 5) {
-                     setSetupStep(prev => prev + 1);
-                   } else {
-                     startGame();
-                   }
+                   if (setupStep < 5) setSetupStep(prev => prev + 1);
+                   else startGame();
                  }
-              } else if (gameState === 'story' && !errorMsg) {
-                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+              } else if (gameState === 'story' && !errorMsg && fullStory && fullStory.length > 0) {
+                 const currentChapter = fullStory[currentChapterIndex];
+                 const isAtLastPage = currentPageIndex === currentChapter.pages.length - 1;
                  
-                 if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
+                 if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && currentPageIndex > 0) {
                      setCurrentPageIndex(p => p - 1);
                      if (window.speechSynthesis) window.speechSynthesis.cancel();
                      setIsSpeaking(false);
@@ -881,14 +958,10 @@
                    setCurrentPageIndex(p => p + 1);
                    if (window.speechSynthesis) window.speechSynthesis.cancel();
                    setIsSpeaking(false);
-                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
-                   if (e.key === 'ArrowDown') {
-                     setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
-                   } else if (e.key === 'ArrowUp') {
-                     setFocusedChoice(prev => Math.max(prev - 1, 0));
-                   } else if (e.key === 'Enter') {
-                     handleChoice(currentNode.choices[focusedChoice]);
-                   }
+                 } else if (isAtLastPage && currentChapter.choices?.length > 0) {
+                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentChapter.choices.length - 1));
+                   else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
+                   else if (e.key === 'Enter') handleChoice(currentChapter.choices[focusedChoice]);
                  }
               } else if (gameState === 'menu') {
                  if (e.key === 'Enter') {
@@ -896,19 +969,15 @@
                     setSetupFocusIndex(0);
                     setGameState('setup');
                  }
-              } else if (gameState === 'gameover' || gameState === 'victory') {
-                 if (e.key === 'Enter') setGameState('menu');
               }
             };
-
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupData, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
+          }, [gameState, setupStep, setupData, setupFocusIndex, fullStory, currentChapterIndex, currentPageIndex, focusedChoice, errorMsg, isMuted, confirmDialog]);
 
           // --- ANALYTICS FUNCTION ---
           const recordEngagement = async (outcome) => {
             if (!SPREADSHEET_WEB_APP_URL) return; 
-            
             const timeSpentSecs = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0;
             const compScore = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).toFixed(2) : 0;
 
@@ -918,7 +987,7 @@
               character: CATEGORIES.characters[setupData.character].name,
               villain: CATEGORIES.villains[setupData.villain].name,
               outcome: outcome,
-              turnsSurvived: turnCount,
+              turnsSurvived: currentChapterIndex,
               totalQuestionsAttempted: totalQuestions,
               correctAnswers: correctAnswers,
               comprehensionScore: compScore + "%",
@@ -935,15 +1004,16 @@
             } catch (err) { console.error("Error sending analytics:", err); }
           };
 
-          // --- DYNAMIC API ENGINE ---
-          const generateStoryNode = async (actionText = null) => {
+          // --- MASSIVE DYNAMIC ENGINE ---
+          const generateFullStory = async () => {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
 
             setGameState('loading');
             setFocusedChoice(0); 
             setCurrentPageIndex(0);
-            setLoadingMsg("Summoning AI Game Master...");
+            setCurrentChapterIndex(0);
+            setLoadingMsg("Summoning the entire 10-chapter Adventure... This takes about 30 seconds!");
             setErrorMsg("");
             
             const char = CATEGORIES.characters[setupData.character];
@@ -953,75 +1023,59 @@
             const dil = CATEGORIES.dilemmas[setupData.dilemma];
 
             const wordCounts = [
-              "between 40 and 50 words per page",
-              "between 75 and 100 words per page",
-              "between 100 and 120 words per page",
-              "between 130 and 150 words per page"
+              "40 to 50 words per page",
+              "75 to 100 words per page",
+              "100 to 120 words per page",
+              "130 to 150 words per page"
             ];
 
             const levelInstructions = [
-              `Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words (e.g., big, run, dark, sad). Sentences must be very short and phonetic. Length: ${wordCounts[0]}. Reading Comprehension: Ask a direct recall question about a clear fact from the final page.`,
-              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary. Length: ${wordCounts[1]}. Reading Comprehension: Ask a question connecting two details or basic character motivations from the text.`,
-              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language and varied sentence structures. Length: ${wordCounts[2]}. Reading Comprehension: Ask an inferential question where the answer is implied but not explicit.`,
-              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary. Length: ${wordCounts[3]}. Reading Comprehension: Ask a complex analytical question about themes or subtle clues.`
+              `Difficulty: Grades 1-2 (Early Primary). CRITICAL: Use extremely simple, highly decodable words. Sentences must be very short and phonetic. Length: exactly ${wordCounts[0]}. Reading Comprehension: Direct recall questions about a clear fact from the text.`,
+              `Difficulty: Grades 3-4 (Primary). CRITICAL: Use standard 3rd-grade sentences and intermediate vocabulary. Length: exactly ${wordCounts[1]}. Reading Comprehension: Connecting two details or basic character motivations from the text.`,
+              `Difficulty: Grades 5-6 (Junior). CRITICAL: Use descriptive language and varied sentence structures. Length: exactly ${wordCounts[2]}. Reading Comprehension: Inferential questions where the answer is implied but not explicit.`,
+              `Difficulty: Grades 7-8 (Intermediate). CRITICAL: Use extensive, atmospheric narrative with advanced, sophisticated vocabulary. Length: exactly ${wordCounts[3]}. Reading Comprehension: Complex analytical questions about themes or subtle clues.`
             ];
 
-            let historyContext = "";
-            if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Turn ${i + 1}: Player faced plot puzzle "${h.node.question}". Player chose "${h.chosenAction}".`).join('\n');
-            }
-
             let promptText = `
-              Current Game State:
+              Generate a COMPLETE 10-chapter Choose Your Own Adventure book.
+              
+              Game Setup:
               - Player Character: ${char.name} (${char.desc})
               - Villain: ${vill.name} (${vill.desc})
               - Setting: ${sett.name} (${sett.desc})
               - Main Plot: ${plot.name}
               - Central Dilemma: ${dil.name}
-              - Turn Count: ${turnCount} out of 10.
               - Reading Level constraints: ${levelInstructions[setupData.readingLevel]}
-              - Randomizer Seed: ${sessionSeed}_${turnCount} (Ensure deterministic but unique generation per turn)
+              - Randomizer Seed: ${sessionSeed}
+
+              STRUCTURE REQUIREMENTS FOR EVERY CHAPTER:
+              1. You must generate EXACTLY 10 chapters.
+              2. Each chapter must progress the linear narrative. Chapter 1 introduces the plot. Chapter 10 must be the grand finale where the hero defeats the villain.
+              3. Each chapter must contain an array of EXACTLY 4 "pages" (strings).
+                 - Page 1: Narrative continuation.
+                 - Page 2: Rising action/exploration.
+                 - Page 3: Encountering an obstacle or lore.
+                 - Page 4: Setting up the puzzle/question.
+              4. CRITICAL: EACH page MUST be ${wordCounts[setupData.readingLevel]}. You MUST expand descriptions to meet this length! Do not repeat text.
+              5. Each chapter must have a reading comprehension "question" based strictly on the text of that chapter, and 2-3 "choices" (one correct, others incorrect with a funny gameOverMessage).
+              6. "imagePrompt" must be an 8-bit style visual description of the chapter.
             `;
 
-            if (turnCount === 0) {
-              promptText += "\nThis is the BEGINNING of the story. Introduce the character, the setting, the villain's plot, and the central dilemma. Set the spooky but kid-friendly tone.";
-            } else {
-              promptText += `\nPast History:\n${historyContext}\n\nDO NOT repeat any previous challenges, concepts, or questions. Create an entirely new obstacle.\nThe player previously chose this action: "${actionText}". Continue the story based on this choice.`;
-            }
-
-            if (turnCount >= 10) {
-              promptText += "\nThis is the FINAL TURN. Provide a satisfying, victorious conclusion where the character defeats the villain and resolves the plot. Set isVictory to true. Do not provide further choices.";
-            } else {
-              promptText += `
-              \nREQUIREMENTS FOR THIS TURN:
-              1. Write a continuous story segment that progresses the plot forward.
-              2. Divide this continuous narrative into an array of EXACTLY 4 distinct 'pages' (strings). CRITICAL: Each page MUST contain different text. Do NOT repeat paragraphs. Page 1 should setup the situation. Page 2 should escalate the tension. Page 3 should introduce a specific obstacle. Page 4 should present the puzzle.
-              3. EACH individual page MUST be exactly ${wordCounts[setupData.readingLevel]}. Use pacing and descriptions to strictly reach this count.
-              4. Create a reading comprehension question based STRICTLY on the story you just wrote on the FINAL page. The question's difficulty must match the Reading Level constraint. DO NOT ask external math or science questions; it must be about the text.
-              5. State the question or puzzle clearly in the "question" field.
-              6. Provide 2 or 3 "choices" representing answers to the reading comprehension question.
-                 - At least one choice MUST be the correct reading comprehension answer (set 'isCorrect' to true).
-                 - At least one choice MUST be an incorrect answer (set 'isCorrect' to false). If the incorrect choice ends the game, set 'isGameOver' to true and write a funny 'gameOverMessage'. 
-              7. Provide an "imagePrompt" field containing a short visual description of the scene to generate an 8-bit image.
-              `;
-            }
-
-            const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.
+            const systemInstruction = `You are a verbose fantasy author. You MUST output a single valid JSON object containing a "chapters" array with EXACTLY 10 chapter objects. Do not use markdown tags. ALWAYS hit the word count targets. Tone: Spooky, 80s retro, educational.
             
-YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
+JSON STRUCTURE:
 {
-  "pages": ["Text for page 1", "Text for page 2", "Text for page 3", "Text for page 4"],
-  "imagePrompt": "Visual description of the scene",
-  "question": "The reading comprehension question",
-  "choices": [
+  "chapters": [
     {
-      "text": "Answer 1",
-      "isCorrect": true,
-      "isGameOver": false,
-      "gameOverMessage": ""
+      "pages": ["page 1 text", "page 2 text", "page 3 text", "page 4 text"],
+      "imagePrompt": "Visual description",
+      "question": "The reading comprehension question",
+      "choices": [
+        { "text": "Answer", "isCorrect": true, "gameOverMessage": "" },
+        { "text": "Wrong Answer", "isCorrect": false, "gameOverMessage": "Death message" }
+      ]
     }
-  ],
-  "isVictory": false
+  ]
 }`;
 
             try {
@@ -1030,87 +1084,84 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   messages: [
-                    { role: "system", content: "You must only respond with raw, valid JSON. Do not wrap your response in markdown code blocks like \`\`\`json." },
+                    { role: "system", content: "You must only respond with raw, valid JSON. Do not wrap your response in markdown code blocks." },
                     { role: "user", content: `System instructions: ${systemInstruction}\n\nUser request: ${promptText}` }
                   ],
                   jsonMode: true
                 })
               });
 
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-              }
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
               let jsonText = await response.text();
-              
-              // Clean markdown if it leaked
               jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
               
               const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                jsonText = jsonMatch[0];
-              }
+              if (jsonMatch) jsonText = jsonMatch[0];
               
               let nodeData;
               try {
                 nodeData = JSON.parse(jsonText);
               } catch (e) {
-                console.error("JSON Parse failed:", jsonText);
-                throw new Error("Game Master sent scrambled thoughts.");
+                throw new Error("Game Master sent scrambled thoughts. The story might have been too long. Try again.");
               }
               
-              // Safely handle if the AI slightly modifies the schema structure
-              if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
-                 if (nodeData.storyText) nodeData.pages = [nodeData.storyText];
-                 else nodeData.pages = [
-                    "A mysterious fog fills the room, obscuring your vision.",
-                    "The air grows colder with every step you take.",
-                    "You hear a faint whispering sound echoing off the walls.",
-                    "You must decide your next move carefully to survive."
-                 ];
+              if (!nodeData.chapters || !Array.isArray(nodeData.chapters)) {
+                 throw new Error("Game Master failed to write the chapters properly.");
               }
+              
+              // Validate each chapter
+              nodeData.chapters = nodeData.chapters.map(ch => {
+                if (!ch.pages || ch.pages.length === 0) ch.pages = ["Missing page text."];
+                if (!ch.choices || ch.choices.length === 0) ch.choices = [{text: "Continue", isCorrect: true}];
+                return ch;
+              });
 
-              if (!nodeData.choices || !Array.isArray(nodeData.choices)) {
-                 nodeData.choices = [{text: "Keep moving forward", isCorrect: true, isGameOver: false}];
-              }
-              
-              setCurrentNode(nodeData);
-              if (turnCount === 0) setSessionInitialNode(nodeData); 
+              setFullStory(nodeData.chapters);
+              setCurrentChapterIndex(0);
               setCurrentPageIndex(0); 
+              setGameState('story');
               
-              if (nodeData.isVictory) {
-                setGameState('victory');
-                recordEngagement('Victory');
-              } else {
-                setGameState('story');
-              }
             } catch (err) {
               console.warn("Pollination Engine Error:", err.message);
-              setErrorMsg(`The magical connection was lost: ${err.message}`);
-              setGameState('story');
+              setErrorMsg(`Generation failed: ${err.message}`);
+              setGameState('story'); // Stay in story state to render error layout
             }
           };
 
           const handleChoice = (choice) => {
-            if (currentNode.question) {
+            if (!fullStory || fullStory.length === 0) return;
+            const currentChapter = fullStory[currentChapterIndex];
+
+            if (currentChapter.question) {
               setTotalQuestions(prev => prev + 1);
               if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
             }
 
-            setStoryHistory([...storyHistory, { node: currentNode, chosenAction: choice.text }]);
-            setTurnCount(turnCount + 1);
+            setStoryHistory([...storyHistory, { chapterIndex: currentChapterIndex, chosenAction: choice.text }]);
 
-            if (choice.isGameOver) {
-              setCurrentNode({
-                ...currentNode,
-                pages: [currentNode.pages[currentNode.pages.length - 1] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
-                choices: []
-              });
-              setCurrentPageIndex(0);
+            if (!choice.isCorrect) {
+              // Modify the last page of the current chapter to include the death message
+              const newStory = [...fullStory];
+              const failedChapter = {...newStory[currentChapterIndex]};
+              const lastPageIdx = failedChapter.pages.length - 1;
+              failedChapter.pages[lastPageIdx] = failedChapter.pages[lastPageIdx] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!");
+              failedChapter.choices = []; // Clear choices
+              newStory[currentChapterIndex] = failedChapter;
+              
+              setFullStory(newStory);
               setGameState('gameover');
               recordEngagement('GameOver');
             } else {
-              generateStoryNode(choice.text);
+              // Advance to next chapter or Victory
+              if (currentChapterIndex < fullStory.length - 1) {
+                 setCurrentChapterIndex(prev => prev + 1);
+                 setCurrentPageIndex(0);
+                 setFocusedChoice(0);
+              } else {
+                 setGameState('victory');
+                 recordEngagement('Victory');
+              }
             }
           };
 
@@ -1121,21 +1172,14 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
             setCorrectAnswers(0);
             setTotalQuestions(0);
             setSessionSeed(Math.random().toString(36).substring(2, 10));
-            generateStoryNode();
+            generateFullStory();
           };
 
           // --- RENDERERS ---
-
           const renderMenu = () => (
             <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative">
-              
               <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-purple-800 music-border bg-black overflow-hidden relative mb-2">
-                 <img 
-                   src={MENU_IMAGES[menuImgIndex]} 
-                   className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" 
-                   style={{ imageRendering: 'pixelated' }}
-                   alt="Retro Castlevania Background"
-                 />
+                 <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
                  <div className="absolute inset-0 bg-black/40"></div>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
                     <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-purple-500 tracking-wider drop-shadow-[0_0_15px_rgba(138,43,226,1)] w-full text-center break-words leading-tight">
@@ -1144,24 +1188,11 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                     <p className="font-terminal text-green-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(74,222,128,1)]">A Reading Quest</p>
                  </div>
               </div>
-
               <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
-                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
-                  ▶️ Press Enter to Start
-                </button>
-
+                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>▶️ Press Enter to Start</button>
                 <div className="flex flex-col gap-2 w-full text-left mt-2">
                     <label className="font-pixel text-[8px] md:text-[10px] text-gray-400 text-center">Student Identification:</label>
-                    <input 
-                      type="text" 
-                      placeholder="Enter Player Name..." 
-                      value={playerName}
-                      onChange={(e) => {
-                        setPlayerName(e.target.value);
-                        localStorage.setItem('adventurevania_player', e.target.value);
-                      }}
-                      className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500"
-                    />
+                    <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500" />
                 </div>
               </div>
             </div>
@@ -1184,21 +1215,12 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                   <h2 className="font-pixel text-xl md:text-2xl text-green-400">{current.title}</h2>
                   <span className="font-pixel text-xs text-gray-500">Step {setupStep + 1}/6</span>
                 </div>
-
                 <div className="flex-grow grid grid-cols-2 md:grid-cols-5 gap-4 overflow-y-auto pb-24 pr-2">
                   {current.data.map((item, idx) => {
                     const isSelected = setupData[current.key] === idx;
                     const isFocused = setupFocusIndex === idx;
                     return (
-                      <div 
-                        key={idx}
-                        onClick={() => {
-                          setSetupFocusIndex(idx);
-                          setSetupData({...setupData, [current.key]: idx});
-                        }}
-                        className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_25px_rgba(74,222,128,0.7)]' : isSelected ? 'bg-purple-950 border-purple-500' : 'bg-black hover:bg-gray-800'}`}
-                        style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #8E2DE2, 0 0 0 8px #000' } : {}}
-                      >
+                      <div key={idx} onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [current.key]: idx}); }} className={`pixel-border p-4 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-purple-900 border-green-400 scale-105 shadow-[0_0_25px_rgba(74,222,128,0.7)]' : isSelected ? 'bg-purple-950 border-purple-500' : 'bg-black hover:bg-gray-800'}`} style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #4ade80, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.2), 0 0 0 4px #8E2DE2, 0 0 0 8px #000' } : {}}>
                         <div className="text-4xl mb-2">{item.icon}</div>
                         <h3 className="font-pixel text-[10px] md:text-xs text-white mb-2 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
                         <p className="font-terminal text-gray-400 text-sm md:text-lg leading-tight hidden md:block">{item.desc}</p>
@@ -1206,67 +1228,49 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                     );
                   })}
                 </div>
-
                 <div className="flex justify-between mt-6 pt-4 items-center shrink-0">
                   <div className="font-pixel text-[8px] text-gray-500 hidden md:block">Use Arrow Keys & Enter</div>
                   <div className="flex gap-4">
                     {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
-                    {setupStep < 5 ? 
-                      <button className="nes-btn green" onClick={() => {
-                        const currentKey = Object.keys(setupData)[setupStep];
-                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                        setSetupFocusIndex(0);
-                        setSetupStep(setupStep + 1);
-                      }}>Next</button> : 
-                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
-                    }
+                    {setupStep < 5 ? <button className="nes-btn green" onClick={() => { const currentKey = Object.keys(setupData)[setupStep]; setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex})); setSetupFocusIndex(0); setSetupStep(setupStep + 1); }}>Next</button> : <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>}
                   </div>
                 </div>
               </div>
             );
           };
 
-          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node || !node.pages) return null;
-            
-            const isAtLastPage = currentPageIndex === node.pages.length - 1;
-            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
+          const renderStoryNode = (chapter, isHistory = false, chosenAction = null) => {
+            if (!chapter || !chapter.pages) return null;
+            const pageIndexToDisplay = isHistory ? chapter.pages.length - 1 : currentPageIndex;
+            const textToDisplay = chapter.pages[pageIndexToDisplay];
+            const isAtLastPage = pageIndexToDisplay === chapter.pages.length - 1;
             const showChallenge = isHistory || isAtLastPage;
 
             return (
               <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
                 <div className="pixel-border bg-black p-4 md:p-6 relative">
-                  
-                  {/* Decorative Corners */}
                   <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
                   <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
                   <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
-
                   <div className="w-full">
                      <HighlightableText text={textToDisplay} textSize={textSize} />
                   </div>
-
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {showChallenge && node.question && (
+                    {showChallenge && chapter.question && (
                       <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
                         <p className="font-pixel text-[11px] text-green-300 leading-loose">
-                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
+                          <span className="text-yellow-400">CHALLENGE:</span> {chapter.question}
                         </p>
                       </div>
                     )}
-                    
                     {!isHistory && (
-                      <button 
-                        onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} 
-                        className="nes-btn shrink-0"
-                      >
+                      <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && chapter.question ? ". The challenge is: " + chapter.question : ""))} className="nes-btn shrink-0">
                         {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
                       </button>
                     )}
                   </div>
                 </div>
-
                 {isHistory && chosenAction && (
                   <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
                     <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
@@ -1277,66 +1281,42 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
           };
 
           const renderGameArea = () => {
-            // Elegant fallback error screen
-            if (!currentNode) {
+            if (!fullStory && !errorMsg) return renderLoading();
+            if (!fullStory && errorMsg) {
               return (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-6">
                   <div className="text-6xl animate-bounce">⚠️</div>
                   <h2 className="font-pixel text-lg text-red-500 leading-relaxed">Connection Interrupted</h2>
-                  <p className="font-terminal text-xl text-gray-300 max-w-md leading-relaxed">
-                    {errorMsg || "The Game Master could not compile your chapter request."}
-                  </p>
+                  <p className="font-terminal text-xl text-gray-300 max-w-md leading-relaxed">{errorMsg}</p>
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="nes-btn green" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>
-                      🔄 Try Again
-                    </button>
-                    <button className="nes-btn" onClick={() => setGameState('menu')}>
-                      ↩️ Back to Menu
-                    </button>
+                    <button className="nes-btn green" onClick={startGame}>🔄 Try Again</button>
+                    <button className="nes-btn" onClick={() => setGameState('menu')}>↩️ Back to Menu</button>
                   </div>
                 </div>
               );
             }
             
-            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+            const currentChapter = fullStory[currentChapterIndex];
+            if (!currentChapter) return null; 
+            const isAtLastPage = currentPageIndex === (currentChapter.pages?.length || 0) - 1;
 
             return (
               <div className="flex flex-col md:flex-row h-full w-full bg-[#050505] relative overflow-hidden">
-                
-                {/* LEFT PANE - Text & Controls */}
                 <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
                   <div className="flex justify-between items-center bg-gray-900 p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
                     <div className="font-pixel text-[10px] md:text-sm text-purple-400 flex items-center gap-2">
-                       🗺️ Turn: {turnCount}/10
+                       🗺️ Chapter: {currentChapterIndex + 1}/10
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
-                      {/* Responsive Text Size Slider */}
                       <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
                         <span className="font-pixel text-[8px] text-gray-400">A</span>
-                        <input 
-                          type="range" min="14" max="24" 
-                          value={textSize} 
-                          onChange={(e) => setTextSize(parseInt(e.target.value))} 
-                          className="w-16 md:w-20 cursor-pointer"
-                        />
+                        <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
                         <span className="font-pixel text-[12px] text-gray-400">A</span>
                       </div>
-
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
-                        setConfirmDialog({
-                          type: 'restart',
-                          message: "Are you sure you want to restart this adventure from the beginning?"
-                        });
-                      }}>
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'restart', message: "Are you sure you want to restart this adventure from the beginning?" }); }}>
                         <span className="text-xl md:text-2xl drop-shadow-md">⏮️</span> <span className="hidden md:inline">Restart</span>
                       </button>
-
-                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => {
-                        setConfirmDialog({
-                          type: 'quit',
-                          message: "Are you sure you want to quit to the main menu?"
-                        });
-                      }}>
+                      <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-pixel text-xs md:text-sm" onClick={() => { setConfirmDialog({ type: 'quit', message: "Are you sure you want to quit to the main menu?" }); }}>
                         <span className="text-xl md:text-2xl drop-shadow-md">🔄</span> <span className="hidden md:inline">Quit</span>
                       </button>
                     </div>
@@ -1345,77 +1325,39 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                   <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
                     {storyHistory.map((hist, idx) => (
                       <React.Fragment key={idx}>
-                        {renderStoryNode(hist.node, true, hist.chosenAction)}
+                        {renderStoryNode(fullStory[hist.chapterIndex], true, hist.chosenAction)}
                       </React.Fragment>
                     ))}
-                    
-                    {renderStoryNode(currentNode, false)}
-
-                    {errorMsg && (
-                      <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
-                        <div>
-                          {errorMsg}
-                        </div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
-                      </div>
-                    )}
-
+                    {renderStoryNode(currentChapter, false)}
                     <div ref={endOfStoryRef} />
                   </div>
 
-                  {/* Active Page Control / Choices Area */}
-                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
+                  {(gameState === 'story') && currentChapter.pages && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 p-3 md:p-4 border-t-4 border-purple-600 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
                       {!isAtLastPage ? (
                         <div className="flex w-full max-w-md gap-4">
                           {currentPageIndex > 0 && (
-                            <button 
-                               className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                               onClick={() => {
-                                 setCurrentPageIndex(p => p - 1);
-                                 if (window.speechSynthesis) window.speechSynthesis.cancel();
-                                 setIsSpeaking(false);
-                               }}
-                            >
+                            <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
                                ⬅️ Back
                             </button>
                           )}
-                          <button 
-                             className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`}
-                             onClick={() => {
-                               setCurrentPageIndex(p => p + 1);
-                               if (window.speechSynthesis) window.speechSynthesis.cancel();
-                               setIsSpeaking(false);
-                             }}
-                          >
-                             Next 📖 (Enter)
+                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(74,222,128,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                             Next Page 📖 (Enter)
                           </button>
                         </div>
                       ) : (
                         <>
                           <div className="flex w-full max-w-4xl justify-start mb-2">
-                             <button 
-                               className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-gray-700 !px-2 !py-1 text-[8px]"
-                               onClick={() => {
-                                 setCurrentPageIndex(p => p - 1);
-                                 if (window.speechSynthesis) window.speechSynthesis.cancel();
-                                 setIsSpeaking(false);
-                               }}
-                             >
+                             <button className="nes-btn !bg-gray-800 !text-gray-300 hover:!bg-gray-700 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
                                ⬅️ Back to Page {currentPageIndex}
                              </button>
                           </div>
                           <p className="font-pixel text-[9px] text-gray-400 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
                           <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
-                            {currentNode?.choices?.map((choice, idx) => {
+                            {currentChapter.choices?.map((choice, idx) => {
                               const isFocused = focusedChoice === idx;
                               return (
-                                <button 
-                                  key={idx} 
-                                  className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`}
-                                  onClick={() => handleChoice(choice)}
-                                  onMouseEnter={() => setFocusedChoice(idx)}
-                                >
+                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-purple-800 ring-2 ring-green-400 scale-[1.02]' : 'hover:bg-purple-800'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
                                   <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-green-300' : ''}`}>{choice.text}</span>
                                   <span className={`${isFocused ? 'opacity-100 text-green-400' : 'opacity-0'} shrink-0`}>▶</span>
                                 </button>
@@ -1429,19 +1371,9 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
 
                   {gameState === 'gameover' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-red-900/95 p-6 border-t-4 border-red-600 z-10 text-center flex flex-col items-center gap-4">
-                       <h2 className="font-pixel text-2xl md:text-3xl text-red-400 flex items-center justify-center gap-4">
-                         💀 GAME OVER 💀
-                       </h2>
+                       <h2 className="font-pixel text-2xl md:text-3xl text-red-400 flex items-center justify-center gap-4">💀 GAME OVER 💀</h2>
                        <div className="flex flex-col md:flex-row gap-4">
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => {
-                            setCurrentNode(sessionInitialNode);
-                            setTurnCount(0);
-                            setStoryHistory([]);
-                            setCurrentPageIndex(0);
-                            setCorrectAnswers(0);
-                            setTotalQuestions(0);
-                            setGameState('story');
-                         }}>Restart This Adventure</button>
+                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentChapterIndex(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
                          <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
                        </div>
                     </div>
@@ -1449,9 +1381,7 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
 
                   {gameState === 'victory' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-green-900/95 p-8 border-t-4 border-green-600 z-10 text-center">
-                       <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">
-                         🏆 VICTORY! 🏆
-                       </h2>
+                       <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
                        <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
                        <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
                     </div>
@@ -1459,20 +1389,17 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                 </div>
                 
                 {/* RIGHT PANE - Visual Content */}
-                <div className="w-full md:w-[40%] lg:w-[45%] h-48 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-purple-800 relative order-1 md:order-2">
-                    <ImagePanel prompt={currentNode?.imagePrompt} turnCount={turnCount} />
+                <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-purple-800 relative order-1 md:order-2">
+                    <ImagePanel prompt={currentChapter?.imagePrompt} turnCount={currentChapterIndex} />
                 </div>
               </div>
             );
           };
 
           const renderLoading = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 flex-grow py-12">
-              <div className="text-6xl animate-bounce">👻</div>
-              <h2 className="font-pixel text-xl text-purple-400 leading-relaxed">{loadingMsg || "Summoning Game Engine..."}</h2>
-              <div className="w-64 h-4 bg-gray-900 pixel-border mt-4 overflow-hidden relative mx-auto">
-                <div className="absolute top-0 left-0 h-full bg-green-500 animate-[loading_2s_ease-in-out_infinite]" style={{width: '50%'}}></div>
-              </div>
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+              <h2 className="font-pixel text-lg md:text-xl text-purple-400 leading-relaxed mt-4 px-4">{loadingMsg}</h2>
+              <FlappyBatMinigame />
             </div>
           );
 
@@ -1480,30 +1407,12 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
           const renderAudioPlayer = () => (
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
-                  <button 
-                    onClick={() => {
-                      if(isMuted) {
-                        if (synthCtx && synthCtx.state === 'suspended') synthCtx.resume();
-                      }
-                      setIsMuted(!isMuted);
-                    }} 
-                    className="text-xl hover:scale-110 transition-transform focus:outline-none"
-                    title={isMuted ? "Unmute Music" : "Mute Music"}
-                  >
+                  <button onClick={() => { if(isMuted) { if (synthCtx && synthCtx.state === 'suspended') synthCtx.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
                     {isMuted ? '🔇' : '🔊'}
                   </button>
-                  <input 
-                    type="range" min="0" max="1" step="0.05" 
-                    value={musicVolume} 
-                    onChange={(e) => setMusicVolume(parseFloat(e.target.value))} 
-                    className="w-20 md:w-24 cursor-pointer"
-                  />
+                  <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
                 </div>
-                <select 
-                  className="bg-gray-900 text-green-400 font-pixel text-[8px] p-1 border border-purple-800 outline-none cursor-pointer" 
-                  value={currentTrack} 
-                  onChange={(e) => setCurrentTrack(parseInt(e.target.value))}
-                >
+                <select className="bg-gray-900 text-green-400 font-pixel text-[8px] p-1 border border-purple-800 outline-none cursor-pointer" value={currentTrack} onChange={(e) => setCurrentTrack(parseInt(e.target.value))}>
                   {SYNTH_TRACKS.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
                 </select>
              </div>
@@ -1517,14 +1426,8 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
               {/* Dynamic Animated Critters Layer */}
               <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                 {critters.map(crit => {
-                  if (crit.isBat) {
-                    return <RetroBat key={crit.id} style={crit.style} />;
-                  }
-                  return (
-                    <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>
-                      🕷️
-                    </div>
-                  );
+                  if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
+                  return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
                 })}
               </div>
 
@@ -1543,7 +1446,7 @@ YOUR ENTIRE RESPONSE MUST BE A SINGLE JSON OBJECT WITH THIS EXACT STRUCTURE:
                       <div className="flex gap-4 justify-center">
                         <button className="nes-btn green flex-1" onClick={() => {
                           if (confirmDialog.type === 'restart') {
-                            setCurrentNode(sessionInitialNode);
+                            setCurrentChapterIndex(0);
                             setTurnCount(0);
                             setStoryHistory([]);
                             setCurrentPageIndex(0);
