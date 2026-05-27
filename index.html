@@ -146,18 +146,6 @@
       ::-webkit-scrollbar-thumb { background: #8E2DE2; border: 2px solid #000; }
       
       body { background-color: #050505; margin: 0; overflow-x: hidden; }
-
-      /* Story Book Columns */
-      .story-columns {
-        column-count: 1;
-        column-gap: 2rem;
-      }
-      @media (min-width: 768px) {
-        .story-columns {
-          column-count: 2;
-          column-rule: 2px dashed #4A00E0;
-        }
-      }
       
       /* Music Slider styling */
       input[type=range] { accent-color: #8E2DE2; }
@@ -174,7 +162,7 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION & CONSTANTS ---
-        // NEW METHOD: We use Pollinations Text API. It is 100% keyless, free, and unrestricted!
+        // We use Pollinations Text API. It is 100% keyless, free, and unrestricted!
         const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
         
         // GOOGLE APPS SCRIPT WEB APP URL (Writes session logs & total books read)
@@ -394,9 +382,15 @@
         const ImagePanel = ({ prompt, turnCount }) => {
           const [loaded, setLoaded] = useState(false);
           const [hasError, setHasError] = useState(false);
+          const imgRef = useRef(null);
           
           useEffect(() => {
-            setLoaded(false);
+            // Race-condition check: if the image loaded from cache instantly before layout effects
+            if (imgRef.current && imgRef.current.complete) {
+              setLoaded(true);
+            } else {
+              setLoaded(false);
+            }
             setHasError(false);
           }, [prompt, turnCount]);
 
@@ -421,12 +415,13 @@
                 </div>
               ) : (
                 <img 
+                  ref={imgRef}
                   key={`${prompt}-${turnCount}`}
                   src={`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " 8-bit pixel art style retro video game screenshot castlevania spooky")}?width=800&height=800&nologo=true&seed=${turnCount}`}
                   alt="Scene"
                   className={`w-full h-full object-cover transition-opacity duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setLoaded(true)}
-                  onError={(e) => { 
+                  onError={() => { 
                     setLoaded(true); 
                     setHasError(true);
                   }}
@@ -961,7 +956,7 @@
             } catch (err) { console.error("Error sending analytics:", err); }
           };
 
-          // --- API LOGIC ---
+          // --- DYNAMIC API ENGINE ---
           const generateStoryNode = async (actionText = null) => {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             setIsSpeaking(false);
@@ -1034,22 +1029,11 @@
 
             const systemInstruction = `You are a verbose, highly descriptive fantasy author writing a CYOA game. You must strictly output a valid, raw JSON object. Do not use markdown tags like \`\`\`json. Ensure all quotes are escaped. Tone: Spooky, funny, 80s retro, educational. ALWAYS check your word counts and strictly adhere to reading level complexity.`;
 
-            // INCREDIBLE WORKAROUND: Instead of Gemini with restricted keys, we use Pollinations free API.
-            // It completely supports Llama 3 / Mistral and returns free unlimited text without authentication!
-            const pollinationPrompt = `System instructions: ${systemInstruction}\n\nUser request: ${promptText}`;
+            // GET Request workaround to guarantee CORS clearance on all school-level networks
+            const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}`;
 
             try {
-              const response = await fetch(POLLINATIONS_TEXT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  messages: [
-                    { role: "system", content: "You must only respond with raw, valid JSON. Do not wrap your response in markdown code blocks like ```json." },
-                    { role: "user", content: pollinationPrompt }
-                  ],
-                  jsonMode: true
-                })
-              });
+              const response = await fetch(pollinationUrl);
 
               if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1064,7 +1048,7 @@
               if (jsonMatch) {
                 jsonText = jsonMatch[0];
               } else {
-                throw new Error("Invalid JSON structure returned.");
+                throw new Error("Invalid JSON structure returned by pollination services.");
               }
               
               const nodeData = JSON.parse(jsonText);
@@ -1076,16 +1060,10 @@
               setCurrentNode(nodeData);
               if (turnCount === 0) setSessionInitialNode(nodeData); 
               setCurrentPageIndex(0); 
-              
-              if (nodeData.isVictory) {
-                setGameState('victory');
-                recordEngagement('Victory');
-              } else {
-                setGameState('story');
-              }
+              setGameState('story');
             } catch (err) {
               console.error("Pollination Engine Error:", err);
-              setErrorMsg(`Summoning Error: ${err.message}. Please try again.`);
+              setErrorMsg(`Summoning Error: ${err.message}. Please click 'Try Again' to reconnect.`);
               setGameState('story');
             }
           };
@@ -1162,8 +1140,8 @@
                       className="w-full bg-black border-2 border-purple-900 text-purple-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-purple-500"
                     />
                 </div>
+
               </div>
-              {errorMsg && <p className="font-terminal text-red-500 text-xl">{errorMsg}</p>}
             </div>
           );
 
@@ -1227,8 +1205,25 @@
           };
 
           const renderGameArea = () => {
-            if (!currentNode && !errorMsg) {
-              return renderLoading();
+            // Elegant fallback error screen - completely bypasses black layouts if API calls fall over
+            if (!currentNode) {
+              return (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-6">
+                  <div className="text-6xl animate-bounce">⚠️</div>
+                  <h2 className="font-pixel text-lg text-red-500 leading-relaxed">Connection Interrupted</h2>
+                  <p className="font-terminal text-xl text-gray-300 max-w-md leading-relaxed">
+                    {errorMsg || "The Game Master could not compile your chapter request."}
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button className="nes-btn green" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>
+                      🔄 Try Again
+                    </button>
+                    <button className="nes-btn" onClick={() => setGameState('menu')}>
+                      ↩️ Back to Menu
+                    </button>
+                  </div>
+                </div>
+              );
             }
             
             const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
@@ -1283,15 +1278,6 @@
                     ))}
                     
                     {renderStoryNode(currentNode, false)}
-
-                    {errorMsg && (
-                      <div className="bg-red-900 border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
-                        <div>
-                          {errorMsg}
-                        </div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
-                      </div>
-                    )}
 
                     <div ref={endOfStoryRef} />
                   </div>
