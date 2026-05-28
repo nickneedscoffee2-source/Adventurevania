@@ -116,7 +116,7 @@
       ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
       
       body { 
-        background: linear-gradient(to bottom, #4D1A0F 0%, #2D140F 50%, #180907 100%); 
+        background: linear-gradient(to bottom, #E65100 0%, #4D1A0F 35%, #2D140F 70%, #180907 100%); 
         margin: 0; 
         overflow-x: hidden; 
       }
@@ -278,6 +278,7 @@
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
         let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
+        let synthCtx = null; // Globally available reference initialized inside standard React scope
 
         // Compat Wrappers to bridge Global Compatibility variables cleanly without ES module imports
         const initializeFirebaseApp = (config) => {
@@ -354,7 +355,8 @@
               q = `Who made the loud noise?`;
               choices = [
                 { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
-                { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" }
+                { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" },
+                { text: `A quiet shadow`, isCorrect: false, isGameOver: true, gameOverMessage: "No, shadows are silent! You lose!" }
               ];
             } else { // Standard logic
               p1 = `Ch ${turn + 1}. With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}.`;
@@ -363,7 +365,8 @@
               q = `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`;
               choices = [
                 { text: `${dil.name}`, isCorrect: true, isGameOver: false },
-                { text: "Finding a snack", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by food and fell into a trapdoor!" }
+                { text: "Finding a snack", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by food and fell into a trapdoor!" },
+                { text: "Deciding to take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You fell asleep and were captured!" }
               ];
             }
 
@@ -710,8 +713,19 @@
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
 
-          // Audio effect functions injected here
-          const playThunderSynth = () => {
+          // --- FIXED LOCALIZED AUDIO FUNCTIONS TO SOLVE UNDEFINED SCOPE ERRORS ---
+          function initAudioContext() {
+            if (!synthCtxRef.current) {
+              synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+              synthCtx = synthCtxRef.current; // Sync compat global pointer
+            }
+            if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') {
+              synthCtxRef.current.resume();
+            }
+          }
+
+          function playThunderSynth() {
+            initAudioContext();
             const ctx = synthCtxRef.current;
             if (!ctx || isMuted) return;
             try {
@@ -733,9 +747,10 @@
               gainNode.connect(ctx.destination);
               noiseNode.start();
             } catch(e) { console.warn(e); }
-          };
+          }
 
-          const playGhostHowl = () => {
+          function playGhostHowl() {
+            initAudioContext();
             const ctx = synthCtxRef.current;
             if (!ctx || isMuted) return;
             try {
@@ -763,13 +778,13 @@
               osc.start(now);
               osc.stop(now + 4.0);
             } catch(e) { console.warn(e); }
-          };
+          }
 
-          const playRealisticWolfHowl = () => {
+          function playRealisticWolfHowl() {
+            initAudioContext();
             const ctx = synthCtxRef.current;
             if (!ctx || isMuted) return;
             try {
-              if (ctx.state === 'suspended') ctx.resume();
               const now = ctx.currentTime;
               const voiceOsc = ctx.createOscillator();
               const subOsc = ctx.createOscillator();
@@ -815,7 +830,18 @@
               voiceOsc.stop(now + 5.6);
               subOsc.stop(now + 5.6);
             } catch(e) { console.warn("Synth Wolf Howl failed:", e); }
-          };
+          }
+
+          function triggerLightning() {
+             setShowLightning(true);
+             playThunderSynth();
+             setTimeout(() => setShowLightning(false), 500);
+             if (Math.random() > 0.5) {
+               setTimeout(playRealisticWolfHowl, 1000);
+             } else {
+               setTimeout(playGhostHowl, 800);
+             }
+          }
 
           // Initialize Firebase Auth compat listener safely
           useEffect(() => {
@@ -920,34 +946,28 @@
             return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
           }, [isMuted, currentTrack, musicVolume]);
 
-          const triggerLightning = () => {
-             setShowLightning(true);
-             playThunderSynth();
-             setTimeout(() => setShowLightning(false), 500);
-             if (Math.random() > 0.5) setTimeout(playRealisticWolfHowl, 1000);
-             else setTimeout(playGhostHowl, 800);
-          };
-
+          // Ambient lightning interval loop
           useEffect(() => {
             const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
 
-          // --- TTS ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
+          // Critter Spawner
+          useEffect(() => {
+            let timeoutId;
+            const spawnCritter = () => {
+              const id = Date.now();
+              const isBat = Math.random() > 0.5;
+              const direction = Math.random() > 0.5 ? 'Right' : 'Left';
+              const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
+              const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
+              setCritters(prev => [...prev, { id, isBat, style: { top: `${top}vh`, animation } }]);
+              setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, 12500);
+              timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
+            };
+            timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
+            return () => clearTimeout(timeoutId);
+          }, []);
 
           // Keyboard Listeners
           useEffect(() => {
@@ -1032,7 +1052,7 @@
             const dil = CATEGORIES.dilemmas[finalSetup.dilemma];
 
             const getReadingLevelInstruction = (level) => {
-              if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY baby sight words like: big, red, run, fast, see, cat. EXACTLY 30 words per page (exactly 90 words per chapter). No big words allowed.";
+              if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY basic sight words (big, red, run, fast, see, cat). EXACTLY 30 words per page (exactly 90 words per chapter). No big words allowed.";
               if (level === 1) return "Write for a standard primary grade. Use simple compound sentences. EXACTLY 100 words per page (exactly 300 words per chapter).";
               if (level === 2) return "Write for a junior grade. Use descriptive words and standard formatting. EXACTLY 133 words per page (exactly 400 words per chapter).";
               return "Write for an intermediate grade. Use highly advanced, dark, atmospheric, and spooky vocabulary. EXACTLY 166 words per page (exactly 500 words per chapter).";
@@ -1048,9 +1068,9 @@
               
               STRICT FORMATTING RULES:
               1. The story MUST progress linearly from Chapter 1 to Chapter 10 without repeating past events.
-              2. EACH Chapter MUST have exactly 3 "pages" (an array of 3 text strings).
+              2. EACH Chapter MUST have exactly 3 "pages" (an array of exactly 3 text strings).
               3. The length of text on EACH page MUST follow this rule: ${getReadingLevelInstruction(finalSetup.readingLevel)}
-              4. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 2 choices (one correct, one incorrect with a 'gameOverMessage').
+              4. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 3 choices (one correct, two incorrect with a 'gameOverMessage').
             `;
 
             const systemInstruction = `You are a strict children's book author. You MUST output a single valid JSON block containing an array of 10 chapters. Use SINGLE QUOTES (') inside strings. Schema: { "chapters": [ { "pages": ["page 1", "page 2", "page 3"], "question": "Question?", "choices": [{"text":"", "isCorrect":true/false, "gameOverMessage":""}] } ] }`;
@@ -1085,7 +1105,71 @@
                    throw new Error("Invalid array structure.");
                 }
 
-                setFullBook(nodeData.chapters);
+                // --- ROBUST CHAPTER & PAGE SANITIZER ---
+                const sanitizedChapters = nodeData.chapters.map((ch, turnIdx) => {
+                  let pages = ch.pages;
+                  
+                  // Enforce pages is always an array of strings
+                  if (!pages || !Array.isArray(pages)) {
+                    const rawText = ch.storyText || (typeof ch.pages === 'string' ? ch.pages : '') || `Adventurevania Chapter ${turnIdx + 1}!`;
+                    const paragraphs = rawText.split('\n\n').map(p => p.trim()).filter(Boolean);
+                    if (paragraphs.length >= 3) {
+                      pages = paragraphs.slice(0, 3);
+                    } else {
+                      const sentences = rawText.match(/[^.!?]+[.!?]+/g) || [rawText];
+                      const size = Math.ceil(sentences.length / 3);
+                      pages = [
+                        sentences.slice(0, size).join(' ').trim(),
+                        sentences.slice(size, size * 2).join(' ').trim(),
+                        sentences.slice(size * 2).join(' ').trim()
+                      ].filter(Boolean);
+                    }
+                  }
+
+                  // Make sure we have exactly 3 pages
+                  pages = pages.map(p => p.trim()).filter(Boolean);
+                  if (pages.length < 3) {
+                    while (pages.length < 3) {
+                      pages.push("You look around carefully, searching for clues on how to proceed...");
+                    }
+                  } else if (pages.length > 3) {
+                    pages = pages.slice(0, 3);
+                  }
+
+                  // Ensure question exists
+                  let question = ch.question ? ch.question.trim() : "What is the best way to bypass this challenge?";
+
+                  // Ensure we always have at least 3 choices
+                  let choices = ch.choices;
+                  if (!choices || !Array.isArray(choices) || choices.length === 0) {
+                    choices = [
+                      { text: "Solve the challenge carefully", isCorrect: true, isGameOver: false },
+                      { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: "You ran into Negabor's trap!" },
+                      { text: "Ignore the signs", isCorrect: false, isGameOver: true, gameOverMessage: "You ignored the warning and fell into a pit!" }
+                    ];
+                  }
+
+                  if (choices.length < 3) {
+                    const backupIncorrect = [
+                      { text: "Take the wrong turn", isCorrect: false, isGameOver: true, gameOverMessage: "You took a wrong turn and got lost in the shadows!" },
+                      { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: "You rested too long and Negabor caught you!" }
+                    ];
+                    while (choices.length < 3) {
+                      choices.push(backupIncorrect[choices.length % backupIncorrect.length]);
+                    }
+                  }
+
+                  // Verify correct/incorrect flags are logically consistent
+                  let hasCorrect = choices.some(c => c.isCorrect);
+                  if (!hasCorrect) {
+                    choices[0].isCorrect = true;
+                    choices[0].isGameOver = false;
+                  }
+
+                  return { pages, question, choices };
+                });
+
+                setFullBook(sanitizedChapters);
                 setLoadingProgress(100);
                 setTimeout(() => setGameState('story'), 500);
                 success = true;
@@ -1133,8 +1217,8 @@
               setGameState('gameover');
             } else {
               if (turnCount + 1 >= fullBook.length || turnCount + 1 >= 10) {
-                 setGameState('victory');
-                 recordEngagement('Victory');
+                 setGameState('story'); // safety fallback
+                 setTimeout(() => { setGameState('victory'); }, 100);
               } else {
                  setTurnCount(turnCount + 1);
                  setCurrentPageIndex(0);
@@ -1417,7 +1501,7 @@
           const renderAudioPlayer = () => (
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
-                  <button onClick={() => { if(isMuted) { if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') synthCtxRef.current.resume(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
+                  <button onClick={() => { if(isMuted) { initAudioContext(); startSynthEngine(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
                     {isMuted ? '🔇' : '🔊'}
                   </button>
                   <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
