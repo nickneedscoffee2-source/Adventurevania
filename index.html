@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventurevania - Choose Your Own Adventure</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Firebase Compat Bundles (Stable Globals) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -117,7 +121,6 @@
         overflow-x: hidden; 
       }
       
-      /* Music Slider styling */
       input[type=range] { accent-color: #E65100; }
     </style>
 </head>
@@ -127,7 +130,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- GLOBAL ERROR BOUNDARY (Prevents White Screens) ---
+        // --- GLOBAL ERROR BOUNDARY ---
         class ErrorBoundary extends React.Component {
           constructor(props) {
             super(props);
@@ -168,8 +171,7 @@
 
         const SYNTH_TRACKS = [
           {
-            name: "Simon's Theme",
-            tempo: 145,
+            name: "Simon's Theme", tempo: 145,
             melody: [
               { note: "E4", dur: 2 }, { note: "A4", dur: 2 }, { note: "C5", dur: 2 }, { note: "B4", dur: 2 },
               { note: "A4", dur: 4 }, { note: "E4", dur: 4 },
@@ -179,17 +181,7 @@
             bass: ["A2", "C2", "D2", "E2"]
           },
           {
-            name: "Moonlight Sonata",
-            tempo: 85,
-            melody: [
-              { note: "A4", dur: 4 }, { note: "C5", dur: 4 }, { note: "E5", dur: 4 }, { note: "A5", dur: 4 },
-              { note: "G5", dur: 2 }, { note: "F5", dur: 2 }, { note: "E5", dur: 8 }
-            ],
-            bass: ["A2", "F2", "C2", "E2"]
-          },
-          {
-            name: "Creepy Crawly",
-            tempo: 140,
+            name: "Creepy Crawly", tempo: 140,
             melody: [
               { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
               { note: "G#4", dur: 4 }, { note: "E4", dur: 4 }, { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, 
@@ -200,9 +192,9 @@
         ];
 
         const NOTE_FREQ = {
-          "C2": 65.41, "C#2": 69.30, "D2": 73.42, "D#2": 77.78, "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
-          "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "A#4": 466.16, "B4": 493.88,
-          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "Ab4": 415.30, "A5": 880.00, "G5": 783.99, "F5": 698.46
+          "C2": 65.41, "D2": 73.42, "E2": 82.41, "F2": 87.31, "G2": 98.00, "A2": 110.00,
+          "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "B4": 493.88,
+          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00
         };
 
         const CATEGORIES = {
@@ -286,7 +278,6 @@
 
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
         let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
-        let synthCtx = null; 
 
         // Compat Wrappers to bridge Global Compatibility variables cleanly without ES module imports
         const initializeFirebaseApp = (config) => {
@@ -319,9 +310,18 @@
             data: () => snap.data()
           };
         };
-        const signInAnonymously = (authRef) => authRef ? authRef.signInAnonymously() : Promise.reject(new Error("No Auth Connection"));
-        const signInWithCustomToken = (authRef, token) => authRef ? authRef.signInWithCustomToken(token) : Promise.reject(new Error("No Auth Connection"));
-        const onAuthStateChanged = (authRef, callback) => authRef ? authRef.onAuthStateChanged(callback) : () => {};
+
+        // --- FIREBASE GLOBALS MAP WITH LOCAL BINDING FIXES ---
+        // VITAL: Reconstructed standard global polyfills to map strictly to globally bundled script exports
+        const signInAnonymously = (authRef) => {
+          return authRef ? authRef.signInAnonymously() : Promise.reject(new Error("Auth Unavailable"));
+        };
+        const signInWithCustomToken = (authRef, token) => {
+          return authRef ? authRef.signInWithCustomToken(token) : Promise.reject(new Error("Auth Unavailable"));
+        };
+        const onAuthStateChanged = (authRef, callback) => {
+          return authRef ? authRef.onAuthStateChanged(callback) : () => {};
+        };
 
         try {
           const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : {};
@@ -336,7 +336,7 @@
         }
 
         // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
-        const generateLocalNode = (turn, setup) => {
+        const generateLocalBook = (setup) => {
           const char = CATEGORIES.characters[setup.character];
           const vill = CATEGORIES.villains[setup.villain];
           const sett = CATEGORIES.settings[setup.setting];
@@ -344,39 +344,33 @@
           const dil = CATEGORIES.dilemmas[setup.dilemma];
           const level = setup.readingLevel;
 
-          let p1, p2, p3, p4, q, choices;
+          let chapters = [];
+          for (let turn = 0; turn < 10; turn++) {
+            let p1, p2, p3, q, choices;
 
-          // Strongly responsive to Grade 1 vs advanced fallbacks
-          if (level === 0 || level === 1) {
-            p1 = `The sky is dark. ${char.name} walks into the ${sett.name}. It is very scary.`;
-            p2 = `There is a loud noise! The bad ${vill.name} is here.`;
-            p3 = `Oh no! The ${vill.name} wants to stop you from getting to the end.`;
-            p4 = `You must solve a fast puzzle to open the big door and win.`;
-            q = `Who made the loud noise?`;
-            choices = [
-              { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
-              { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" },
-              { text: `A sleeping cat`, isCorrect: false, isGameOver: true, gameOverMessage: "No, cats are quiet. You lose!" }
-            ];
-          } else {
-            p1 = `With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy.`;
-            p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures. You must stay vigilant to proceed with your quest to ${plot.name}.`;
-            p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
-            p4 = `The decisive threshold is here. A heavy iron gate blocking the entrance requires solving a reading mystery to bypass ${vill.name}'s trap.`;
-            q = `What is blocking the path forward?`;
-            choices = [
-              { text: `An iron gate`, isCorrect: true, isGameOver: false },
-              { text: `A magic shield`, isCorrect: false, isGameOver: true, gameOverMessage: "You touched the wrong shield and got zapped!" },
-              { text: `A sleeping dragon`, isCorrect: false, isGameOver: true, gameOverMessage: "You woke the dragon up!" }
-            ];
+            if (setup.readingLevel === 0) { // Toddler logic
+              p1 = `Chapter ${turn + 1}. The sky is dark. ${char.name} walks. It is scary.`;
+              p2 = `There is a big noise! The bad ${vill.name} is here.`;
+              p3 = `Oh no! The bad ${vill.name} wants to stop you.`;
+              q = `Who made the loud noise?`;
+              choices = [
+                { text: `The ${vill.name}`, isCorrect: true, isGameOver: false },
+                { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" }
+              ];
+            } else { // Standard logic
+              p1 = `Chapter ${turn + 1}. With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}.`;
+              p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}.`;
+              p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
+              q = `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`;
+              choices = [
+                { text: `${dil.name}`, isCorrect: true, isGameOver: false },
+                { text: "Finding a snack", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted by food and fell into a trapdoor!" }
+              ];
+            }
+
+            chapters.push({ pages: [p1, p2, p3], question: q, choices: choices.sort(() => Math.random() - 0.5) });
           }
-
-          return {
-            pages: [p1, p2, p3, p4],
-            imagePrompt: `A retro pixel art sunset scene in ${sett.name} with ${char.name}`,
-            question: q,
-            choices: choices.sort(() => Math.random() - 0.5)
-          };
+          return chapters;
         };
 
         // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
@@ -387,19 +381,18 @@
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            
             const w = canvas.width;
             const h = canvas.height;
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, w, h);
 
-            // 1. SKY GRADIENT based on sunset progression stage (turn 0 to 9)
+            // 1. SKY GRADIENT (10 phases of sunset)
             let skyColors = [];
-            if (turn === 0) {
+            if (turn === 0 || turn === 1) {
               skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
-            } else if (turn >= 1 && turn <= 3) {
+            } else if (turn >= 2 && turn <= 4) {
               skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
-            } else if (turn >= 4 && turn <= 6) {
+            } else if (turn >= 5 && turn <= 7) {
               skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
             } else {
               skyColors = ['#180040', '#000028', '#000010', '#000000']; 
@@ -411,246 +404,127 @@
               ctx.fillRect(0, i * step, w, step);
             });
 
-            // 2. SUNSTAGE & CELESTIALS
+            // 2. CELESTIAL BODIES
             if (turn < 7) {
-              const sunY = 60 + turn * 18;
-              const sunSize = 32;
-              
+              const sunY = 60 + turn * 22;
               ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
-              ctx.beginPath();
-              ctx.arc(w/2, sunY, sunSize + 16, 0, Math.PI * 2);
-              ctx.fill();
-              
+              ctx.beginPath(); ctx.arc(w/2, sunY, 48, 0, Math.PI * 2); ctx.fill();
               ctx.fillStyle = '#ffeb3b';
-              ctx.beginPath();
-              ctx.arc(w/2, sunY, sunSize, 0, Math.PI * 2);
-              ctx.fill();
+              ctx.beginPath(); ctx.arc(w/2, sunY, 32, 0, Math.PI * 2); ctx.fill();
             } else {
               ctx.fillStyle = '#ffffff';
               for (let i = 0; i < 20; i++) {
-                const rx = (Math.sin(i * 99) * 0.5 + 0.5) * w;
-                const ry = (Math.cos(i * 33) * 0.5 + 0.5) * (h - 100);
-                ctx.fillRect(Math.floor(rx), Math.floor(ry), 2, 2);
+                ctx.fillRect(Math.floor((Math.sin(i * 99) * 0.5 + 0.5) * w), Math.floor((Math.cos(i * 33) * 0.5 + 0.5) * (h - 100)), 2, 2);
               }
-
               const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
               const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
               ctx.fillStyle = moonGlow;
-              ctx.beginPath();
-              ctx.arc(w - 70, 60, 26, 0, Math.PI * 2);
-              ctx.fill();
-
+              ctx.beginPath(); ctx.arc(w - 70, 60, 26, 0, Math.PI * 2); ctx.fill();
               ctx.fillStyle = moonColor;
-              ctx.beginPath();
-              ctx.arc(w - 70, 60, 18, 0, Math.PI * 2);
-              ctx.fill();
+              ctx.beginPath(); ctx.arc(w - 70, 60, 18, 0, Math.PI * 2); ctx.fill();
             }
 
-            // 2.5 THE NEGABOR GREEN OGRE FACE RENDERING (If villain index 3 is selected)
+            // 2.5 THE NEGABOR GREEN OGRE FACE
             if (villain === 3) {
-              const ogreX = w * 0.15;
-              const ogreY = 45;
-              
-              // Big green head base
-              ctx.fillStyle = '#388e3c'; 
-              ctx.fillRect(ogreX, ogreY, 40, 40);
-              
-              // Horns / Ears
-              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8);
-              ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
-              
-              // Glowing yellow-red eyes
-              ctx.fillStyle = '#f57c00'; 
-              ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6);
-              ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
-              
-              ctx.fillStyle = '#ff1744'; 
-              ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2);
-              ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
-
-              // Flat nose
-              ctx.fillStyle = '#1b5e20'; 
-              ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
-
-              // Fangs
-              ctx.fillStyle = '#ffffff'; 
-              ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4);
-              ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
-              
-              // Angry mouth line
-              ctx.fillStyle = '#000000';
-              ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
+              const ogreX = w * 0.15; const ogreY = 45;
+              ctx.fillStyle = '#388e3c'; ctx.fillRect(ogreX, ogreY, 40, 40);
+              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8); ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
+              ctx.fillStyle = '#f57c00'; ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6); ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
+              ctx.fillStyle = '#ff1744'; ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2); ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
+              ctx.fillStyle = '#1b5e20'; ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
+              ctx.fillStyle = '#ffffff'; ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4); ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
+              ctx.fillStyle = '#000000'; ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
             }
 
             // 3. MOUNTAIN SILHOUETTE
             ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-            ctx.lineTo(0, h - 80);
-            ctx.lineTo(w * 0.2, h - 120);
-            ctx.lineTo(w * 0.4, h - 70);
-            ctx.lineTo(w * 0.6, h - 105);
-            ctx.lineTo(w * 0.8, h - 80);
-            ctx.lineTo(w, h - 130);
-            ctx.lineTo(w, h);
-            ctx.closePath();
-            ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, h - 80); ctx.lineTo(w * 0.2, h - 120);
+            ctx.lineTo(w * 0.4, h - 70); ctx.lineTo(w * 0.6, h - 105); ctx.lineTo(w * 0.8, h - 80);
+            ctx.lineTo(w, h - 130); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
             // 4. SETTING SILHOUETTES
-            // Wrapped in block braces {} to prevent babel lexical parsing errors
-            ctx.fillStyle = '#100504';
-            ctx.fillRect(0, h - 40, w, 40);
-            ctx.fillStyle = '#3e2723';
-            ctx.fillRect(0, h - 40, w, 4);
+            ctx.fillStyle = '#100504'; ctx.fillRect(0, h - 40, w, 40);
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
             ctx.fillStyle = '#000000';
 
             switch(setting) {
               case 0: {
-                ctx.fillRect(10, 0, 30, h);
-                ctx.fillRect(w - 40, 0, 30, h);
-                ctx.fillStyle = '#ffeb3b';
-                ctx.fillRect(120, h - 140, 12, 6);
-                ctx.fillRect(w - 150, h - 180, 14, 8);
+                ctx.fillRect(10, 0, 30, h); ctx.fillRect(w - 40, 0, 30, h);
+                ctx.fillStyle = '#ffeb3b'; ctx.fillRect(120, h - 140, 12, 6); ctx.fillRect(w - 150, h - 180, 14, 8);
                 break;
               }
               case 1: {
-                ctx.fillRect(30, h - 220, 60, 180);
-                ctx.fillRect(200, h - 180, 50, 140);
-                ctx.beginPath();
-                ctx.moveTo(30, h - 220);
-                ctx.lineTo(60, h - 270);
-                ctx.lineTo(90, h - 220);
-                ctx.fill();
+                ctx.fillRect(30, h - 220, 60, 180); ctx.fillRect(200, h - 180, 50, 140);
+                ctx.beginPath(); ctx.moveTo(30, h - 220); ctx.lineTo(60, h - 270); ctx.lineTo(90, h - 220); ctx.fill();
                 break;
               }
               case 2: {
                 const drawTree = (tx, ty) => {
                   ctx.fillRect(tx + 12, ty, 6, h - ty);
-                  ctx.beginPath();
-                  ctx.moveTo(tx, ty + 60);
-                  ctx.lineTo(tx + 15, ty);
-                  ctx.lineTo(tx + 30, ty + 60);
-                  ctx.fill();
-                  ctx.beginPath();
-                  tx -= 5;
-                  ctx.moveTo(tx, ty + 120);
-                  ctx.lineTo(tx + 20, ty + 40);
-                  ctx.lineTo(tx + 40, ty + 120);
-                  ctx.fill();
+                  ctx.beginPath(); ctx.moveTo(tx, ty + 60); ctx.lineTo(tx + 15, ty); ctx.lineTo(tx + 30, ty + 60); ctx.fill();
+                  ctx.beginPath(); tx -= 5; ctx.moveTo(tx, ty + 120); ctx.lineTo(tx + 20, ty + 40); ctx.lineTo(tx + 40, ty + 120); ctx.fill();
                 };
-                drawTree(40, h - 240);
-                drawTree(w - 90, h - 260);
+                drawTree(40, h - 240); drawTree(w - 90, h - 260);
                 break;
               }
               case 3: {
-                ctx.beginPath();
-                ctx.moveTo(w/2 - 120, h - 40);
-                ctx.lineTo(w/2, h - 190);
-                ctx.lineTo(w/2 + 120, h - 40);
-                ctx.closePath();
-                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(w/2 - 120, h - 40); ctx.lineTo(w/2, h - 190); ctx.lineTo(w/2 + 120, h - 40); ctx.closePath(); ctx.fill();
                 break;
               }
               case 4: {
-                ctx.fillRect(20, h - 160, 20, 120);
-                ctx.fillRect(w - 50, h - 190, 30, 150);
-                ctx.fillStyle = '#00e676';
-                ctx.fillRect(25, h - 120, 4, 4);
-                ctx.fillStyle = '#ff1744';
-                ctx.fillRect(25, h - 100, 4, 4);
+                ctx.fillRect(20, h - 160, 20, 120); ctx.fillRect(w - 50, h - 190, 30, 150);
+                ctx.fillStyle = '#00e676'; ctx.fillRect(25, h - 120, 4, 4);
+                ctx.fillStyle = '#ff1744'; ctx.fillRect(25, h - 100, 4, 4);
                 break;
               }
               case 5: {
-                ctx.fillRect(0, h - 50, w, 20);
-                ctx.fillRect(40, h - 180, 12, 140);
-                ctx.fillRect(w - 80, h - 200, 14, 160);
+                ctx.fillRect(0, h - 50, w, 20); ctx.fillRect(40, h - 180, 12, 140); ctx.fillRect(w - 80, h - 200, 14, 160);
                 break;
               }
               case 6: {
-                ctx.fillRect(20, h - 170, 80, 130);
-                ctx.fillRect(w - 110, h - 190, 90, 150);
-                ctx.fillStyle = '#000';
-                ctx.fillRect(w/2 - 3, h - 100, 6, 40);
-                ctx.fillRect(w/2 - 12, h - 90, 24, 6);
+                ctx.fillRect(20, h - 170, 80, 130); ctx.fillRect(w - 110, h - 190, 90, 150);
+                ctx.fillStyle = '#000'; ctx.fillRect(w/2 - 3, h - 100, 6, 40); ctx.fillRect(w/2 - 12, h - 90, 24, 6);
                 break;
               }
               case 7: {
-                ctx.beginPath();
-                ctx.arc(80, h - 160, 45, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(80, h - 160, 45, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2); ctx.fill();
                 break;
               }
               case 8: {
-                ctx.fillRect(60, h - 120, 40, 80);
-                ctx.fillRect(w - 100, h - 140, 40, 100);
-                ctx.beginPath();
-                ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillRect(60, h - 120, 40, 80); ctx.fillRect(w - 100, h - 140, 40, 100);
+                ctx.beginPath(); ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2); ctx.fill();
                 break;
               }
               case 9: {
-                ctx.beginPath();
-                ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2);
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 6;
-                ctx.stroke();
+                ctx.beginPath(); ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2); ctx.strokeStyle = '#000000'; ctx.lineWidth = 6; ctx.stroke();
                 ctx.lineWidth = 2;
                 for (let a = 0; a < 8; a++) {
                   const angle = (a * Math.PI) / 4;
-                  ctx.beginPath();
-                  ctx.moveTo(w/2, h - 150);
-                  ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70);
-                  ctx.stroke();
+                  ctx.beginPath(); ctx.moveTo(w/2, h - 150); ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70); ctx.stroke();
                 }
                 break;
               }
             }
-
-            ctx.fillStyle = '#000000';
-            for (let i = 0; i < 4; i++) {
-              const bx = (Math.sin(i * 45 + turn) * 0.5 + 0.5) * (w - 60) + 30;
-              const by = (Math.cos(i * 12 + turn) * 0.3 + 0.3) * (h - 140) + 20;
-              ctx.fillRect(bx, by, 8, 4);
-              ctx.fillRect(bx - 6, by - 3, 4, 3);
-              ctx.fillRect(bx + 10, by - 3, 4, 3);
-            }
-
           }, [setting, turn, villain]);
 
           return (
-            <canvas 
-              ref={canvasRef} 
-              width={500} 
-              height={500} 
-              className="w-full h-full object-cover transition-opacity duration-1000"
-              style={{ imageRendering: 'pixelated' }}
-            />
+            <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
           );
         };
 
         // --- INTERACTIVE TEXT HIGHLIGHTER ---
         const InteractiveText = ({ text, textSize }) => {
           const [highlights, setHighlights] = useState([]);
-
-          useEffect(() => {
-            setHighlights([]);
-          }, [text]); 
+          useEffect(() => { setHighlights([]); }, [text]); 
 
           const handleSelection = () => {
             const selection = window.getSelection();
             if (!selection || selection.isCollapsed) return;
             const selectedText = selection.toString().trim();
-            if (selectedText.length > 1 && !highlights.includes(selectedText)) {
-              setHighlights(prev => [...prev, selectedText]);
-            }
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) setHighlights(prev => [...prev, selectedText]);
           };
-
-          const removeHighlight = (phrase) => {
-            setHighlights(prev => prev.filter(h => h !== phrase));
-          };
+          const removeHighlight = (phrase) => { setHighlights(prev => prev.filter(h => h !== phrase)); };
 
           const renderText = () => {
             if (!text) return null;
@@ -658,25 +532,16 @@
             const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
             const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
             const parts = text.split(regex);
-
             return parts.map((part, i) => {
               const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
-              if (matched) {
-                return (
-                  <mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>
-                    {part}
-                  </mark>
-                );
-              }
+              if (matched) return (<mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>{part}</mark>);
               return <span key={i}>{part}</span>;
             });
           };
 
           return (
             <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
-              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
-                {renderText()}
-              </p>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>{renderText()}</p>
             </div>
           );
         };
@@ -684,24 +549,17 @@
         // RetroBat component definition 
         function RetroBat({ style }) {
           const [wingFrame, setWingFrame] = useState(0);
-
           useEffect(() => {
-            const frameTimer = setInterval(() => {
-              setWingFrame(f => (f === 0 ? 1 : 0));
-            }, 100);
+            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 100);
             return () => clearInterval(frameTimer);
           }, []);
-
           return (
             <div className="critter" style={style}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                {/* Bat Body */}
                 <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
                 <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
-                {/* Red Eyes */}
                 <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
                 <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                
                 {wingFrame === 0 ? (
                   <g>
                     <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
@@ -733,7 +591,6 @@
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         const FlappyBatMinigame = () => {
           const canvasRef = useRef(null);
-
           useEffect(() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
@@ -742,112 +599,55 @@
 
             let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
             let pipes = [];
-            let score = 0;
-            let gameOver = false;
-            let frameCount = 0;
+            let score = 0; let gameOver = false; let frameCount = 0;
 
             const drawBat = (x, y, size) => {
-              ctx.fillStyle = '#ffb300'; // Golden sunset bat
-              ctx.fillRect(x, y + size/3, size, size/3); // body
+              ctx.fillStyle = '#ffb300'; ctx.fillRect(x, y + size/3, size, size/3);
               if (Math.floor(frameCount / 8) % 2 === 0) {
-                ctx.fillRect(x - size/2, y, size/2, size/2); 
-                ctx.fillRect(x + size, y, size/2, size/2); 
+                ctx.fillRect(x - size/2, y, size/2, size/2); ctx.fillRect(x + size, y, size/2, size/2); 
               } else {
-                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); 
-                ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); ctx.fillRect(x + size, y + size/2, size/2, size/2); 
               }
-              ctx.fillStyle = '#ff2222'; 
-              ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
+              ctx.fillStyle = '#ff2222'; ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
             };
 
             const update = () => {
               if (gameOver) return;
-              bat.velocity += bat.gravity;
-              bat.y += bat.velocity;
-
-              if (bat.y > canvas.height - bat.size || bat.y < 0) {
-                gameOver = true;
-              }
-
-              if (frameCount % 110 === 0) {
-                const gap = 120;
-                const topHeight = Math.random() * (canvas.height - gap - 40) + 20;
-                pipes.push({ x: canvas.width, topHeight, gap, passed: false, width: 45 });
-              }
-
+              bat.velocity += bat.gravity; bat.y += bat.velocity;
+              if (bat.y > canvas.height - bat.size || bat.y < 0) gameOver = true;
+              if (frameCount % 110 === 0) pipes.push({ x: canvas.width, topHeight: Math.random() * (canvas.height - 160) + 20, gap: 120, passed: false, width: 45 });
               pipes.forEach(p => {
                 p.x -= 2.5;
-                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) {
-                  if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) {
-                    gameOver = true;
-                  }
-                }
-                if (!p.passed && bat.x > p.x + p.width) {
-                  p.passed = true;
-                  score++;
-                }
+                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) { if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) gameOver = true; }
+                if (!p.passed && bat.x > p.x + p.width) { p.passed = true; score++; }
               });
-
               pipes = pipes.filter(p => p.x + p.width > 0);
               frameCount++;
             };
 
             const draw = () => {
-              ctx.fillStyle = '#1c0f0d'; // Warm dark background
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+              ctx.fillStyle = '#1c0f0d'; ctx.fillRect(0, 0, canvas.width, canvas.height);
               pipes.forEach(p => {
-                ctx.fillStyle = '#d84315'; // Sunset brick orange
-                ctx.fillRect(p.x, 0, p.width, p.topHeight);
-                ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-                ctx.strokeStyle = '#3e2723';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(p.x, 0, p.width, p.topHeight);
-                ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.fillStyle = '#d84315'; ctx.fillRect(p.x, 0, p.width, p.topHeight); ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 3; ctx.strokeRect(p.x, 0, p.width, p.topHeight); ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
               });
-
               drawBat(bat.x, bat.y, bat.size);
-
-              ctx.fillStyle = 'white';
-              ctx.font = '16px "Press Start 2P", monospace';
-              ctx.fillText(`SCORE:${score}`, 10, 30);
-
+              ctx.fillStyle = 'white'; ctx.font = '16px "Press Start 2P", monospace'; ctx.fillText(`SCORE:${score}`, 10, 30);
               if (gameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#ef4444';
-                ctx.textAlign = 'center';
-                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
-                ctx.fillStyle = 'white';
-                ctx.font = '10px "Press Start 2P", monospace';
-                ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20);
-                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ef4444'; ctx.textAlign = 'center'; ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+                ctx.fillStyle = 'white'; ctx.font = '10px "Press Start 2P", monospace'; ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20); ctx.textAlign = 'left';
               }
             };
 
-            const loop = () => {
-              update();
-              draw();
-              animationFrameId = window.requestAnimationFrame(loop);
-            };
-
+            const loop = () => { update(); draw(); animationFrameId = window.requestAnimationFrame(loop); };
             loop();
 
             const handleInput = (e) => {
-              if (e.type === 'keydown' && e.code === 'Space') {
-                e.preventDefault();
-              }
+              if (e.type === 'keydown' && e.code === 'Space') e.preventDefault();
               if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
-
-              if (gameOver) {
-                bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
-                pipes = [];
-                score = 0;
-                gameOver = false;
-                frameCount = 0;
-              } else {
-                bat.velocity = bat.jump;
-              }
+              if (gameOver) { bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 }; pipes = []; score = 0; gameOver = false; frameCount = 0; } 
+              else { bat.velocity = bat.jump; }
             };
 
             window.addEventListener('keydown', handleInput, { passive: false });
@@ -857,10 +657,7 @@
             return () => {
               window.cancelAnimationFrame(animationFrameId);
               window.removeEventListener('keydown', handleInput);
-              if (canvas) {
-                canvas.removeEventListener('touchstart', handleInput);
-                canvas.removeEventListener('mousedown', handleInput);
-              }
+              if (canvas) { canvas.removeEventListener('touchstart', handleInput); canvas.removeEventListener('mousedown', handleInput); }
             };
           }, []);
 
@@ -869,12 +666,7 @@
               <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
                 Play Flappy Bat while the AI writes your book!
               </p>
-              <canvas 
-                ref={canvasRef} 
-                width={480} 
-                height={280} 
-                className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full"
-              />
+              <canvas ref={canvasRef} width={480} height={280} className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full" />
               <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
             </div>
           );
@@ -911,6 +703,9 @@
           const [loadingProgress, setLoadingProgress] = useState(0);
           const [errorMsg, setErrorMsg] = useState("");
           const [confirmDialog, setConfirmDialog] = useState(null);
+
+          // Holds the dynamically generated 10-chapter structure
+          const [fullBook, setFullBook] = useState([]);
 
           const endOfStoryRef = useRef(null);
           const melodyIntervalRef = useRef(null);
@@ -1047,7 +842,7 @@
             if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
               endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
             }
-          }, [currentNode, currentPageIndex, gameState]);
+          }, [currentPageIndex, gameState]);
 
           // Rotating Menu
           useEffect(() => {
@@ -1060,9 +855,9 @@
           useEffect(() => {
             let interval;
             if (gameState === 'loading') {
-              setLoadingProgress(0);
               interval = setInterval(() => {
                 setLoadingProgress(prev => {
+                  if (prev >= 95) return 95;
                   const increment = (100 - prev) * 0.08; 
                   return prev + increment;
                 });
@@ -1187,7 +982,9 @@
                    }
                  }
               } else if (gameState === 'story' && !errorMsg) {
-                 const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+                 const currentChapter = fullBook[turnCount];
+                 if (!currentChapter) return;
+                 const isAtLastPage = currentPageIndex === currentChapter.pages.length - 1;
                  
                  if (e.key === 'ArrowLeft' && currentPageIndex > 0) {
                      setCurrentPageIndex(p => p - 1);
@@ -1197,10 +994,10 @@
                    setCurrentPageIndex(p => p + 1);
                    if (window.speechSynthesis) window.speechSynthesis.cancel();
                    setIsSpeaking(false);
-                 } else if (isAtLastPage && currentNode?.choices?.length > 0) {
-                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentNode.choices.length - 1));
+                 } else if (isAtLastPage && currentChapter.choices?.length > 0) {
+                   if (e.key === 'ArrowDown') setFocusedChoice(prev => Math.min(prev + 1, currentChapter.choices.length - 1));
                    else if (e.key === 'ArrowUp') setFocusedChoice(prev => Math.max(prev - 1, 0));
-                   else if (e.key === 'Enter') handleChoice(currentNode.choices[focusedChoice]);
+                   else if (e.key === 'Enter') handleChoice(currentChapter.choices[focusedChoice]);
                  }
               } else if (gameState === 'menu') {
                  if (e.key === 'Enter') {
@@ -1213,45 +1010,25 @@
 
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupFocusIndex, currentNode, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData]);
+          }, [gameState, setupStep, setupFocusIndex, fullBook, turnCount, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData]);
 
           const startGameWithData = (finalSetup) => {
             setTurnCount(0);
-            setStoryHistory([]);
-            setSessionStartTime(Date.now());
-            setCorrectAnswers(0);
-            setTotalQuestions(0);
-            const seed = Math.random().toString(36).substring(2, 10);
-            setSessionSeed(seed);
-            generateStoryNode(null, finalSetup, seed);
+            setCurrentPageIndex(0);
+            setGameState('loading');
+            setLoadingMsg("Summoning a cohesive 30-Page Book...");
+            setErrorMsg("");
+            generateFullBook(finalSetup);
           };
 
-          const generateStoryNode = async (actionText = null, overrideSetupData = null, overrideSeed = null) => {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            setIsSpeaking(false);
+          const generateFullBook = async (finalSetup) => {
+            const char = CATEGORIES.characters[finalSetup.character];
+            const vill = CATEGORIES.villains[finalSetup.villain];
+            const sett = CATEGORIES.settings[finalSetup.setting];
+            const plot = CATEGORIES.plots[finalSetup.plot];
+            const dil = CATEGORIES.dilemmas[finalSetup.dilemma];
 
-            setGameState('loading');
-            setFocusedChoice(0); 
-            setCurrentPageIndex(0);
-            setLoadingMsg(`Summoning Chapter ${turnCount + 1}...`);
-            setErrorMsg("");
-            
-            const currentSetup = overrideSetupData || setupData;
-            const currentSeed = overrideSeed || sessionSeed;
-
-            const char = CATEGORIES.characters[currentSetup.character];
-            const vill = CATEGORIES.villains[currentSetup.villain];
-            const sett = CATEGORIES.settings[currentSetup.setting];
-            const plot = CATEGORIES.plots[currentSetup.plot];
-            const dil = CATEGORIES.dilemmas[currentSetup.dilemma];
-
-            const getStrictLengthConstraints = (level) => {
-              if (level === 0) return "CRITICAL RULE: Each page MUST be EXACTLY 3 to 4 simple sentences long. Do not write paragraphs. Keep it extremely brief.";
-              if (level === 1) return "CRITICAL RULE: Each page MUST be EXACTLY 1 single paragraph. This paragraph MUST contain EXACTLY 5 to 7 sentences.";
-              if (level === 2) return "CRITICAL RULE: Each page MUST be EXACTLY 2 distinct paragraphs. Each paragraph MUST contain 4 to 5 sentences. Do not make it shorter.";
-              return "CRITICAL RULE: Each page MUST be EXACTLY 3 to 4 distinct paragraphs. Each paragraph MUST contain 5 to 6 complex sentences.";
-            };
-
+            const wordCounts = ["40 to 50 words", "75 to 100 words", "100 to 120 words", "130 to 150 words"];
             const getReadingLevelInstruction = (level) => {
               if (level === 0) return "Write like a kindergarten book. Sentences MUST be 3 to 5 words max. Use ONLY baby sight words like: big, red, run, fast, bad, see. NO BIG WORDS allowed.";
               if (level === 1) return "Write for a 3rd grader. Use simple compound sentences and basic vocabulary.";
@@ -1259,41 +1036,22 @@
               return "Write for an 8th grader. Use highly advanced, dark, atmospheric, and spooky vocabulary.";
             };
 
-            let historyContext = "";
-            if (storyHistory.length > 0) {
-              historyContext = storyHistory.map((h, i) => `Previous Choice ${i + 1}: Chosen Option: "${h.chosenAction}"`).join('\n');
-            }
-
             let promptText = `
-              Quest Chapter ${turnCount + 1} of 10.
-              - Hero: ${char.name}
-              - Boss: ${vill.name}
-              - Setting: ${sett.name}
-              - Quest Plot: ${plot.name}
-              - Danger: ${dil.name}
-              - Reading level instructions: ${getReadingLevelInstruction(currentSetup.readingLevel)}
-              - Seed: ${currentSeed}_${turnCount}
+              Write a complete, highly cohesive 10-chapter Choose Your Own Adventure book.
+              - Hero: ${char.name} (${char.desc})
+              - Villain: ${vill.name} (${vill.desc})
+              - Setting: ${sett.name} (${sett.desc})
+              - Plot: ${plot.name}
+              - Central Danger: ${dil.name}
+              
+              STRICT FORMATTING RULES:
+              1. The story MUST progress linearly from Chapter 1 to Chapter 10 without repeating past events.
+              2. EACH Chapter MUST have exactly 3 "pages" (an array of 3 text strings).
+              3. The length of text on EACH page MUST follow this rule: ${getReadingLevelInstruction(finalSetup.readingLevel)}
+              4. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 2 choices (one correct, one incorrect with a 'gameOverMessage').
             `;
 
-            if (turnCount === 0) {
-              promptText += "\nSetup the plot, setting, and dilemma. Keep a kid-friendly Castlevania spooky tone.";
-            } else {
-              promptText += `\nPast History choices made:\n${historyContext}\nContinue story based on action: "${actionText}".`;
-            }
-
-            if (turnCount >= 9) {
-              promptText += "\nFINAL CHAPTER. Resolve the plot fully with a heroic win over the villain. set isVictory to true. Do not provide any more questions.";
-            } else {
-              promptText += `
-              \nCRITICAL REQUIREMENTS:
-              1. Return exactly 4 strings in 'pages' array. Page 1 sets scene. Page 2 adds tension. Page 3 has setting detail. Page 4 contains reading comp challenge.
-              2. ${getStrictLengthConstraints(currentSetup.readingLevel)}
-              3. Create a reading comprehension question based on Chapter text, and 2-3 choices. One choice must be 'isCorrect: true', others incorrect with a 'gameOverMessage'.
-              4. 'imagePrompt' must be a short description (unrelated to images, just text scene).
-              `;
-            }
-
-            const systemInstruction = `You are an educational children's book author. Your most important rule is to strictly obey the requested reading level. Output a single JSON block. Do NOT use markdown code blocks. CRITICAL: ONLY use SINGLE QUOTES (') inside your text strings. NEVER use double quotes (") inside JSON text strings.`;
+            const systemInstruction = `You are a strict children's book author. You MUST output a single valid JSON block containing an array of 10 chapters. Use SINGLE QUOTES (') inside strings. Schema: { "chapters": [ { "pages": ["page 1", "page 2", "page 3"], "question": "Question?", "choices": [{"text":"", "isCorrect":true/false, "gameOverMessage":""}] } ] }`;
 
             let success = false;
             let attempts = 0;
@@ -1302,9 +1060,9 @@
             while (attempts < 3 && !success) {
               attempts++;
               try {
-                if (attempts > 1) await sleep(attempts * 1500); 
+                if (attempts > 1) await sleep(attempts * 2000); 
 
-                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${currentSeed}_${attempts}`;
+                const pollinationUrl = `${POLLINATIONS_TEXT_URL}${encodeURIComponent(promptText)}?model=openai&jsonMode=true&system=${encodeURIComponent(systemInstruction)}&seed=${Math.random()}`;
                 const response = await fetch(pollinationUrl);
                 if (!response.ok) throw new Error(`Status: ${response.status}`);
                 
@@ -1321,23 +1079,13 @@
                 
                 const nodeData = JSON.parse(jsonText);
                 
-                if (!nodeData.pages || !Array.isArray(nodeData.pages)) {
-                   if (nodeData.storyText) {
-                     const segments = nodeData.storyText.split("\n\n").filter(t => t.trim().length > 10);
-                     nodeData.pages = segments.length >= 4 ? segments.slice(0, 4) : [nodeData.storyText, "You walk carefully into the dim red sunset glow...", "Your footsteps echo against dusty walls...", "You must solve a mystery to proceed."];
-                   } else {
-                     throw new Error("Invalid structure.");
-                   }
+                if (!nodeData.chapters || nodeData.chapters.length === 0) {
+                   throw new Error("Invalid array structure.");
                 }
 
-                while (nodeData.pages.length < 4) {
-                  nodeData.pages.push("You carefully explore the quiet sunset hallways...");
-                }
-
-                setCurrentNode(nodeData);
-                if (turnCount === 0) setSessionInitialNode(nodeData); 
-                setCurrentPageIndex(0); 
-                setGameState('story');
+                setFullBook(nodeData.chapters);
+                setLoadingProgress(100);
+                setTimeout(() => setGameState('story'), 500);
                 success = true;
                 
               } catch (err) {
@@ -1347,48 +1095,38 @@
             }
 
             if (!success) {
+              console.warn("API failed. Booting local offline fallback engine...");
               try {
-                const localNode = generateLocalNode(turnCount, currentSetup);
-                setCurrentNode(localNode);
-                if (turnCount === 0) setSessionInitialNode(localNode);
-                setCurrentPageIndex(0);
-                setGameState('story');
+                const localBook = generateLocalBook(finalSetup);
+                setFullBook(localBook);
+                setLoadingProgress(100);
+                setTimeout(() => setGameState('story'), 500);
               } catch (localErr) {
-                setErrorMsg(`The magical connection was lost, and fallback system failed: ${localErr.message}`);
+                setErrorMsg(`Critical Fallback Error: ${localErr.message}`);
                 setGameState('story');
               }
             }
           };
 
-          const startGame = () => {
-            const currentKey = STEPS_KEYS[setupStep];
-            const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
-            setSetupData(finalSetup);
-            startGameWithData(finalSetup);
-          };
-
           const handleChoice = (choice) => {
-            if (currentNode.question) {
-              setTotalQuestions(prev => prev + 1);
-              if (choice.isCorrect) setCorrectAnswers(prev => prev + 1);
-            }
-
-            setStoryHistory([...storyHistory, { node: currentNode, chosenAction: choice.text }]);
-            setTurnCount(turnCount + 1);
-
-            if (choice.isGameOver) {
-              setCurrentNode({
-                ...currentNode,
-                pages: [currentNode.pages[currentNode.pages.length - 1] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
+            if (choice.isGameOver || choice.isCorrect === false) {
+              const currentChapter = fullBook[turnCount];
+              const updatedChapter = {
+                ...currentChapter,
+                pages: [...currentChapter.pages.slice(0, 2), currentChapter.pages[2] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
                 choices: []
-              });
-              setCurrentPageIndex(0);
+              };
+              let newBook = [...fullBook];
+              newBook[turnCount] = updatedChapter;
+              setFullBook(newBook);
+              setCurrentPageIndex(2); // Jump to last page to see death message
               setGameState('gameover');
             } else {
-              if (turnCount + 1 >= 10) {
+              if (turnCount + 1 >= fullBook.length || turnCount + 1 >= 10) {
                  setGameState('victory');
               } else {
-                 generateStoryNode(choice.text);
+                 setTurnCount(turnCount + 1);
+                 setCurrentPageIndex(0);
               }
             }
           };
@@ -1434,6 +1172,7 @@
                   <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
                 </div>
 
+                {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
                 <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
                     {currentDataList.map((item, idx) => {
@@ -1476,10 +1215,12 @@
 
           const renderLoading = () => (
             <div className="flex flex-col h-full w-full bg-[#180907]">
+              {/* Top/Middle Minigame */}
               <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
                 <FlappyBatMinigame />
               </div>
               
+              {/* Bottom Progress Bar */}
               <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
                 <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-4">{loadingMsg}</h2>
                 <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
@@ -1491,8 +1232,9 @@
           );
 
           const renderGameArea = () => {
-            if (!currentNode && !errorMsg) return renderLoading();
-            const isAtLastPage = currentPageIndex === (currentNode?.pages?.length || 0) - 1;
+            const currentChapter = fullBook[turnCount];
+            if (!currentChapter && !errorMsg) return renderLoading();
+            const isAtLastPage = currentPageIndex === (currentChapter?.pages?.length || 0) - 1;
 
             return (
               <div className="flex flex-col md:flex-row h-full w-full bg-[#180907] relative overflow-hidden">
@@ -1517,23 +1259,45 @@
                   </div>
 
                   <div className="flex-grow overflow-y-auto px-4 md:px-8 pb-48 pt-4">
-                    {storyHistory.map((hist, idx) => (
-                      <React.Fragment key={idx}>
-                        {renderStoryNode(hist.node, true, hist.chosenAction)}
-                      </React.Fragment>
-                    ))}
-                    {renderStoryNode(currentNode, false)}
+                    {/* Display current page */}
+                    {currentChapter && (
+                      <div className="animate-[fadeIn_0.5s_ease-in]">
+                        <div className="pixel-border bg-black p-4 md:p-6 relative">
+                          <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
+                          <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
+                          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
+                          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+
+                          <div className="w-full">
+                             <InteractiveText text={currentChapter.pages[currentPageIndex]} textSize={textSize} />
+                          </div>
+
+                          <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                            {isAtLastPage && currentChapter.question && (
+                              <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
+                                <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                                  <span className="text-yellow-400">CHALLENGE:</span> {currentChapter.question}
+                                </p>
+                              </div>
+                            )}
+                            <button onClick={() => handleReadAloud(currentChapter.pages[currentPageIndex] + (isAtLastPage && currentChapter.question ? ". The challenge is: " + currentChapter.question : ""))} className="nes-btn shrink-0">
+                              {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {errorMsg && (
                       <div className="bg-[#5d120d] border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
                         <div>{errorMsg}</div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => generateStoryNode(storyHistory.length > 0 ? storyHistory[storyHistory.length-1].chosenAction : null)}>Try Again</button>
+                        <button className="nes-btn mt-2 mx-auto" onClick={() => startGameWithData(setupData)}>Try Again</button>
                       </div>
                     )}
                     <div ref={endOfStoryRef} />
                   </div>
 
-                  {(gameState === 'story') && !errorMsg && currentNode?.pages && (
+                  {(gameState === 'story') && !errorMsg && currentChapter && (
                     <div className="absolute bottom-0 left-0 right-0 bg-[#2D140F]/95 p-3 md:p-4 border-t-4 border-red-950 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
                       {!isAtLastPage ? (
                         <div className="flex w-full max-w-md gap-4">
@@ -1555,7 +1319,7 @@
                           </div>
                           <p className="font-pixel text-[9px] text-amber-500/80 mb-2 text-center">What will you do next? (Arrows + Enter)</p>
                           <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full">
-                            {currentNode?.choices?.map((choice, idx) => {
+                            {currentChapter.choices?.map((choice, idx) => {
                               const isFocused = focusedChoice === idx;
                               return (
                                 <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
@@ -1574,7 +1338,7 @@
                     <div className="absolute bottom-0 left-0 right-0 bg-[#3e2723]/95 p-6 border-t-4 border-[#B71C1C] z-10 text-center flex flex-col items-center gap-4">
                        <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
                        <div className="flex flex-col md:flex-row gap-4">
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setCurrentNode(sessionInitialNode); setTurnCount(0); setStoryHistory([]); setCurrentPageIndex(0); setCorrectAnswers(0); setTotalQuestions(0); setGameState('story'); }}>Restart This Adventure</button>
+                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setTurnCount(0); setCurrentPageIndex(0); setGameState('story'); }}>Restart Adventure</button>
                          <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
                        </div>
                     </div>
@@ -1612,7 +1376,7 @@
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
 
                   <div className="w-full">
-                     <InteractiveText text={textToDisplay} textSize={textSize} />
+                     <InteractiveText text={textToDisplay} />
                   </div>
 
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
