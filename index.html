@@ -168,7 +168,7 @@
       body { 
         margin: 0; 
         overflow-x: hidden; 
-        background: linear-gradient(to bottom, #E65100 0%, #4D1A0F 35%, #2D140F 70%, #180907 100%); 
+        transition: background 1s ease-in-out;
       }
       
       input[type=range] { accent-color: #E65100; }
@@ -216,10 +216,16 @@
         const POLLINATIONS_TEXT_URL = "https://text.pollinations.ai/";
         const SPREADSHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0V7hWS2O4mjqtII6sW3NvWXE927uhvjXtIKrAe1V8R9SmMDp2QhUwEaC1HP_N4q2XDQ/exec"; 
 
-        const MENU_IMAGES = [
+        const MENU_IMAGES_VANIA = [
           "https://image.pollinations.ai/prompt/dracula%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20night%20blood%20moon?width=600&height=300&nologo=true&seed=1",
           "https://image.pollinations.ai/prompt/creepy%20haunted%20graveyard%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20spooky%20lightning?width=600&height=300&nologo=true&seed=2",
           "https://image.pollinations.ai/prompt/dark%20dungeon%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20torches%20skeletons?width=600&height=300&nologo=true&seed=3"
+        ];
+
+        const MENU_IMAGES_BUBBLE = [
+          "https://image.pollinations.ai/prompt/magical%20disney%20castle%20exterior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20calm%20peaceful%20daytime?width=600&height=300&nologo=true&seed=4",
+          "https://image.pollinations.ai/prompt/enchanted%20fairy%20forest%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20glowing%20flowers%20peaceful?width=600&height=300&nologo=true&seed=5",
+          "https://image.pollinations.ai/prompt/beautiful%20crystal%20cave%20interior%208-bit%20pixel%20art%20retro%20video%20game%20screenshot%20sparkling%20gems?width=600&height=300&nologo=true&seed=6"
         ];
 
         const SYNTH_TRACKS = [
@@ -547,7 +553,7 @@
         };
 
         // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
-        const SunsetPixelArt = ({ setting, turn, villain }) => {
+        const SunsetPixelArt = ({ setting, turn, villain, theme }) => {
           const canvasRef = useRef(null);
 
           useEffect(() => {
@@ -559,16 +565,18 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, w, h);
 
-            // 1. SKY GRADIENT (10 phases of sunset)
+            // 1. SKY GRADIENT (10 phases based on theme)
             let skyColors = [];
-            if (turn === 0 || turn === 1) {
-              skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
-            } else if (turn >= 2 && turn <= 4) {
-              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
-            } else if (turn >= 5 && turn <= 7) {
-              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
+            if (theme === 'bubble') {
+              if (turn === 0 || turn === 1) skyColors = ['#00E5FF', '#00BFFF', '#0099FF'];
+              else if (turn >= 2 && turn <= 4) skyColors = ['#00BFFF', '#0099FF', '#0066CC', '#0044AA'];
+              else if (turn >= 5 && turn <= 7) skyColors = ['#0099FF', '#0066CC', '#003388', '#001144'];
+              else skyColors = ['#0044AA', '#002266', '#000A22', '#000000'];
             } else {
-              skyColors = ['#180040', '#000028', '#000010', '#000000']; 
+              if (turn === 0 || turn === 1) skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
+              else if (turn >= 2 && turn <= 4) skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
+              else if (turn >= 5 && turn <= 7) skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
+              else skyColors = ['#180040', '#000028', '#000010', '#000000']; 
             }
 
             const step = h / skyColors.length;
@@ -580,17 +588,17 @@
             // 2. CELESTIAL BODIES
             if (turn < 7) {
               const sunY = 60 + turn * 22;
-              ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
+              ctx.fillStyle = theme === 'bubble' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 235, 59, 0.2)';
               ctx.beginPath(); ctx.arc(w/2, sunY, 48, 0, Math.PI * 2); ctx.fill();
-              ctx.fillStyle = '#ffeb3b';
+              ctx.fillStyle = theme === 'bubble' ? '#ffffff' : '#ffeb3b';
               ctx.beginPath(); ctx.arc(w/2, sunY, 32, 0, Math.PI * 2); ctx.fill();
             } else {
               ctx.fillStyle = '#ffffff';
               for (let i = 0; i < 20; i++) {
                 ctx.fillRect(Math.floor((Math.sin(i * 99) * 0.5 + 0.5) * w), Math.floor((Math.cos(i * 33) * 0.5 + 0.5) * (h - 100)), 2, 2);
               }
-              const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
-              const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
+              const moonColor = theme === 'bubble' ? '#88EEFF' : (turn === 9 ? '#d32f2f' : '#fff9c4');
+              const moonGlow = theme === 'bubble' ? 'rgba(0, 229, 255, 0.3)' : (turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)');
               ctx.fillStyle = moonGlow;
               ctx.beginPath(); ctx.arc(w - 70, 60, 26, 0, Math.PI * 2); ctx.fill();
               ctx.fillStyle = moonColor;
@@ -602,7 +610,7 @@
               const ogreX = w * 0.15; const ogreY = 45;
               ctx.fillStyle = '#388e3c'; ctx.fillRect(ogreX, ogreY, 40, 40);
               ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8); ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
-              ctx.fillStyle = '#f57c00'; ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6); ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
+              ctx.fillStyle = theme === 'bubble' ? '#FF4081' : '#f57c00'; ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6); ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
               ctx.fillStyle = '#ff1744'; ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2); ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
               ctx.fillStyle = '#1b5e20'; ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
               ctx.fillStyle = '#ffffff'; ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4); ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
@@ -610,20 +618,20 @@
             }
 
             // 3. MOUNTAIN SILHOUETTE
-            ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
+            ctx.fillStyle = theme === 'bubble' ? 'rgba(0, 17, 51, 0.65)' : 'rgba(24, 9, 7, 0.65)';
             ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, h - 80); ctx.lineTo(w * 0.2, h - 120);
             ctx.lineTo(w * 0.4, h - 70); ctx.lineTo(w * 0.6, h - 105); ctx.lineTo(w * 0.8, h - 80);
             ctx.lineTo(w, h - 130); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
             // 4. SETTING SILHOUETTES
-            ctx.fillStyle = '#100504'; ctx.fillRect(0, h - 40, w, 40);
-            ctx.fillStyle = '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
+            ctx.fillStyle = theme === 'bubble' ? '#000A1A' : '#100504'; ctx.fillRect(0, h - 40, w, 40);
+            ctx.fillStyle = theme === 'bubble' ? '#00E5FF' : '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
             ctx.fillStyle = '#000000';
 
             switch(setting) {
               case 0: {
                 ctx.fillRect(10, 0, 30, h); ctx.fillRect(w - 40, 0, 30, h);
-                ctx.fillStyle = '#ffeb3b'; ctx.fillRect(120, h - 140, 12, 6); ctx.fillRect(w - 150, h - 180, 14, 8);
+                ctx.fillStyle = theme === 'bubble' ? '#FF4081' : '#ffeb3b'; ctx.fillRect(120, h - 140, 12, 6); ctx.fillRect(w - 150, h - 180, 14, 8);
                 break;
               }
               case 1: {
@@ -679,7 +687,7 @@
                 break;
               }
             }
-          }, [setting, turn, villain]);
+          }, [setting, turn, villain, theme]);
 
           return (
             <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
@@ -762,49 +770,73 @@
         };
 
         // --- FLAPPY BAT MINIGAME COMPONENT ---
-        const FlappyBatMinigame = () => {
+        const FlappyBatMinigame = ({ theme }) => {
           const canvasRef = useRef(null);
+          const isBubble = theme === 'bubble';
+
           useEffect(() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             let animationFrameId;
 
-            let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+            let player = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
             let pipes = [];
             let score = 0; let gameOver = false; let frameCount = 0;
 
-            const drawBat = (x, y, size) => {
-              ctx.fillStyle = '#ffb300'; ctx.fillRect(x, y + size/3, size, size/3);
-              if (Math.floor(frameCount / 8) % 2 === 0) {
-                ctx.fillRect(x - size/2, y, size/2, size/2); ctx.fillRect(x + size, y, size/2, size/2); 
+            const drawPlayer = (x, y, size) => {
+              if (isBubble) {
+                // Draw flappy bubble
+                ctx.fillStyle = 'rgba(0, 229, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                // Highlight
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(x + size/3, y + size/3, size/6, 0, Math.PI * 2);
+                ctx.fill();
               } else {
-                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+                // Draw flappy bat
+                ctx.fillStyle = '#ffb300'; ctx.fillRect(x, y + size/3, size, size/3);
+                if (Math.floor(frameCount / 8) % 2 === 0) {
+                  ctx.fillRect(x - size/2, y, size/2, size/2); ctx.fillRect(x + size, y, size/2, size/2); 
+                } else {
+                  ctx.fillRect(x - size/2, y + size/2, size/2, size/2); ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+                }
+                ctx.fillStyle = '#ff2222'; ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
               }
-              ctx.fillStyle = '#ff2222'; ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
             };
 
             const update = () => {
               if (gameOver) return;
-              bat.velocity += bat.gravity; bat.y += bat.velocity;
-              if (bat.y > canvas.height - bat.size || bat.y < 0) gameOver = true;
+              player.velocity += player.gravity; player.y += player.velocity;
+              if (player.y > canvas.height - player.size || player.y < 0) gameOver = true;
               if (frameCount % 110 === 0) pipes.push({ x: canvas.width, topHeight: Math.random() * (canvas.height - 160) + 20, gap: 120, passed: false, width: 45 });
               pipes.forEach(p => {
                 p.x -= 2.5;
-                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) { if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) gameOver = true; }
-                if (!p.passed && bat.x > p.x + p.width) { p.passed = true; score++; }
+                if (player.x < p.x + p.width && player.x + player.size > p.x) { if (player.y < p.topHeight || player.y + player.size > p.topHeight + p.gap) gameOver = true; }
+                if (!p.passed && player.x > p.x + p.width) { p.passed = true; score++; }
               });
               pipes = pipes.filter(p => p.x + p.width > 0);
               frameCount++;
             };
 
             const draw = () => {
-              ctx.fillStyle = '#1c0f0d'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = isBubble ? '#001133' : '#1c0f0d'; 
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              
               pipes.forEach(p => {
-                ctx.fillStyle = '#d84315'; ctx.fillRect(p.x, 0, p.width, p.topHeight); ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
-                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 3; ctx.strokeRect(p.x, 0, p.width, p.topHeight); ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.fillStyle = isBubble ? '#FF4081' : '#d84315'; 
+                ctx.fillRect(p.x, 0, p.width, p.topHeight); ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.strokeStyle = isBubble ? '#fff' : '#3e2723'; 
+                ctx.lineWidth = 3; 
+                ctx.strokeRect(p.x, 0, p.width, p.topHeight); ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
               });
-              drawBat(bat.x, bat.y, bat.size);
+              drawPlayer(player.x, player.y, player.size);
               ctx.fillStyle = 'white'; ctx.font = '16px "Press Start 2P", monospace'; ctx.fillText(`SCORE:${score}`, 10, 30);
               if (gameOver) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -819,8 +851,8 @@
             const handleInput = (e) => {
               if (e.type === 'keydown' && e.code === 'Space') e.preventDefault();
               if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
-              if (gameOver) { bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 }; pipes = []; score = 0; gameOver = false; frameCount = 0; } 
-              else { bat.velocity = bat.jump; }
+              if (gameOver) { player = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 }; pipes = []; score = 0; gameOver = false; frameCount = 0; } 
+              else { player.velocity = player.jump; }
             };
 
             window.addEventListener('keydown', handleInput, { passive: false });
@@ -832,14 +864,14 @@
               window.removeEventListener('keydown', handleInput);
               if (canvas) { canvas.removeEventListener('touchstart', handleInput); canvas.removeEventListener('mousedown', handleInput); }
             };
-          }, []);
+          }, [isBubble]);
 
           return (
             <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
-              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
-                Play Flappy Bat while the AI writes your book!
+              <p className={`font-pixel text-[10px] mb-4 animate-pulse text-center leading-relaxed ${isBubble ? 'text-[#00E5FF]' : 'text-amber-500'}`}>
+                Play {isBubble ? 'Flappy Bubble' : 'Flappy Bat'} while the AI writes your book!
               </p>
-              <canvas ref={canvasRef} width={480} height={280} className="pixel-border-vania cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full" />
+              <canvas ref={canvasRef} width={480} height={280} className={`cursor-pointer touch-none max-w-full ${isBubble ? 'pixel-border-bubble bg-[#001133] shadow-[0_0_20px_rgba(0,229,255,0.4)]' : 'pixel-border-vania bg-black shadow-[0_0_20px_rgba(230,81,0,0.4)]'}`} />
               <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
             </div>
           );
@@ -882,6 +914,15 @@
           const endOfStoryRef = useRef(null);
           const melodyIntervalRef = useRef(null);
           const synthCtxRef = useRef(null);
+
+          // Change body background when theme changes
+          useEffect(() => {
+            if (gameTheme === 'bubble') {
+              document.body.style.background = 'linear-gradient(to bottom, #00E5FF 0%, #0088CC 35%, #004488 70%, #001133 100%)';
+            } else {
+              document.body.style.background = 'linear-gradient(to bottom, #E65100 0%, #4D1A0F 35%, #2D140F 70%, #180907 100%)';
+            }
+          }, [gameTheme]);
 
           // --- FIXED LOCALIZED AUDIO FUNCTIONS TO SOLVE UNDEFINED SCOPE ERRORS ---
           function initAudioContext() {
@@ -1042,9 +1083,10 @@
           // Rotating Menu
           useEffect(() => {
             if(gameState !== 'menu') return;
-            const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % MENU_IMAGES.length); }, 3000);
+            const activeMenuImages = gameTheme === 'bubble' ? MENU_IMAGES_BUBBLE : MENU_IMAGES_VANIA;
+            const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % activeMenuImages.length); }, 3000);
             return () => clearInterval(imgInterval);
-          }, [gameState]);
+          }, [gameState, gameTheme]);
 
           // Simulated Progress Bar
           useEffect(() => {
@@ -1118,9 +1160,10 @@
 
           // Ambient lightning interval loop
           useEffect(() => {
+            if (gameTheme === 'bubble') return; // no scary lightning in bubble mode
             const lightningInterval = setInterval(() => { if (Math.random() > 0.6) triggerLightning(); }, 8000);
             return () => clearInterval(lightningInterval);
-          }, [isMuted, musicVolume]);
+          }, [isMuted, musicVolume, gameTheme]);
 
           // Critter Spawner / Bubble Spawner
           useEffect(() => {
@@ -1393,65 +1436,68 @@
             setCritters(prev => prev.filter(c => c.id !== critId));
           };
 
-          const renderMenu = () => (
-            <div className={`flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative ${gameTheme === 'bubble' ? 'bg-[#001133]/40' : 'bg-[#1c0f0d]/40'}`}>
-              <div className={`w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 bg-black overflow-hidden relative mb-2 ${gameTheme === 'bubble' ? 'border-[#00E5FF] music-border-bubble' : 'border-[#B71C1C] music-border-vania'}`}>
-                 <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
-                 <div className={`absolute inset-0 mix-blend-color-burn ${gameTheme === 'bubble' ? 'bg-[#00e5ff]/25' : 'bg-[#E65100]/25'}`}></div>
-                 <div className="absolute inset-0 bg-black/40"></div>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
-                    <h1 className={`font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl tracking-wider w-full text-center break-words leading-tight ${gameTheme === 'bubble' ? 'text-[#00E5FF] drop-shadow-[0_0_15px_rgba(0,229,255,1)]' : 'text-amber-500 drop-shadow-[0_0_15px_rgba(230,81,0,1)]'}`}>
-                      ADVENTUREVANIA
-                    </h1>
-                    <p className={`font-terminal text-lg sm:text-xl md:text-2xl mt-2 font-bold ${gameTheme === 'bubble' ? 'text-[#FF4081] drop-shadow-[0_0_10px_rgba(255,64,129,1)]' : 'text-orange-400 drop-shadow-[0_0_10px_rgba(230,81,0,1)]'}`}>
-                      {gameTheme === 'bubble' ? '🫧 Cheerful Bubble Bobble Quest 🫧' : '🦇 A Grade 3 Spooky Quest 🦇'}
-                    </p>
-                 </div>
-              </div>
+          const renderMenu = () => {
+            const activeMenuImages = gameTheme === 'bubble' ? MENU_IMAGES_BUBBLE : MENU_IMAGES_VANIA;
+            return (
+              <div className={`flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative ${gameTheme === 'bubble' ? 'bg-[#001133]/40' : 'bg-[#1c0f0d]/40'}`}>
+                <div className={`w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 bg-black overflow-hidden relative mb-2 ${gameTheme === 'bubble' ? 'border-[#00E5FF] music-border-bubble' : 'border-[#B71C1C] music-border-vania'}`}>
+                   <img src={activeMenuImages[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
+                   <div className={`absolute inset-0 mix-blend-color-burn ${gameTheme === 'bubble' ? 'bg-[#00e5ff]/25' : 'bg-[#E65100]/25'}`}></div>
+                   <div className="absolute inset-0 bg-black/40"></div>
+                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
+                      <h1 className={`font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl tracking-wider w-full text-center break-words leading-tight ${gameTheme === 'bubble' ? 'text-[#00E5FF] drop-shadow-[0_0_15px_rgba(0,229,255,1)]' : 'text-amber-500 drop-shadow-[0_0_15px_rgba(230,81,0,1)]'}`}>
+                        ADVENTUREVANIA
+                      </h1>
+                      <p className={`font-terminal text-lg sm:text-xl md:text-2xl mt-2 font-bold ${gameTheme === 'bubble' ? 'text-[#FF4081] drop-shadow-[0_0_10px_rgba(255,64,129,1)]' : 'text-orange-400 drop-shadow-[0_0_10px_rgba(230,81,0,1)]'}`}>
+                        {gameTheme === 'bubble' ? '🫧 Cheerful Bubble Bobble Quest 🫧' : '🦇 A Grade 3 Spooky Quest 🦇'}
+                      </p>
+                   </div>
+                </div>
 
-              {/* Theme Toggle Button Slider */}
-              <div className="flex items-center gap-4 relative z-10">
-                <span className="font-pixel text-[8px] sm:text-[10px] text-orange-400">🦇 Gothic</span>
-                <button 
-                  onClick={() => {
-                    initAudioContext();
-                    const nextTheme = gameTheme === 'vania' ? 'bubble' : 'vania';
-                    setGameTheme(nextTheme);
-                    setCurrentTrack(nextTheme === 'bubble' ? 1 : 0);
-                    playSynthNote(440, 'square', 0.2, 0.4);
-                  }}
-                  className={`w-16 h-8 rounded-full p-1 transition-colors duration-300 flex items-center ${gameTheme === 'bubble' ? 'bg-[#00E5FF]' : 'bg-[#B71C1C]'}`}
-                >
-                  <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 flex items-center justify-center ${gameTheme === 'bubble' ? 'translate-x-8' : 'translate-x-0'}`}>
-                    <span className="text-[10px]">{gameTheme === 'bubble' ? '🫧' : '😈'}</span>
+                {/* Theme Toggle Button Slider */}
+                <div className="flex items-center gap-4 relative z-10">
+                  <span className="font-pixel text-[8px] sm:text-[10px] text-orange-400">🦇 Original</span>
+                  <button 
+                    onClick={() => {
+                      initAudioContext();
+                      const nextTheme = gameTheme === 'vania' ? 'bubble' : 'vania';
+                      setGameTheme(nextTheme);
+                      setCurrentTrack(nextTheme === 'bubble' ? 1 : 0);
+                      playSynthNote(440, 'square', 0.2, 0.4);
+                    }}
+                    className={`w-16 h-8 rounded-full p-1 transition-colors duration-300 flex items-center ${gameTheme === 'bubble' ? 'bg-[#00E5FF]' : 'bg-[#B71C1C]'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 flex items-center justify-center ${gameTheme === 'bubble' ? 'translate-x-8' : 'translate-x-0'}`}>
+                      <span className="text-[10px]">{gameTheme === 'bubble' ? '🫧' : '😈'}</span>
+                    </div>
+                  </button>
+                  <span className="font-pixel text-[8px] sm:text-[10px] text-[#00E5FF]">Bobble 🫧</span>
+                </div>
+
+                <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
+                  <button 
+                    className={`nes-btn animate-pulse text-xs sm:text-sm ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} 
+                    onClick={() => { initAudioContext(); setSetupStep(0); setGameState('setup'); }}
+                  >
+                    ▶️ Press Enter to Start
+                  </button>
+
+                  <div className="flex flex-col gap-2 w-full text-left mt-2">
+                      <label className={`font-pixel text-[8px] md:text-[10px] text-center ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-orange-400'}`}>
+                        Student Identification:
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Enter Player Name..." 
+                        value={playerName} 
+                        onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} 
+                        className={`w-full bg-[#1c0f0d] border-2 text-[10px] text-center p-3 outline-none font-pixel ${gameTheme === 'bubble' ? 'border-[#00E5FF] text-[#00E5FF] focus:border-[#FF4081]' : 'border-red-950 text-orange-400 focus:border-orange-500'}`} 
+                      />
                   </div>
-                </button>
-                <span className="font-pixel text-[8px] sm:text-[10px] text-[#00E5FF]">Bobble 🫧</span>
-              </div>
-
-              <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
-                <button 
-                  className={`nes-btn animate-pulse text-xs sm:text-sm ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} 
-                  onClick={() => { initAudioContext(); setSetupStep(0); setGameState('setup'); }}
-                >
-                  ▶️ Press Enter to Start
-                </button>
-
-                <div className="flex flex-col gap-2 w-full text-left mt-2">
-                    <label className={`font-pixel text-[8px] md:text-[10px] text-center ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-orange-400'}`}>
-                      Student Identification:
-                    </label>
-                    <input 
-                      type="text" 
-                      placeholder="Enter Player Name..." 
-                      value={playerName} 
-                      onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} 
-                      className={`w-full bg-[#1c0f0d] border-2 text-[10px] text-center p-3 outline-none font-pixel ${gameTheme === 'bubble' ? 'border-[#00E5FF] text-[#00E5FF] focus:border-[#FF4081]' : 'border-red-950 text-orange-400 focus:border-orange-500'}`} 
-                    />
                 </div>
               </div>
-            </div>
-          );
+            );
+          };
 
           const renderSetup = () => {
             const currentDataList = getActiveCategoryList(setupStep);
@@ -1523,7 +1569,7 @@
             <div className={`flex flex-col h-full w-full ${gameTheme === 'bubble' ? 'bg-[#001133]' : 'bg-[#180907]'}`}>
               {/* Top/Middle Minigame */}
               <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
-                <FlappyBatMinigame />
+                <FlappyBatMinigame theme={gameTheme} />
               </div>
               
               {/* Bottom Progress Bar */}
@@ -1672,7 +1718,7 @@
                 
                 {/* RIGHT PANE - Custom procedural Sunset scene (Offline ready, zero AI delay!) */}
                 <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
-                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} />
+                    <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} theme={gameTheme} />
                 </div>
               </div>
             );
@@ -1693,7 +1739,7 @@
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
 
                   <div className="w-full">
-                     <InteractiveText text={textToDisplay} />
+                     <InteractiveText text={textToDisplay} textSize={textSize} />
                   </div>
 
                   <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
