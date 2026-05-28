@@ -34,7 +34,7 @@
         pointer-events: none;
       }
       
-      .pixel-border {
+      .pixel-border-vania {
         box-shadow: 
           inset -4px -4px 0px 0px rgba(0,0,0,0.6),
           inset 4px 4px 0px 0px rgba(255,255,255,0.15),
@@ -42,11 +42,27 @@
           0 0 0 8px #000;
       }
 
-      .music-border {
+      .pixel-border-bubble {
+        box-shadow: 
+          inset -4px -4px 0px 0px rgba(0,0,0,0.6),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.3),
+          0 0 0 4px #FF4081,
+          0 0 0 8px #00E5FF;
+      }
+
+      .music-border-vania {
         box-shadow: 
           inset -2px -2px 0px 0px rgba(0,0,0,0.5),
           inset 2px 2px 0px 0px rgba(255,255,255,0.15),
           0 0 0 2px #E65100,
+          0 0 0 4px #000;
+      }
+
+      .music-border-bubble {
+        box-shadow: 
+          inset -2px -2px 0px 0px rgba(0,0,0,0.5),
+          inset 2px 2px 0px 0px rgba(255,255,255,0.3),
+          0 0 0 2px #00E5FF,
           0 0 0 4px #000;
       }
       
@@ -89,34 +105,67 @@
       .nes-btn {
         position: relative;
         display: inline-block;
-        background-color: #B71C1C;
         color: white;
         padding: 8px 16px;
         font-family: 'Press Start 2P', cursive;
         font-size: 10px;
         text-transform: uppercase;
         cursor: pointer;
-        box-shadow: 
-          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
-          inset 4px 4px 0px 0px rgba(255,255,255,0.25);
         transition: transform 0.1s;
       }
       .nes-btn:active {
         transform: scale(0.95);
-        box-shadow: 
-          inset 4px 4px 0px 0px rgba(0,0,0,0.4),
-          inset -4px -4px 0px 0px rgba(255,255,255,0.25);
       }
-      .nes-btn.green { background-color: #E65100; color: #fff; }
-      .nes-btn.red { background-color: #3e2723; color: #ffab91; }
 
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 12px; }
-      ::-webkit-scrollbar-track { background: #1a0f0d; border-left: 2px solid #E65100; }
-      ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
+      .nes-btn-vania {
+        background-color: #B71C1C;
+        box-shadow: 
+          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.25);
+      }
+      .nes-btn-vania.green { background-color: #E65100; color: #fff; }
+      .nes-btn-vania.red { background-color: #3e2723; color: #ffab91; }
+
+      .nes-btn-bubble {
+        background-color: #00E5FF;
+        color: #001133;
+        box-shadow: 
+          inset -4px -4px 0px 0px rgba(0,0,0,0.5),
+          inset 4px 4px 0px 0px rgba(255,255,255,0.6);
+      }
+      .nes-btn-bubble.green { background-color: #76FF03; color: #001133; }
+      .nes-btn-bubble.red { background-color: #FF4081; color: #fff; }
+
+      /* Custom Scrollbar Vania */
+      .scrollbar-vania::-webkit-scrollbar { width: 12px; }
+      .scrollbar-vania::-webkit-scrollbar-track { background: #1a0f0d; border-left: 2px solid #E65100; }
+      .scrollbar-vania::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
+
+      /* Custom Scrollbar Bubble */
+      .scrollbar-bubble::-webkit-scrollbar { width: 12px; }
+      .scrollbar-bubble::-webkit-scrollbar-track { background: #001133; border-left: 2px solid #00E5FF; }
+      .scrollbar-bubble::-webkit-scrollbar-thumb { background: #FF4081; border: 2px solid #000; }
+
+      /* Floating Bubble Animation */
+      @keyframes floatBubble {
+        0% { transform: translateY(110vh) scale(1); opacity: 0.8; }
+        50% { transform: translateY(50vh) scale(1.1) translateX(15px); }
+        100% { transform: translateY(-10vh) scale(1) translateX(-15px); opacity: 0; }
+      }
+
+      .floating-bubble {
+        position: fixed;
+        bottom: -50px;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(0,229,255,0.4) 50%, rgba(255,64,129,0.2) 100%);
+        border: 2px solid rgba(255,255,255,0.6);
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0,229,255,0.5);
+        pointer-events: auto;
+        cursor: pointer;
+        z-index: 80;
+      }
       
       body { 
-        background: linear-gradient(to bottom, #E65100 0%, #4D1A0F 35%, #2D140F 70%, #180907 100%); 
         margin: 0; 
         overflow-x: hidden; 
       }
@@ -130,8 +179,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- GLOBAL VARIABLES IN BANNER SCOPE ---
-        let synthCtx = null;
+        // --- GLOBAL AUDIO REFERENCE SCOPE ---
+        window.synthCtx = null;
 
         // --- GLOBAL ERROR BOUNDARY ---
         class ErrorBoundary extends React.Component {
@@ -151,10 +200,10 @@
                 <div className="flex flex-col items-center justify-center h-screen bg-[#180907] p-8 text-center border-4 border-red-600">
                   <h1 className="font-pixel text-4xl text-red-500 mb-6">SYSTEM CRASH</h1>
                   <p className="font-terminal text-2xl text-white mb-6">A magical anomaly broke the timeline:</p>
-                  <div className="bg-black p-4 text-red-400 font-terminal text-xl pixel-border w-full max-w-2xl break-words">
+                  <div className="bg-black p-4 text-red-400 font-terminal text-xl pixel-border-vania w-full max-w-2xl break-words">
                     {this.state.errorMessage}
                   </div>
-                  <button className="nes-btn green mt-8" onClick={() => window.location.reload()}>Reboot System</button>
+                  <button className="nes-btn nes-btn-vania green mt-8" onClick={() => window.location.reload()}>Reboot System</button>
                 </div>
               );
             }
@@ -184,6 +233,15 @@
             bass: ["A2", "C2", "D2", "E2"]
           },
           {
+            name: "Bobble Cheerful", tempo: 160,
+            melody: [
+              { note: "C5", dur: 2 }, { note: "E5", dur: 2 }, { note: "G5", dur: 2 }, { note: "C6", dur: 2 },
+              { note: "A5", dur: 4 }, { note: "F5", dur: 4 },
+              { note: "G5", dur: 2 }, { note: "E5", dur: 2 }, { note: "D5", dur: 4 }, { note: "C5", dur: 8 }
+            ],
+            bass: ["C2", "F2", "G2", "C2"]
+          },
+          {
             name: "Creepy Crawly", tempo: 140,
             melody: [
               { note: "A4", dur: 2 }, { note: "B4", dur: 2 }, { note: "C5", dur: 4 }, { note: "B4", dur: 2 }, { note: "A4", dur: 2 },
@@ -197,7 +255,8 @@
         const NOTE_FREQ = {
           "C2": 65.41, "D2": 73.42, "E2": 82.41, "F2": 87.31, "G2": 98.00, "A2": 110.00,
           "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "B4": 493.88,
-          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00
+          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00,
+          "C6": 1046.50
         };
 
         const CATEGORIES = {
@@ -279,8 +338,7 @@
         // --- UTILITIES ---
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // Deterministic text splitter to split any raw layout string cleanly into exactly 3 pages
-        function splitStoryIntoPages(pagesInput, fallbackText) {
+        function splitStoryIntoPages(pagesInput, fallbackText, targetWordsPerPage) {
           let text = "";
           if (Array.isArray(pagesInput)) {
             text = pagesInput.join("\n\n").trim();
@@ -291,32 +349,18 @@
             text = fallbackText;
           }
 
-          // Try splitting by double-newlines first (paragraphs)
-          let paragraphs = text.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
-          if (paragraphs.length >= 3) {
-            return [
-              paragraphs.slice(0, Math.ceil(paragraphs.length / 3)).join("\n\n"),
-              paragraphs.slice(Math.ceil(paragraphs.length / 3), Math.ceil(paragraphs.length / 3) * 2).join("\n\n"),
-              paragraphs.slice(Math.ceil(paragraphs.length / 3) * 2).join("\n\n")
-            ];
+          // Balanced splitting algorithm that splits cleanly into 3 pages
+          let words = text.split(/\s+/).filter(Boolean);
+          if (words.length < 10) {
+            // String is too short, multiply fallback templates
+            return [text, "You proceed forward with extreme caution.", "The path is clear. Prepare to face your challenge."];
           }
 
-          // Fallback: Split by sentences
-          let sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text];
-          if (sentences.length >= 3) {
-            let size = Math.ceil(sentences.length / 3);
-            return [
-              sentences.slice(0, size).join("").trim(),
-              sentences.slice(size, size * 2).join("").trim(),
-              sentences.slice(size * 2).join("").trim()
-            ];
-          }
-
-          // Hard Fallback
+          let size = Math.ceil(words.length / 3);
           return [
-            text,
-            "You proceed with caution, keeping your eyes open for hidden clues in the environment.",
-            "The path forward is clear. Prepare to face your challenge."
+            words.slice(0, size).join(" "),
+            words.slice(size, size * 2).join(" "),
+            words.slice(size * 2).join(" ")
           ];
         }
 
@@ -418,221 +462,6 @@
           return chapters;
         };
 
-        // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
-        const SunsetPixelArt = ({ setting, turn, villain }) => {
-          const canvasRef = useRef(null);
-
-          useEffect(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width;
-            const h = canvas.height;
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, w, h);
-
-            // 1. SKY GRADIENT (10 phases of sunset)
-            let skyColors = [];
-            if (turn === 0 || turn === 1) {
-              skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
-            } else if (turn >= 2 && turn <= 4) {
-              skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
-            } else if (turn >= 5 && turn <= 7) {
-              skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
-            } else {
-              skyColors = ['#180040', '#000028', '#000010', '#000000']; 
-            }
-
-            const step = h / skyColors.length;
-            skyColors.forEach((color, i) => {
-              ctx.fillStyle = color;
-              ctx.fillRect(0, i * step, w, step);
-            });
-
-            // 2. CELESTIAL BODIES
-            if (turn < 7) {
-              const sunY = 60 + turn * 22;
-              ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
-              ctx.beginPath(); ctx.arc(w/2, sunY, 48, 0, Math.PI * 2); ctx.fill();
-              ctx.fillStyle = '#ffeb3b';
-              ctx.beginPath(); ctx.arc(w/2, sunY, 32, 0, Math.PI * 2); ctx.fill();
-            } else {
-              ctx.fillStyle = '#ffffff';
-              for (let i = 0; i < 20; i++) {
-                ctx.fillRect(Math.floor((Math.sin(i * 99) * 0.5 + 0.5) * w), Math.floor((Math.cos(i * 33) * 0.5 + 0.5) * (h - 100)), 2, 2);
-              }
-              const moonColor = turn === 9 ? '#d32f2f' : '#fff9c4';
-              const moonGlow = turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)';
-              ctx.fillStyle = moonGlow;
-              ctx.beginPath(); ctx.arc(w - 70, 60, 26, 0, Math.PI * 2); ctx.fill();
-              ctx.fillStyle = moonColor;
-              ctx.beginPath(); ctx.arc(w - 70, 60, 18, 0, Math.PI * 2); ctx.fill();
-            }
-
-            // 2.5 THE NEGABOR GREEN OGRE FACE
-            if (villain === 3) {
-              const ogreX = w * 0.15; const ogreY = 45;
-              ctx.fillStyle = '#388e3c'; ctx.fillRect(ogreX, ogreY, 40, 40);
-              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8); ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
-              ctx.fillStyle = '#f57c00'; ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6); ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
-              ctx.fillStyle = '#ff1744'; ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2); ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
-              ctx.fillStyle = '#1b5e20'; ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
-              ctx.fillStyle = '#ffffff'; ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4); ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
-              ctx.fillStyle = '#000000'; ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
-            }
-
-            // 3. MOUNTAIN SILHOUETTE
-            ctx.fillStyle = 'rgba(24, 9, 7, 0.65)';
-            ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, h - 80); ctx.lineTo(w * 0.2, h - 120);
-            ctx.lineTo(w * 0.4, h - 70); ctx.lineTo(w * 0.6, h - 105); ctx.lineTo(w * 0.8, h - 80);
-            ctx.lineTo(w, h - 130); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
-
-            // 4. SETTING SILHOUETTES
-            ctx.fillStyle = '#100504'; ctx.fillRect(0, h - 40, w, 40);
-            ctx.fillStyle = '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
-            ctx.fillStyle = '#000000';
-
-            switch(setting) {
-              case 0: {
-                ctx.fillRect(10, 0, 30, h); ctx.fillRect(w - 40, 0, 30, h);
-                ctx.fillStyle = '#ffeb3b'; ctx.fillRect(120, h - 140, 12, 6); ctx.fillRect(w - 150, h - 180, 14, 8);
-                break;
-              }
-              case 1: {
-                ctx.fillRect(30, h - 220, 60, 180); ctx.fillRect(200, h - 180, 50, 140);
-                ctx.beginPath(); ctx.moveTo(30, h - 220); ctx.lineTo(60, h - 270); ctx.lineTo(90, h - 220); ctx.fill();
-                break;
-              }
-              case 2: {
-                const drawTree = (tx, ty) => {
-                  ctx.fillRect(tx + 12, ty, 6, h - ty);
-                  ctx.beginPath(); ctx.moveTo(tx, ty + 60); ctx.lineTo(tx + 15, ty); ctx.lineTo(tx + 30, ty + 60); ctx.fill();
-                  ctx.beginPath(); tx -= 5; ctx.moveTo(tx, ty + 120); ctx.lineTo(tx + 20, ty + 40); ctx.lineTo(tx + 40, ty + 120); ctx.fill();
-                };
-                drawTree(40, h - 240); drawTree(w - 90, h - 260);
-                break;
-              }
-              case 3: {
-                ctx.beginPath(); ctx.moveTo(w/2 - 120, h - 40); ctx.lineTo(w/2, h - 190); ctx.lineTo(w/2 + 120, h - 40); ctx.closePath(); ctx.fill();
-                break;
-              }
-              case 4: {
-                ctx.fillRect(20, h - 160, 20, 120); ctx.fillRect(w - 50, h - 190, 30, 150);
-                ctx.fillStyle = '#00e676'; ctx.fillRect(25, h - 120, 4, 4);
-                ctx.fillStyle = '#ff1744'; ctx.fillRect(25, h - 100, 4, 4);
-                break;
-              }
-              case 5: {
-                ctx.fillRect(0, h - 50, w, 20); ctx.fillRect(40, h - 180, 12, 140); ctx.fillRect(w - 80, h - 200, 14, 160);
-                break;
-              }
-              case 6: {
-                ctx.fillRect(20, h - 170, 80, 130); ctx.fillRect(w - 110, h - 190, 90, 150);
-                ctx.fillStyle = '#000'; ctx.fillRect(w/2 - 3, h - 100, 6, 40); ctx.fillRect(w/2 - 12, h - 90, 24, 6);
-                break;
-              }
-              case 7: {
-                ctx.beginPath(); ctx.arc(80, h - 160, 45, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2); ctx.fill();
-                break;
-              }
-              case 8: {
-                ctx.fillRect(60, h - 120, 40, 80); ctx.fillRect(w - 100, h - 140, 40, 100);
-                ctx.beginPath(); ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2); ctx.fill();
-                break;
-              }
-              case 9: {
-                ctx.beginPath(); ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2); ctx.strokeStyle = '#000000'; ctx.lineWidth = 6; ctx.stroke();
-                ctx.lineWidth = 2;
-                for (let a = 0; a < 8; a++) {
-                  const angle = (a * Math.PI) / 4;
-                  ctx.beginPath(); ctx.moveTo(w/2, h - 150); ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70); ctx.stroke();
-                }
-                break;
-              }
-            }
-          }, [setting, turn, villain]);
-
-          return (
-            <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
-          );
-        };
-
-        // --- INTERACTIVE TEXT HIGHLIGHTER ---
-        const InteractiveText = ({ text, textSize }) => {
-          const [highlights, setHighlights] = useState([]);
-          useEffect(() => { setHighlights([]); }, [text]); 
-
-          const handleSelection = () => {
-            const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
-            const selectedText = selection.toString().trim();
-            if (selectedText.length > 1 && !highlights.includes(selectedText)) setHighlights(prev => [...prev, selectedText]);
-          };
-          const removeHighlight = (phrase) => { setHighlights(prev => prev.filter(h => h !== phrase)); };
-
-          const renderText = () => {
-            if (!text) return null;
-            if (highlights.length === 0) return text;
-            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
-            const parts = text.split(regex);
-            return parts.map((part, i) => {
-              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
-              if (matched) return (<mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>{part}</mark>);
-              return <span key={i}>{part}</span>;
-            });
-          };
-
-          return (
-            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
-              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>{renderText()}</p>
-            </div>
-          );
-        };
-
-        // RetroBat component definition 
-        function RetroBat({ style }) {
-          const [wingFrame, setWingFrame] = useState(0);
-          useEffect(() => {
-            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 100);
-            return () => clearInterval(frameTimer);
-          }, []);
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
-                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
-                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
-                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
-                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
-                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
-                  </g>
-                )}
-              </svg>
-            </div>
-          );
-        }
-
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         const FlappyBatMinigame = () => {
           const canvasRef = useRef(null);
@@ -711,7 +540,7 @@
               <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
                 Play Flappy Bat while the AI writes your book!
               </p>
-              <canvas ref={canvasRef} width={480} height={280} className="pixel-border cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full" />
+              <canvas ref={canvasRef} width={480} height={280} className="pixel-border-vania cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full" />
               <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
             </div>
           );
@@ -721,6 +550,7 @@
         function Adventurevania() {
           const [user, setUser] = useState(null); 
           const [gameState, setGameState] = useState('menu'); 
+          const [gameTheme, setGameTheme] = useState('vania'); // vania or bubble
           
           const [setupData, setSetupData] = useState({ character: 0, villain: 0, setting: 0, plot: 0, dilemma: 0, readingLevel: 1 });
           const [setupStep, setSetupStep] = useState(0); 
@@ -732,10 +562,6 @@
           const [sessionInitialNode, setSessionInitialNode] = useState(null); 
           const [sessionSeed, setSessionSeed] = useState("");
           const [playerName, setPlayerName] = useState(localStorage.getItem('adventurevania_player') || "");
-          const [sessionStartTime, setSessionStartTime] = useState(null);
-          const [correctAnswers, setCorrectAnswers] = useState(0);
-          const [totalQuestions, setTotalQuestions] = useState(0);
-          const [menuImgIndex, setMenuImgIndex] = useState(0);
           const [showLightning, setShowLightning] = useState(false);
           const [musicVolume, setMusicVolume] = useState(0.3);
           const [isMuted, setIsMuted] = useState(true); 
@@ -996,22 +822,41 @@
             return () => clearInterval(lightningInterval);
           }, [isMuted, musicVolume]);
 
-          // Critter Spawner
+          // Critter Spawner / Bubble Spawner
           useEffect(() => {
             let timeoutId;
             const spawnCritter = () => {
               const id = Date.now();
               const isBat = Math.random() > 0.5;
               const direction = Math.random() > 0.5 ? 'Right' : 'Left';
-              const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
-              const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
-              setCritters(prev => [...prev, { id, isBat, style: { top: `${top}vh`, animation } }]);
-              setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, 12500);
-              timeoutId = setTimeout(spawnCritter, Math.random() * 15000 + 30000);
+              
+              if (gameTheme === 'bubble') {
+                // Spawn a floaty bubble
+                const leftPercent = Math.floor(Math.random() * 80) + 10;
+                const sizePx = Math.floor(Math.random() * 30) + 20;
+                const animDuration = Math.floor(Math.random() * 4) + 6;
+                setCritters(prev => [...prev, {
+                  id,
+                  isBubble: true,
+                  style: {
+                    left: `${leftPercent}vw`,
+                    width: `${sizePx}px`,
+                    height: `${sizePx}px`,
+                    animation: `floatBubble ${animDuration}s linear forwards`
+                  }
+                }]);
+                setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, animDuration * 1000 + 500);
+              } else {
+                const top = isBat ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 20) + 60; 
+                const animation = isBat ? `batFly${direction} 8s ease-in-out forwards` : `spiderCrawl${direction} 12s linear forwards`;
+                setCritters(prev => [...prev, { id, isBat, style: { top: `${top}vh`, animation } }]);
+                setTimeout(() => { setCritters(prev => prev.filter(c => c.id !== id)); }, 12500);
+              }
+              timeoutId = setTimeout(spawnCritter, Math.random() * 4000 + 4000);
             };
-            timeoutId = setTimeout(spawnCritter, Math.random() * 5000 + 5000);
+            timeoutId = setTimeout(spawnCritter, 3000);
             return () => clearTimeout(timeoutId);
-          }, []);
+          }, [gameTheme]);
 
           // Keyboard Listeners
           useEffect(() => {
@@ -1089,12 +934,16 @@
             generateFullBook(finalSetup);
           };
 
+          // --- CORE COHESION AND PROGRESSIVE SYSTEM ---
           const generateFullBook = async (finalSetup) => {
             const char = CATEGORIES.characters[finalSetup.character];
             const vill = CATEGORIES.villains[finalSetup.villain];
             const sett = CATEGORIES.settings[finalSetup.setting];
             const plot = CATEGORIES.plots[finalSetup.plot];
             const dil = CATEGORIES.dilemmas[finalSetup.dilemma];
+
+            const pageWordTargets = [30, 100, 133, 166];
+            const chapterWordTargets = [90, 300, 400, 500];
 
             const getReadingLevelInstruction = (level) => {
               if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY basic sight words (big, red, run, fast, see, cat). EXACTLY 30 words per page (exactly 90 words per chapter). No big words allowed.";
@@ -1103,6 +952,7 @@
               return "Write for an intermediate grade. Use highly advanced, dark, atmospheric, and spooky vocabulary. EXACTLY 166 words per page (exactly 500 words per chapter).";
             };
 
+            // Aggressively force LLM cohesion by instructing a single sequential prompt flow
             let promptText = `
               Write a complete, highly cohesive 10-chapter Choose Your Own Adventure book.
               - Hero: ${char.name} (${char.desc})
@@ -1111,11 +961,12 @@
               - Plot: ${plot.name}
               - Central Danger: ${dil.name}
               
-              STRICT FORMATTING RULES:
+              STRICT COHESION & FLOW RULES:
               1. The story MUST progress linearly from Chapter 1 to Chapter 10 without repeating past events or duplicating descriptions. Each chapter must represent a totally new stage of the plot journey!
-              2. EACH Chapter MUST have exactly 3 "pages" (an array of exactly 3 text strings).
-              3. The length of text on EACH page MUST follow this rule: ${getReadingLevelInstruction(finalSetup.readingLevel)}
-              4. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 3 choices (one correct, two incorrect with a 'gameOverMessage').
+              2. Chapter 1 is the Arrival. Chapter 2-4 is the search and exploration of clues. Chapter 5-7 is a trap laid by ${vill.name}. Chapter 8-9 is the narrow escape. Chapter 10 is the final boss clash!
+              3. EACH Chapter MUST have exactly 3 "pages" (an array of exactly 3 text strings).
+              4. The length of text on EACH page MUST follow this rule: ${getReadingLevelInstruction(finalSetup.readingLevel)}
+              5. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 3 choices (one correct, two incorrect with a 'gameOverMessage').
             `;
 
             const systemInstruction = `You are a strict children's book author. You MUST output a single valid JSON block containing an array of 10 chapters. Use SINGLE QUOTES (') inside strings. Schema: { "chapters": [ { "pages": ["page 1", "page 2", "page 3"], "question": "Question?", "choices": [{"text":"", "isCorrect":true/false, "gameOverMessage":""}] } ] }`;
@@ -1150,10 +1001,11 @@
                    throw new Error("Invalid array structure.");
                 }
 
-                // --- ROBUST CHAPTER & PAGE SANITIZER ---
+                // --- ROBUST CHAPTER, COHESION & PAGE BALANCER ---
+                const targetW = pageWordTargets[finalSetup.readingLevel];
                 const sanitizedChapters = nodeData.chapters.map((ch, turnIdx) => {
                   const fallbackText = `Chapter ${turnIdx + 1} begins. You venture further into ${sett.name}.`;
-                  let pages = splitStoryIntoPages(ch.pages || ch.storyText, fallbackText);
+                  let pages = splitStoryIntoPages(ch.pages || ch.storyText, fallbackText, targetW);
 
                   // Ensure question exists
                   let question = ch.question ? ch.question.trim() : "What is the best way to bypass this challenge?";
@@ -1163,7 +1015,7 @@
                   if (!choices || !Array.isArray(choices) || choices.length === 0) {
                     choices = [
                       { text: "Solve the challenge carefully", isCorrect: true, isGameOver: false },
-                      { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: "You ran into Negabor's trap!" },
+                      { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: `You ran into ${vill.name}'s trap!` },
                       { text: "Ignore the signs", isCorrect: false, isGameOver: true, gameOverMessage: "You ignored the warning and fell into a pit!" }
                     ];
                   }
@@ -1171,7 +1023,7 @@
                   if (choices.length < 3) {
                     const backupIncorrect = [
                       { text: "Take the wrong turn", isCorrect: false, isGameOver: true, gameOverMessage: "You took a wrong turn and got lost in the shadows!" },
-                      { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: "You rested too long and Negabor caught you!" }
+                      { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: `You rested too long and ${vill.name} caught you!` }
                     ];
                     while (choices.length < 3) {
                       choices.push(backupIncorrect[choices.length % backupIncorrect.length]);
@@ -1213,7 +1065,7 @@
             }
           };
 
-          // FIXED: Added the missing startGame definition inside React Scope to clear setup transitions
+          // Added the missing startGame definition inside React Scope to clear setup transitions
           const startGame = () => {
             const currentKey = STEPS_KEYS[setupStep];
             const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
@@ -1238,28 +1090,68 @@
             }
           };
 
+          const popBubble = (critId) => {
+            // Cheerful synth pop sound
+            playSynthNote(880, 'sine', 0.08, 0.4);
+            playSynthNote(1200, 'sine', 0.05, 0.3);
+            setCritters(prev => prev.filter(c => c.id !== critId));
+          };
+
           const renderMenu = () => (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative bg-[#1c0f0d]/40">
-              <div className="w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 border-[#B71C1C] music-border bg-black overflow-hidden relative mb-2">
+            <div className={`flex flex-col items-center justify-center h-full text-center p-4 md:p-8 space-y-6 md:space-y-8 relative ${gameTheme === 'bubble' ? 'bg-[#001133]/40' : 'bg-[#1c0f0d]/40'}`}>
+              <div className={`w-full max-w-2xl h-48 sm:h-56 md:h-64 border-4 bg-black overflow-hidden relative mb-2 ${gameTheme === 'bubble' ? 'border-[#00E5FF] music-border-bubble' : 'border-[#B71C1C] music-border-vania'}`}>
                  <img src={MENU_IMAGES[menuImgIndex]} className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" style={{ imageRendering: 'pixelated' }} alt="Retro Castlevania Background" />
-                 <div className="absolute inset-0 bg-[#E65100]/25 mix-blend-color-burn"></div>
+                 <div className={`absolute inset-0 mix-blend-color-burn ${gameTheme === 'bubble' ? 'bg-[#00e5ff]/25' : 'bg-[#E65100]/25'}`}></div>
                  <div className="absolute inset-0 bg-black/40"></div>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 w-full">
-                    <h1 className="font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl text-amber-500 tracking-wider drop-shadow-[0_0_15px_rgba(230,81,0,1)] w-full text-center break-words leading-tight">
+                    <h1 className={`font-pixel text-lg sm:text-2xl md:text-3xl lg:text-4xl tracking-wider w-full text-center break-words leading-tight ${gameTheme === 'bubble' ? 'text-[#00E5FF] drop-shadow-[0_0_15px_rgba(0,229,255,1)]' : 'text-amber-500 drop-shadow-[0_0_15px_rgba(230,81,0,1)]'}`}>
                       ADVENTUREVANIA
                     </h1>
-                    <p className="font-terminal text-orange-400 text-lg sm:text-xl md:text-2xl mt-2 font-bold drop-shadow-[0_0_10px_rgba(230,81,0,1)]">A Reading Quest</p>
+                    <p className={`font-terminal text-lg sm:text-xl md:text-2xl mt-2 font-bold ${gameTheme === 'bubble' ? 'text-[#FF4081] drop-shadow-[0_0_10px_rgba(255,64,129,1)]' : 'text-orange-400 drop-shadow-[0_0_10px_rgba(230,81,0,1)]'}`}>
+                      {gameTheme === 'bubble' ? '🫧 Cheerful Bubble Bobble Quest 🫧' : '🦇 A Grade 3 Spooky Quest 🦇'}
+                    </p>
                  </div>
               </div>
 
+              {/* Theme Toggle Button Slider */}
+              <div className="flex items-center gap-4 relative z-10">
+                <span className="font-pixel text-[8px] sm:text-[10px] text-orange-400">🦇 Gothic</span>
+                <button 
+                  onClick={() => {
+                    initAudioContext();
+                    const nextTheme = gameTheme === 'vania' ? 'bubble' : 'vania';
+                    setGameTheme(nextTheme);
+                    setCurrentTrack(nextTheme === 'bubble' ? 1 : 0);
+                    playSynthNote(440, 'square', 0.2, 0.4);
+                  }}
+                  className={`w-16 h-8 rounded-full p-1 transition-colors duration-300 flex items-center ${gameTheme === 'bubble' ? 'bg-[#00E5FF]' : 'bg-[#B71C1C]'}`}
+                >
+                  <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 flex items-center justify-center ${gameTheme === 'bubble' ? 'translate-x-8' : 'translate-x-0'}`}>
+                    <span className="text-[10px]">{gameTheme === 'bubble' ? '🫧' : '😈'}</span>
+                  </div>
+                </button>
+                <span className="font-pixel text-[8px] sm:text-[10px] text-[#00E5FF]">Bobble 🫧</span>
+              </div>
+
               <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md relative z-10">
-                <button className="nes-btn animate-pulse text-xs sm:text-sm" onClick={() => { setSetupStep(0); setGameState('setup'); }}>
+                <button 
+                  className={`nes-btn animate-pulse text-xs sm:text-sm ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} 
+                  onClick={() => { initAudioContext(); setSetupStep(0); setGameState('setup'); }}
+                >
                   ▶️ Press Enter to Start
                 </button>
 
                 <div className="flex flex-col gap-2 w-full text-left mt-2">
-                    <label className="font-pixel text-[8px] md:text-[10px] text-orange-400 text-center">Student Identification:</label>
-                    <input type="text" placeholder="Enter Player Name..." value={playerName} onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} className="w-full bg-[#1c0f0d] border-2 border-red-950 text-orange-400 font-pixel text-[10px] text-center p-3 outline-none focus:border-orange-500" />
+                    <label className={`font-pixel text-[8px] md:text-[10px] text-center ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-orange-400'}`}>
+                      Student Identification:
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter Player Name..." 
+                      value={playerName} 
+                      onChange={(e) => { setPlayerName(e.target.value); localStorage.setItem('adventurevania_player', e.target.value); }} 
+                      className={`w-full bg-[#1c0f0d] border-2 text-[10px] text-center p-3 outline-none font-pixel ${gameTheme === 'bubble' ? 'border-[#00E5FF] text-[#00E5FF] focus:border-[#FF4081]' : 'border-red-950 text-orange-400 focus:border-orange-500'}`} 
+                    />
                 </div>
               </div>
             </div>
@@ -1273,14 +1165,14 @@
             return (
               <div className="flex flex-col h-full p-4 md:p-6 overflow-hidden bg-black/30">
                 <div className="flex justify-between items-center mb-4 border-b-4 border-red-950 pb-2 shrink-0">
-                  <h2 className="font-pixel text-xs md:text-sm text-orange-400 leading-relaxed">
+                  <h2 className={`font-pixel text-xs md:text-sm leading-relaxed ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-orange-400'}`}>
                     {["Select Your Hero", "Choose the Villain", "Pick a Setting", "Select the Plot", "Choose a Dilemma", "Reading Difficulty"][setupStep]}
                   </h2>
-                  <span className="font-pixel text-[9px] text-orange-500/70">Step {setupStep + 1}/6</span>
+                  <span className={`font-pixel text-[9px] ${gameTheme === 'bubble' ? 'text-[#FF4081]' : 'text-orange-500/70'}`}>Step {setupStep + 1}/6</span>
                 </div>
 
                 {/* Scroll Grid: Ensures all items are fully scrollable and visible */}
-                <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-4">
+                <div className={`flex-grow overflow-y-auto min-h-0 pr-2 pb-4 ${gameTheme === 'bubble' ? 'scrollbar-bubble' : 'scrollbar-vania'}`}>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 py-2">
                     {currentDataList.map((item, idx) => {
                       const isSelected = setupData[currentKey] === idx;
@@ -1289,8 +1181,8 @@
                         <div 
                           key={idx} 
                           onClick={() => { setSetupFocusIndex(idx); setSetupData({...setupData, [currentKey]: idx}); }} 
-                          className={`pixel-border p-3 cursor-pointer flex flex-col items-center text-center transition-all ${isFocused ? 'bg-amber-950 border-orange-500 scale-105 shadow-[0_0_25px_rgba(230,81,0,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
-                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #D84315, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
+                          className={`p-3 cursor-pointer flex flex-col items-center text-center transition-all ${gameTheme === 'bubble' ? 'pixel-border-bubble' : 'pixel-border-vania'} ${isFocused ? 'bg-amber-950 scale-105 shadow-[0_0_25px_rgba(0,229,255,0.4)]' : isSelected ? 'bg-red-950 border-red-500' : 'bg-black/40 border-stone-800 hover:bg-stone-900/60'}`} 
+                          style={isFocused ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #00E5FF, 0 0 0 8px #000' } : isSelected ? { boxShadow: 'inset -4px -4px 0px 0px rgba(0,0,0,0.5), inset 4px 4px 0px 0px rgba(255,255,255,0.15), 0 0 0 4px #B71C1C, 0 0 0 8px #000' } : {}}
                         >
                           <div className="text-3xl mb-1">{item.icon}</div>
                           <h3 className="font-pixel text-[8px] md:text-[9px] text-white mb-1 leading-tight h-8 flex items-center justify-center">{item.name}</h3>
@@ -1304,15 +1196,26 @@
                 <div className="flex justify-between mt-4 pt-2 border-t-2 border-red-950 items-center shrink-0">
                   <div className="font-pixel text-[8px] text-orange-600/70 hidden md:block">Use Arrow Keys & Enter</div>
                   <div className="flex gap-4">
-                    {setupStep > 0 ? <button className="nes-btn" onClick={() => setSetupStep(setupStep - 1)}>Back</button> : <div></div>}
+                    {setupStep > 0 ? (
+                      <button className={`nes-btn ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => setSetupStep(setupStep - 1)}>
+                        Back
+                      </button>
+                    ) : <div></div>}
                     {setupStep < 5 ? (
-                      <button className="nes-btn green" onClick={() => { 
-                        setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
-                        setSetupStep(setupStep + 1); 
-                        setSetupFocusIndex(0);
-                      }}>Next</button>
+                      <button 
+                        className={`nes-btn green ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} 
+                        onClick={() => { 
+                          setSetupData(prev => ({...prev, [currentKey]: setupFocusIndex}));
+                          setSetupStep(setupStep + 1); 
+                          setSetupFocusIndex(0);
+                        }}
+                      >
+                        Next
+                      </button>
                     ) : (
-                      <button className="nes-btn green animate-pulse" onClick={startGame}>Start Quest</button>
+                      <button className={`nes-btn green animate-pulse ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={startGame}>
+                        Start Quest
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1321,7 +1224,7 @@
           };
 
           const renderLoading = () => (
-            <div className="flex flex-col h-full w-full bg-[#180907]">
+            <div className={`flex flex-col h-full w-full ${gameTheme === 'bubble' ? 'bg-[#001133]' : 'bg-[#180907]'}`}>
               {/* Top/Middle Minigame */}
               <div className="flex-1 p-4 flex flex-col items-center justify-center bg-[#130807] overflow-hidden">
                 <FlappyBatMinigame />
@@ -1329,13 +1232,15 @@
               
               {/* Bottom Progress Bar */}
               <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
-                <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-1">{loadingMsg}</h2>
+                <h2 className={`font-pixel text-[10px] md:text-xs leading-relaxed text-center mb-1 ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-orange-400'}`}>
+                  {loadingMsg}
+                </h2>
                 {/* Vetted Waiting Instruction Note */}
                 <p className="font-terminal text-yellow-500 text-lg md:text-xl mb-4 text-center animate-pulse">
                   This could take several scary minutes.
                 </p>
-                <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
-                  <div className="absolute top-0 left-0 h-full bg-orange-600 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
+                <div className={`w-full max-w-md h-6 bg-black relative overflow-hidden ${gameTheme === 'bubble' ? 'pixel-border-bubble' : 'pixel-border-vania'}`}>
+                  <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${gameTheme === 'bubble' ? 'bg-[#00E5FF]' : 'bg-orange-600'}`} style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
                 </div>
                 <p className="font-terminal text-xl text-orange-400 mt-2">{Math.floor(Math.min(loadingProgress, 99))}%</p>
               </div>
@@ -1350,12 +1255,12 @@
             return (
               <div className="flex flex-col md:flex-row h-full w-full bg-[#180907] relative overflow-hidden">
                 <div className="flex-1 flex flex-col relative h-full overflow-hidden order-2 md:order-1">
-                  <div className="flex justify-between items-center bg-[#2d140f] p-2 md:p-4 pixel-border mb-0 shrink-0 z-10">
-                    <div className="font-pixel text-[10px] md:text-sm text-amber-500 flex items-center gap-2 animate-pulse">
+                  <div className={`flex justify-between items-center p-2 md:p-4 mb-0 shrink-0 z-10 ${gameTheme === 'bubble' ? 'bg-[#001133] pixel-border-bubble' : 'bg-[#2d140f] pixel-border-vania'}`}>
+                    <div className={`font-pixel text-[10px] md:text-sm flex items-center gap-2 animate-pulse ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-amber-500'}`}>
                        🗺️ Chapter: {turnCount + 1}/10
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
-                      <div className="flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 music-border mr-1 md:mr-2">
+                      <div className={`flex items-center gap-1 md:gap-2 bg-black px-1 md:px-2 py-1 mr-1 md:mr-2 ${gameTheme === 'bubble' ? 'music-border-bubble' : 'music-border-vania'}`}>
                         <span className="font-pixel text-[8px] text-gray-400">A</span>
                         <input type="range" min="14" max="24" value={textSize} onChange={(e) => setTextSize(parseInt(e.target.value))} className="w-16 md:w-20 cursor-pointer" />
                         <span className="font-pixel text-[12px] text-gray-400">A</span>
@@ -1373,11 +1278,11 @@
                     {/* Display current page */}
                     {currentChapter && (
                       <div className="animate-[fadeIn_0.5s_ease-in]">
-                        <div className="pixel-border bg-black p-4 md:p-6 relative">
-                          <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
-                          <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
-                          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
-                          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+                        <div className={`p-4 md:p-6 relative bg-black ${gameTheme === 'bubble' ? 'pixel-border-bubble' : 'pixel-border-vania'}`}>
+                          <div className={`absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 ${gameTheme === 'bubble' ? 'border-[#00E5FF]' : 'border-purple-600'}`}></div>
+                          <div className={`absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 ${gameTheme === 'bubble' ? 'border-[#00E5FF]' : 'border-purple-600'}`}></div>
+                          <div className={`absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 ${gameTheme === 'bubble' ? 'border-[#00E5FF]' : 'border-purple-600'}`}></div>
+                          <div className={`absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 ${gameTheme === 'bubble' ? 'border-[#00E5FF]' : 'border-purple-600'}`}></div>
 
                           <div className="w-full">
                              {/* FIXED: text size now applies properly to current pages */}
@@ -1386,14 +1291,17 @@
 
                           <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                             {isAtLastPage && currentChapter.question && !activeDeathMessage && (
-                              <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
-                                <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                              <div className={`p-3 border-l-4 break-inside-avoid w-full ${gameTheme === 'bubble' ? 'bg-[#001133] border-[#FF4081]' : 'bg-purple-900 border-green-400'}`}>
+                                <p className={`font-pixel text-[11px] leading-loose ${gameTheme === 'bubble' ? 'text-[#00E5FF]' : 'text-green-300'}`}>
                                   <span className="text-yellow-400">CHALLENGE:</span> {currentChapter.question}
                                 </p>
                               </div>
                             )}
-                            <button onClick={() => handleReadAloud((currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? ". " + activeDeathMessage : "")) + (isAtLastPage && currentChapter.question && !activeDeathMessage ? ". The challenge is: " + currentChapter.question : ""))} className="nes-btn shrink-0">
-                              {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                            <button 
+                              onClick={() => handleReadAloud((currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? ". " + activeDeathMessage : "")) + (isAtLastPage && currentChapter.question && !activeDeathMessage ? ". The challenge is: " + currentChapter.question : ""))} 
+                              className={`nes-btn shrink-0 ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`}
+                            >
+                              {isSpeaking ? '⏹️ Stop' : '🗣️ Read Aloud'}
                             </button>
                           </div>
                         </div>
@@ -1403,29 +1311,29 @@
                     {errorMsg && (
                       <div className="bg-[#5d120d] border-2 border-red-500 p-4 my-4 font-terminal text-xl text-white text-center flex flex-col gap-4">
                         <div>{errorMsg}</div>
-                        <button className="nes-btn mt-2 mx-auto" onClick={() => startGameWithData(setupData)}>Try Again</button>
+                        <button className={`nes-btn mt-2 mx-auto ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => startGameWithData(setupData)}>Try Again</button>
                       </div>
                     )}
                     <div ref={endOfStoryRef} />
                   </div>
 
                   {(gameState === 'story') && !errorMsg && currentChapter && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-[#2D140F]/95 p-3 md:p-4 border-t-4 border-red-950 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center">
+                    <div className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 border-t-4 z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] flex flex-col items-center ${gameTheme === 'bubble' ? 'bg-[#001133]/95 border-[#00E5FF]' : 'bg-[#2D140F]/95 border-red-950'}`}>
                       {!isAtLastPage ? (
                         <div className="flex w-full max-w-md gap-4">
                           {currentPageIndex > 0 && (
-                            <button className="nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                            <button className={`nes-btn w-1/3 py-4 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)] ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
                                ⬅️ Back
                             </button>
                           )}
-                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(230,81,0,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                          <button className={`nes-btn green py-4 text-sm font-bold shadow-[0_0_15px_rgba(230,81,0,0.5)] ${currentPageIndex > 0 ? 'w-2/3' : 'w-full'} ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => { setCurrentPageIndex(p => p + 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
                              Next Page 📖 (Enter)
                           </button>
                         </div>
                       ) : (
                         <>
                           <div className="flex w-full max-w-4xl justify-start mb-2">
-                             <button className="nes-btn !bg-stone-900 !text-orange-400 hover:!bg-stone-800 !px-2 !py-1 text-[8px]" onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
+                             <button className={`nes-btn !bg-stone-900 hover:!bg-stone-800 !px-2 !py-1 text-[8px] ${gameTheme === 'bubble' ? '!text-[#00E5FF]' : '!text-orange-400'}`} onClick={() => { setCurrentPageIndex(p => p - 1); if (window.speechSynthesis) window.speechSynthesis.cancel(); setIsSpeaking(false); }}>
                                ⬅️ Back to Page {currentPageIndex}
                              </button>
                           </div>
@@ -1434,7 +1342,7 @@
                             {currentChapter.choices?.map((choice, idx) => {
                               const isFocused = focusedChoice === idx;
                               return (
-                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
+                                <button key={idx} className={`nes-btn text-left flex justify-between items-center group py-2 transition-transform duration-100 ${isFocused ? 'bg-amber-950 ring-2 ring-orange-500 scale-[1.02]' : 'hover:bg-amber-950/40'} ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => handleChoice(choice)} onMouseEnter={() => setFocusedChoice(idx)}>
                                   <span className={`text-[10px] md:text-[11px] leading-relaxed pr-4 ${isFocused ? 'text-amber-300 font-bold' : ''}`}>{choice.text}</span>
                                   <span className={`${isFocused ? 'opacity-100 text-orange-500' : 'opacity-0'} shrink-0`}>▶</span>
                                 </button>
@@ -1451,8 +1359,8 @@
                        <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
                        <div className="flex flex-col md:flex-row gap-4">
                          {/* Clear out death overlay when restarting so choice cards are displayed instantly */}
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setTurnCount(0); setCurrentPageIndex(0); setActiveDeathMessage(""); setGameState('story'); }}>Restart Adventure</button>
-                         <button className="nes-btn text-xs md:text-sm" onClick={() => { setGameState('menu'); setActiveDeathMessage(""); }}>Main Menu</button>
+                         <button className={`nes-btn text-xs md:text-sm green ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => { setTurnCount(0); setCurrentPageIndex(0); setActiveDeathMessage(""); setGameState('story'); }}>Restart Adventure</button>
+                         <button className={`nes-btn text-xs md:text-sm ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => { setGameState('menu'); setActiveDeathMessage(""); }}>Main Menu</button>
                        </div>
                     </div>
                   )}
@@ -1461,7 +1369,7 @@
                     <div className="absolute bottom-0 left-0 right-0 bg-[#1b5e20]/95 p-8 border-t-4 border-yellow-500 z-10 text-center">
                        <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
                        <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
+                       <button className={`nes-btn text-xl ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => setGameState('menu')}>Play Again</button>
                     </div>
                   )}
                 </div>
@@ -1474,50 +1382,8 @@
             );
           };
 
-          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node || !node.pages) return null;
-            const isAtLastPage = currentPageIndex === node.pages.length - 1;
-            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
-            const showChallenge = isHistory || isAtLastPage;
-
-            return (
-              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
-                <div className="pixel-border bg-black p-4 md:p-6 relative">
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
-
-                  <div className="w-full">
-                     <InteractiveText text={textToDisplay} textSize={textSize} />
-                  </div>
-
-                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {showChallenge && node.question && (
-                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
-                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
-                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
-                        </p>
-                      </div>
-                    )}
-                    {!isHistory && (
-                      <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} className="nes-btn shrink-0">
-                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {isHistory && chosenAction && (
-                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
-                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
-                  </div>
-                )}
-              </div>
-            );
-          };
-
           const renderAudioPlayer = () => (
-             <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
+             <div className={`absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity ${gameTheme === 'bubble' ? 'music-border-bubble' : 'music-border-vania'}`}>
                 <div className="flex items-center gap-3 justify-between">
                   {/* FIXED: Turning on the sound will no longer crash the game with undefined variable reference errors */}
                   <button onClick={() => { initAudioContext(); if(isMuted) { startSynthEngine(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
@@ -1536,9 +1402,19 @@
               <div className="crt fixed inset-0 z-50 pointer-events-none"></div>
               <div className="scanline fixed inset-0 z-40 pointer-events-none"></div>
               
-              {/* Dynamic Animated Critters Layer */}
+              {/* Dynamic Animated Critters / Floaty Bubbles Layer */}
               <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                 {critters.map(crit => {
+                  if (crit.isBubble) {
+                    return (
+                      <div 
+                        key={crit.id} 
+                        className="floating-bubble" 
+                        style={crit.style} 
+                        onClick={() => popBubble(crit.id)} 
+                      />
+                    );
+                  }
                   if (crit.isBat) return <RetroBat key={crit.id} style={crit.style} />;
                   return <div key={crit.id} className="critter font-pixel text-red-500" style={crit.style}>🕷️</div>;
                 })}
@@ -1550,14 +1426,14 @@
                 
                 {confirmDialog && (
                   <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-                    <div className="pixel-border bg-[#2d140f] p-6 md:p-8 text-center max-w-sm w-full">
+                    <div className={`p-6 md:p-8 text-center max-w-sm w-full bg-[#2d140f] ${gameTheme === 'bubble' ? 'pixel-border-bubble' : 'pixel-border-vania'}`}>
                       <h3 className="font-pixel text-orange-400 mb-4 text-xl">Are you sure?</h3>
                       <p className="font-terminal text-xl text-white mb-8 leading-relaxed">
                         {confirmDialog.message}
                       </p>
                       <div className="flex gap-4 justify-center">
                         {/* FIXED: Clicking YES now correctly restarts from turn 0 instantly without hanging */}
-                        <button className="nes-btn green flex-1" onClick={() => {
+                        <button className={`nes-btn green flex-1 ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => {
                           if (confirmDialog.type === 'restart') {
                             setCurrentPageIndex(0);
                             setTurnCount(0);
@@ -1572,13 +1448,13 @@
                           }
                           setConfirmDialog(null);
                         }}>Yes</button>
-                        <button className="nes-btn red flex-1" onClick={() => setConfirmDialog(null)}>No</button>
+                        <button className={`nes-btn red flex-1 ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`} onClick={() => setConfirmDialog(null)}>No</button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] md:pixel-border relative overflow-hidden flex flex-col justify-between">
+                <div className={`w-full max-w-6xl h-full md:h-[95vh] bg-[#1c0f0d] relative overflow-hidden flex flex-col justify-between ${gameTheme === 'bubble' ? 'pixel-border-bubble bg-[#001133]/90' : 'pixel-border-vania'}`}>
                   {renderAudioPlayer()}
 
                   <div className="flex-grow h-full flex flex-col overflow-hidden relative">
