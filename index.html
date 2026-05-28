@@ -464,85 +464,6 @@
           console.error("Firebase init failed:", e);
         }
 
-        // --- RETRO FAIRY FOR BUBBLE THEME ---
-        const RetroFairy = ({ style }) => {
-          const [wingFrame, setWingFrame] = useState(0);
-          useEffect(() => {
-            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 120);
-            return () => clearInterval(frameTimer);
-          }, []);
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-16 h-16">
-                <rect x="14" y="10" width="4" height="10" fill="#FF80AB" />
-                <rect x="13" y="4" width="6" height="6" fill="#FFD180" />
-                <rect x="13" y="2" width="6" height="2" fill="#FFD54F" />
-                <rect x="11" y="4" width="2" height="6" fill="#FFD54F" />
-                <rect x="19" y="2" width="2" height="6" fill="#FFD54F" />
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="6" y="6" width="8" height="6" fill="#80DEEA" />
-                    <rect x="18" y="6" width="8" height="6" fill="#80DEEA" />
-                    <rect x="4" y="12" width="10" height="4" fill="#00E5FF" />
-                    <rect x="18" y="12" width="10" height="4" fill="#00E5FF" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="6" y="12" width="8" height="6" fill="#80DEEA" />
-                    <rect x="18" y="12" width="8" height="6" fill="#80DEEA" />
-                    <rect x="4" y="16" width="10" height="4" fill="#00E5FF" />
-                    <rect x="18" y="16" width="10" height="4" fill="#00E5FF" />
-                  </g>
-                )}
-                <rect x="8" y="14" width="6" height="2" fill="#FFD54F" />
-                <rect x="6" y="12" width="2" height="6" fill="#FFF" />
-              </svg>
-            </div>
-          );
-        };
-
-        // --- RETROBAT CONSTANT COMPONENT DECLARATION ---
-        const RetroBat = ({ style }) => {
-          const [wingFrame, setWingFrame] = useState(0);
-          useEffect(() => {
-            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 100);
-            return () => clearInterval(frameTimer);
-          }, []);
-          return (
-            <div className="critter" style={style}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
-                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
-                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
-                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
-                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
-                {wingFrame === 0 ? (
-                  <g>
-                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
-                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
-                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
-                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
-                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
-                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
-                  </g>
-                )}
-              </svg>
-            </div>
-          );
-        };
-
         // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
         const generateLocalBook = (setup) => {
           const char = CATEGORIES.characters[setup.character];
@@ -551,8 +472,6 @@
           const plot = CATEGORIES.plots[setup.plot];
           const dil = CATEGORIES.dilemmas[setup.dilemma];
           const level = setup.readingLevel;
-          const pageWordTargets = [30, 100, 133, 166];
-          const targetW = pageWordTargets[level] || 100;
 
           const storyProgressionTemplates = [
             {
@@ -626,6 +545,9 @@
                 { text: `A sleeping bird`, isCorrect: false, isGameOver: true, gameOverMessage: "No, birds are friendly! You got captured." }
               ];
             } else {
+              // Scale the progressive story text to perfectly meet the required word count constraints
+              let targetWords = level === 1 ? 100 : level === 2 ? 133 : 166;
+              
               const expandText = (baseText, targetCount) => {
                 let textWords = baseText.split(/\s+/).filter(Boolean);
                 let count = textWords.length;
@@ -649,9 +571,9 @@
                 return textWords.slice(0, targetCount).join(" ");
               };
 
-              p1 = expandText(rawStory, targetW);
-              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms heavily in the air. ${char.name} must remain vigilant and stay focused.`, targetW);
-              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the shadows, hoping you will make a mistake. Prepare to solve the riddle!`, targetW);
+              p1 = expandText(rawStory, targetWords);
+              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms heavily in the air. ${char.name} must remain vigilant and stay focused.`, targetWords);
+              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the shadows, hoping you will make a mistake. Prepare to solve the riddle!`, targetWords);
               
               q = `What is the primary objective of ${char.name}'s current quest?`;
               choices = [
@@ -666,8 +588,262 @@
           return chapters;
         };
 
+        // --- CUSTOM PROGRESSIVE SUNSET PROCEDURAL 8-BIT RENDERER ---
+        function SunsetPixelArt({ setting, turn, villain, theme }) {
+          const canvasRef = useRef(null);
+
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, w, h);
+
+            // 1. SKY GRADIENT (10 phases of sunset)
+            let skyColors = [];
+            if (theme === 'bubble') {
+              if (turn === 0 || turn === 1) skyColors = ['#00E5FF', '#00BFFF', '#0099FF'];
+              else if (turn >= 2 && turn <= 4) skyColors = ['#00BFFF', '#0099FF', '#0066CC', '#0044AA'];
+              else if (turn >= 5 && turn <= 7) skyColors = ['#0099FF', '#0066CC', '#003388', '#001144'];
+              else skyColors = ['#0044AA', '#002266', '#000A22', '#000000'];
+            } else {
+              if (turn === 0 || turn === 1) skyColors = ['#fc9838', '#fc7460', '#bc447c']; 
+              else if (turn >= 2 && turn <= 4) skyColors = ['#f85800', '#e40058', '#a800a8', '#5800a8']; 
+              else if (turn >= 5 && turn <= 7) skyColors = ['#e40058', '#a800a8', '#400080', '#000040']; 
+              else skyColors = ['#180040', '#000028', '#000010', '#000000']; 
+            }
+
+            const step = h / skyColors.length;
+            skyColors.forEach((color, i) => {
+              ctx.fillStyle = color;
+              ctx.fillRect(0, i * step, w, step);
+            });
+
+            // 2. CELESTIAL BODIES
+            if (turn < 7) {
+              const sunY = 60 + turn * 22;
+              ctx.fillStyle = theme === 'bubble' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 235, 59, 0.2)';
+              ctx.beginPath(); ctx.arc(w/2, sunY, 48, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = theme === 'bubble' ? '#ffffff' : '#ffeb3b';
+              ctx.beginPath(); ctx.arc(w/2, sunY, 32, 0, Math.PI * 2); ctx.fill();
+            } else {
+              ctx.fillStyle = '#ffffff';
+              for (let i = 0; i < 20; i++) {
+                ctx.fillRect(Math.floor((Math.sin(i * 99) * 0.5 + 0.5) * w), Math.floor((Math.cos(i * 33) * 0.5 + 0.5) * (h - 100)), 2, 2);
+              }
+              const moonColor = theme === 'bubble' ? '#88EEFF' : (turn === 9 ? '#d32f2f' : '#fff9c4');
+              const moonGlow = theme === 'bubble' ? 'rgba(0, 229, 255, 0.3)' : (turn === 9 ? 'rgba(211, 47, 47, 0.3)' : 'rgba(255, 249, 196, 0.2)');
+              ctx.fillStyle = moonGlow;
+              ctx.beginPath(); ctx.arc(w - 70, 60, 26, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = moonColor;
+              ctx.beginPath(); ctx.arc(w - 70, 60, 18, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // 2.5 THE NEGABOR GREEN OGRE FACE
+            if (villain === 3) {
+              const ogreX = w * 0.15; const ogreY = 45;
+              ctx.fillStyle = '#388e3c'; ctx.fillRect(ogreX, ogreY, 40, 40);
+              ctx.fillRect(ogreX - 8, ogreY + 6, 8, 8); ctx.fillRect(ogreX + 40, ogreY + 6, 8, 8);
+              ctx.fillStyle = theme === 'bubble' ? '#FF4081' : '#f57c00'; ctx.fillRect(ogreX + 6, ogreY + 12, 6, 6); ctx.fillRect(ogreX + 28, ogreY + 12, 6, 6);
+              ctx.fillStyle = '#ff1744'; ctx.fillRect(ogreX + 8, ogreY + 14, 2, 2); ctx.fillRect(ogreX + 30, ogreY + 14, 2, 2);
+              ctx.fillStyle = '#1b5e20'; ctx.fillRect(ogreX + 16, ogreY + 22, 8, 6);
+              ctx.fillStyle = '#ffffff'; ctx.fillRect(ogreX + 8, ogreY + 30, 4, 4); ctx.fillRect(ogreX + 28, ogreY + 30, 4, 4);
+              ctx.fillStyle = '#000000'; ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
+            }
+
+            // 3. MOUNTAIN SILHOUETTE
+            ctx.fillStyle = theme === 'bubble' ? 'rgba(0, 17, 51, 0.65)' : 'rgba(24, 9, 7, 0.65)';
+            ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, h - 80); ctx.lineTo(w * 0.2, h - 120);
+            ctx.lineTo(w * 0.4, h - 70); ctx.lineTo(w * 0.6, h - 105); ctx.lineTo(w * 0.8, h - 80);
+            ctx.lineTo(w, h - 130); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+
+            // 4. SETTING SILHOUETTES
+            ctx.fillStyle = theme === 'bubble' ? '#000A1A' : '#100504'; ctx.fillRect(0, h - 40, w, 40);
+            ctx.fillStyle = theme === 'bubble' ? '#00E5FF' : '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
+            ctx.fillStyle = '#000000';
+
+            switch(setting) {
+              case 0: {
+                ctx.fillRect(10, 0, 30, h); ctx.fillRect(w - 40, 0, 30, h);
+                ctx.fillStyle = theme === 'bubble' ? '#FF4081' : '#ffeb3b'; ctx.fillRect(120, h - 140, 12, 6); ctx.fillRect(w - 150, h - 180, 14, 8);
+                break;
+              }
+              case 1: {
+                ctx.fillRect(30, h - 220, 60, 180); ctx.fillRect(200, h - 180, 50, 140);
+                ctx.beginPath(); ctx.moveTo(30, h - 220); ctx.lineTo(60, h - 270); ctx.lineTo(90, h - 220); ctx.fill();
+                break;
+              }
+              case 2: {
+                const drawTree = (tx, ty) => {
+                  ctx.fillRect(tx + 12, ty, 6, h - ty);
+                  ctx.beginPath(); ctx.moveTo(tx, ty + 60); ctx.lineTo(tx + 15, ty); ctx.lineTo(tx + 30, ty + 60); ctx.fill();
+                  ctx.beginPath(); tx -= 5; ctx.moveTo(tx, ty + 120); ctx.lineTo(tx + 20, ty + 40); ctx.lineTo(tx + 40, ty + 120); ctx.fill();
+                };
+                drawTree(40, h - 240); drawTree(w - 90, h - 260);
+                break;
+              }
+              case 3: {
+                ctx.beginPath(); ctx.moveTo(w/2 - 120, h - 40); ctx.lineTo(w/2, h - 190); ctx.lineTo(w/2 + 120, h - 40); ctx.closePath(); ctx.fill();
+                break;
+              }
+              case 4: {
+                ctx.fillRect(20, h - 160, 20, 120); ctx.fillRect(w - 50, h - 190, 30, 150);
+                ctx.fillStyle = '#00e676'; ctx.fillRect(25, h - 120, 4, 4);
+                ctx.fillStyle = '#ff1744'; ctx.fillRect(25, h - 100, 4, 4);
+                break;
+              }
+              case 5: {
+                ctx.fillRect(0, h - 50, w, 20); ctx.fillRect(40, h - 180, 12, 140); ctx.fillRect(w - 80, h - 200, 14, 160);
+                break;
+              }
+              case 6: {
+                ctx.fillRect(20, h - 170, 80, 130); ctx.fillRect(w - 110, h - 190, 90, 150);
+                ctx.fillStyle = '#000'; ctx.fillRect(w/2 - 3, h - 100, 6, 40); ctx.fillRect(w/2 - 12, h - 90, 24, 6);
+                break;
+              }
+              case 7: {
+                ctx.beginPath(); ctx.arc(80, h - 160, 45, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(w - 100, h - 200, 60, 0, Math.PI * 2); ctx.fill();
+                break;
+              }
+              case 8: {
+                ctx.fillRect(60, h - 120, 40, 80); ctx.fillRect(w - 100, h - 140, 40, 100);
+                ctx.beginPath(); ctx.arc(w - 80, h - 160, 15, 0, Math.PI * 2); ctx.fill();
+                break;
+              }
+              case 9: {
+                ctx.beginPath(); ctx.arc(w/2, h - 150, 70, 0, Math.PI * 2); ctx.strokeStyle = '#000000'; ctx.lineWidth = 6; ctx.stroke();
+                ctx.lineWidth = 2;
+                for (let a = 0; a < 8; a++) {
+                  const angle = (a * Math.PI) / 4;
+                  ctx.beginPath(); ctx.moveTo(w/2, h - 150); ctx.lineTo(w/2 + Math.cos(angle) * 70, h - 150 + Math.sin(angle) * 70); ctx.stroke();
+                }
+                break;
+              }
+            }
+          }, [setting, turn, villain, theme]);
+
+          return (
+            <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
+          );
+        }
+
+        // --- INTERACTIVE TEXT HIGHLIGHTER ---
+        function InteractiveText({ text, textSize }) {
+          const [highlights, setHighlights] = useState([]);
+          useEffect(() => { setHighlights([]); }, [text]); 
+
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) setHighlights(prev => [...prev, selectedText]);
+          };
+          const removeHighlight = (phrase) => { setHighlights(prev => prev.filter(h => h !== phrase)); };
+
+          const renderText = () => {
+            if (!text) return null;
+            if (highlights.length === 0) return text;
+            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
+            const parts = text.split(regex);
+            return parts.map((part, i) => {
+              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+              if (matched) return (<mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>{part}</mark>);
+              return <span key={i}>{part}</span>;
+            });
+          };
+
+          return (
+            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>{renderText()}</p>
+            </div>
+          );
+        }
+
+        // --- RETRO FAIRY FOR BUBBLE THEME ---
+        function RetroFairy({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
+          useEffect(() => {
+            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 120);
+            return () => clearInterval(frameTimer);
+          }, []);
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-16 h-16">
+                <rect x="14" y="10" width="4" height="10" fill="#FF80AB" />
+                <rect x="13" y="4" width="6" height="6" fill="#FFD180" />
+                <rect x="13" y="2" width="6" height="2" fill="#FFD54F" />
+                <rect x="11" y="4" width="2" height="6" fill="#FFD54F" />
+                <rect x="19" y="2" width="2" height="6" fill="#FFD54F" />
+                {wingFrame === 0 ? (
+                  <g>
+                    <rect x="6" y="6" width="8" height="6" fill="#80DEEA" />
+                    <rect x="18" y="6" width="8" height="6" fill="#80DEEA" />
+                    <rect x="4" y="12" width="10" height="4" fill="#00E5FF" />
+                    <rect x="18" y="12" width="10" height="4" fill="#00E5FF" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="6" y="12" width="8" height="6" fill="#80DEEA" />
+                    <rect x="18" y="12" width="8" height="6" fill="#80DEEA" />
+                    <rect x="4" y="16" width="10" height="4" fill="#00E5FF" />
+                    <rect x="18" y="16" width="10" height="4" fill="#00E5FF" />
+                  </g>
+                )}
+                <rect x="8" y="14" width="6" height="2" fill="#FFD54F" />
+                <rect x="6" y="12" width="2" height="6" fill="#FFF" />
+              </svg>
+            </div>
+          );
+        }
+
+        // --- RETROBAT ---
+        function RetroBat({ style }) {
+          const [wingFrame, setWingFrame] = useState(0);
+          useEffect(() => {
+            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
+                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                {wingFrame === 0 ? (
+                  <g>
+                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
+                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
+                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
+        }
+
         // --- FLAPPY BAT MINIGAME COMPONENT ---
-        const FlappyBatMinigame = ({ theme }) => {
+        function FlappyBatMinigame({ theme }) {
           const canvasRef = useRef(null);
           const isBubble = theme === 'bubble';
 
@@ -683,7 +859,6 @@
 
             const drawPlayer = (x, y, size) => {
               if (isBubble) {
-                // Draw flappy bubble
                 ctx.fillStyle = 'rgba(0, 229, 255, 0.6)';
                 ctx.beginPath();
                 ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
@@ -691,13 +866,11 @@
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                // Highlight
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
                 ctx.arc(x + size/3, y + size/3, size/6, 0, Math.PI * 2);
                 ctx.fill();
               } else {
-                // Draw flappy bat
                 ctx.fillStyle = '#ffb300'; ctx.fillRect(x, y + size/3, size, size/3);
                 if (Math.floor(frameCount / 8) % 2 === 0) {
                   ctx.fillRect(x - size/2, y, size/2, size/2); ctx.fillRect(x + size, y, size/2, size/2); 
@@ -772,7 +945,7 @@
               <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
             </div>
           );
-        };
+        }
 
         // --- MAIN APP ---
         function Adventurevania() {
@@ -811,7 +984,6 @@
 
           const endOfStoryRef = useRef(null);
           const melodyIntervalRef = useRef(null);
-          const synthCtxRef = useRef(null);
 
           // Change body background when theme changes
           useEffect(() => {
@@ -824,18 +996,17 @@
 
           // --- FIXED LOCALIZED AUDIO FUNCTIONS TO SOLVE UNDEFINED SCOPE ERRORS ---
           function initAudioContext() {
-            if (!synthCtxRef.current) {
-              synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              window.synthCtx = synthCtxRef.current; // Sync window compat global pointer safely
+            if (!window.synthCtx) {
+              window.synthCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') {
-              synthCtxRef.current.resume();
+            if (window.synthCtx && window.synthCtx.state === 'suspended') {
+              window.synthCtx.resume();
             }
           }
 
           function playThunderSynth() {
             initAudioContext();
-            const ctx = synthCtxRef.current;
+            const ctx = window.synthCtx;
             if (!ctx || isMuted) return;
             try {
               const bufferSize = ctx.sampleRate * 1.5;
@@ -860,7 +1031,7 @@
 
           function playGhostHowl() {
             initAudioContext();
-            const ctx = synthCtxRef.current;
+            const ctx = window.synthCtx;
             if (!ctx || isMuted) return;
             try {
               const osc = ctx.createOscillator();
@@ -891,7 +1062,7 @@
 
           function playRealisticWolfHowl() {
             initAudioContext();
-            const ctx = synthCtxRef.current;
+            const ctx = window.synthCtx;
             if (!ctx || isMuted) return;
             try {
               const now = ctx.currentTime;
@@ -966,30 +1137,109 @@
             setTimeout(() => setShootingStar(null), 2000);
           };
 
-          // --- FIXED TTS SYSTEM ---
-          const handleReadAloud = (text) => {
-            if (!window.speechSynthesis) return;
-            if (isSpeaking) {
-              window.speechSynthesis.cancel();
-              setIsSpeaking(false);
-              return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9; 
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
-          };
-
-          // Clear speaking states on component unmount
+          // Initialize Firebase Auth compat listener safely
           useEffect(() => {
-            return () => {
-              if (window.speechSynthesis) window.speechSynthesis.cancel();
+            const initAuth = async () => {
+              if(!fbAuth) return;
+              try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                  await signInWithCustomToken(fbAuth, window.__initial_auth_token);
+                } else {
+                  await signInAnonymously(fbAuth);
+                }
+              } catch (err) { console.error("Auth Error", err); }
             };
+            initAuth();
+            if (fbAuth) {
+              const unsubscribe = onAuthStateChanged(fbAuth, setUser);
+              return () => unsubscribe();
+            }
           }, []);
 
-          // Ambient event loop
+          // Scroll to bottom
+          useEffect(() => {
+            if ((gameState === 'story' || gameState === 'gameover' || gameState === 'victory') && endOfStoryRef.current) {
+              endOfStoryRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, [currentPageIndex, gameState]);
+
+          // Rotating Menu
+          useEffect(() => {
+            if(gameState !== 'menu') return;
+            const activeMenuImages = gameTheme === 'bubble' ? MENU_IMAGES_BUBBLE : MENU_IMAGES_VANIA;
+            const imgInterval = setInterval(() => { setMenuImgIndex(prev => (prev + 1) % activeMenuImages.length); }, 3000);
+            return () => clearInterval(imgInterval);
+          }, [gameState, gameTheme]);
+
+          // Simulated Progress Bar
+          useEffect(() => {
+            let interval;
+            if (gameState === 'loading') {
+              interval = setInterval(() => {
+                setLoadingProgress(prev => {
+                  if (prev >= 95) return 95;
+                  const increment = (100 - prev) * 0.08; 
+                  return prev + increment;
+                });
+              }, 400);
+            }
+            return () => clearInterval(interval);
+          }, [gameState]);
+
+          // --- SYNTH AUDIO ---
+          const playSynthNote = (freq, type, duration, volMod) => {
+            const ctx = window.synthCtx;
+            if (!ctx || isMuted || !freq) return;
+            try {
+              if (ctx.state === 'suspended') ctx.resume();
+              const osc = ctx.createOscillator();
+              const gainNode = ctx.createGain();
+              osc.type = type;
+              osc.frequency.setValueAtTime(freq, ctx.currentTime);
+              gainNode.gain.setValueAtTime(0, ctx.currentTime);
+              gainNode.gain.linearRampToValueAtTime(musicVolume * volMod, ctx.currentTime + 0.01);
+              gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration - 0.01);
+              osc.connect(gainNode);
+              gainNode.connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + duration);
+            } catch (e) { console.warn("Synth error:", e); }
+          };
+
+          const startSynthEngine = () => {
+            if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
+            initAudioContext();
+            
+            const track = gameTheme === 'bubble' ? BUBBLE_TRACKS[currentTrack % BUBBLE_TRACKS.length] : VANIA_TRACKS[currentTrack % VANIA_TRACKS.length];
+            const stepDuration = 60 / track.tempo / 2; 
+            let step = 0;
+            melodyIntervalRef.current = setInterval(() => {
+              if (isMuted) return;
+              if (step % 4 === 0) {
+                const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
+                if (NOTE_FREQ[bassNote]) playSynthNote(NOTE_FREQ[bassNote], "triangle", stepDuration * 3.8, 0.7);
+              }
+              let melodySum = 0;
+              let currentMelodyNote = null;
+              for (let i = 0; i < track.melody.length; i++) {
+                const item = track.melody[i];
+                if (step % 16 === melodySum) { currentMelodyNote = item; break; }
+                melodySum += item.dur;
+              }
+              if (currentMelodyNote && NOTE_FREQ[currentMelodyNote.note]) {
+                playSynthNote(NOTE_FREQ[currentMelodyNote.note], "square", stepDuration * currentMelodyNote.dur * 0.9, 0.3);
+              }
+              step = (step + 1) % 16;
+            }, stepDuration * 1000);
+          };
+
+          useEffect(() => {
+            if (!isMuted) startSynthEngine();
+            else if (melodyIntervalRef.current) { clearInterval(melodyIntervalRef.current); melodyIntervalRef.current = null; }
+            return () => { if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current); };
+          }, [isMuted, currentTrack, musicVolume, gameTheme]);
+
+          // Ambient lightning interval loop
           useEffect(() => {
             const ambientInterval = setInterval(() => {
               if (Math.random() > 0.6) {
@@ -1098,6 +1348,7 @@
             };
 
             const hackerChoiceEnter = (currentChapter) => {
+              if (!currentChapter || !currentChapter.choices || !currentChapter.choices[focusedChoice]) return;
               handleChoice(currentChapter.choices[focusedChoice]);
             };
 
@@ -1479,7 +1730,7 @@
                               </div>
                             )}
                             <button 
-                              onClick={() => handleReadAloud(currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? ". " + activeDeathMessage : "") + (isAtLastPage && currentChapter.question && !activeDeathMessage ? ". The challenge is: " + currentChapter.question : ""))} 
+                              onClick={() => handleReadAloud((currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? ". " + activeDeathMessage : "")) + (isAtLastPage && currentChapter.question && !activeDeathMessage ? ". The challenge is: " + currentChapter.question : ""))} 
                               className={`nes-btn shrink-0 ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`}
                             >
                               {isSpeaking ? '⏹️ Stop' : '🗣️ Read Aloud'}
@@ -1563,48 +1814,6 @@
             );
           };
 
-          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
-            if (!node || !node.pages) return null;
-            const isAtLastPage = currentPageIndex === node.pages.length - 1;
-            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
-            const showChallenge = isHistory || isAtLastPage;
-
-            return (
-              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
-                <div className="pixel-border bg-black p-4 md:p-6 relative">
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
-
-                  <div className="w-full">
-                     <InteractiveText text={textToDisplay} textSize={textSize} />
-                  </div>
-
-                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    {showChallenge && node.question && (
-                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
-                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
-                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
-                        </p>
-                      </div>
-                    )}
-                    {!isHistory && (
-                      <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} className="nes-btn shrink-0">
-                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {isHistory && chosenAction && (
-                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
-                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
-                  </div>
-                )}
-              </div>
-            );
-          };
-
           const renderAudioPlayer = () => {
              const activeTracks = gameTheme === 'bubble' ? BUBBLE_TRACKS : VANIA_TRACKS;
              return (
@@ -1652,14 +1861,10 @@
               {/* Shooting Star overlay for Bubble Theme */}
               {shootingStar && (
                 <div 
-                  className="absolute z-30 pointer-events-none transition-all duration-1000 ease-out"
-                  style={{
-                    top: `${shootingStar.y}%`,
-                    left: `${shootingStar.x}%`,
-                    transform: 'translate(-50%, -50%)',
-                  }}
+                  className="shooting-star-animated pointer-events-none"
+                  style={{ left: `${shootingStar.x}%` }}
                 >
-                  <svg viewBox="0 0 64 64" className="w-16 h-16 animate-pulse">
+                  <svg viewBox="0 0 64 64" className="w-16 h-16">
                     <path d="M32 0 L36 24 L60 28 L36 32 L32 56 L28 32 L4 28 L28 24 Z" fill="#FFF" />
                     <path d="M32 8 L34 24 L50 28 L34 32 L32 48 L30 32 L14 28 L30 24 Z" fill="#00E5FF" />
                     <circle cx="20" cy="40" r="2" fill="#FF4081" opacity="0.8" />
