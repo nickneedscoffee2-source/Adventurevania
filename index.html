@@ -104,7 +104,7 @@
       .nes-btn:active {
         transform: scale(0.95);
         box-shadow: 
-          inset 4px 4px 0px 0px rgba(0,0,0,0.5),
+          inset 4px 4px 0px 0px rgba(0,0,0,0.4),
           inset -4px -4px 0px 0px rgba(255,255,255,0.25);
       }
       .nes-btn.green { background-color: #E65100; color: #fff; }
@@ -129,6 +129,9 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        // --- GLOBAL WINDOW BINDINGS FOR AUDIO ---
+        window.synthCtx = null;
 
         // --- GLOBAL ERROR BOUNDARY ---
         class ErrorBoundary extends React.Component {
@@ -276,9 +279,49 @@
         // --- UTILITIES ---
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+        // Deterministic text splitter to split any raw layout string cleanly into exactly 3 pages
+        function splitStoryIntoPages(pagesInput, fallbackText) {
+          let text = "";
+          if (Array.isArray(pagesInput)) {
+            text = pagesInput.join("\n\n").trim();
+          } else if (typeof pagesInput === 'string') {
+            text = pagesInput.trim();
+          }
+          if (!text) {
+            text = fallbackText;
+          }
+
+          // Try splitting by double-newlines first (paragraphs)
+          let paragraphs = text.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
+          if (paragraphs.length >= 3) {
+            return [
+              paragraphs.slice(0, Math.ceil(paragraphs.length / 3)).join("\n\n"),
+              paragraphs.slice(Math.ceil(paragraphs.length / 3), Math.ceil(paragraphs.length / 3) * 2).join("\n\n"),
+              paragraphs.slice(Math.ceil(paragraphs.length / 3) * 2).join("\n\n")
+            ];
+          }
+
+          // Fallback: Split by sentences
+          let sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text];
+          if (sentences.length >= 3) {
+            let size = Math.ceil(sentences.length / 3);
+            return [
+              sentences.slice(0, size).join("").trim(),
+              sentences.slice(size, size * 2).join("").trim(),
+              sentences.slice(size * 2).join("").trim()
+            ];
+          }
+
+          // Hard Fallback
+          return [
+            text,
+            "You proceed with caution, keeping your eyes open for hidden clues in the environment.",
+            "The path forward is clear. Prepare to face your challenge."
+          ];
+        }
+
         // --- FIREBASE AND AUDIO CONTEXT GLOBALS ---
         let fbApp = null, fbAuth = null, fbDb = null, fbAppId = 'adventurevania-default';
-        let synthCtx = null; // Globally available reference initialized inside standard React scope
 
         // Compat Wrappers to bridge Global Compatibility variables cleanly without ES module imports
         const initializeFirebaseApp = (config) => {
@@ -705,6 +748,7 @@
           const [loadingProgress, setLoadingProgress] = useState(0);
           const [errorMsg, setErrorMsg] = useState("");
           const [confirmDialog, setConfirmDialog] = useState(null);
+          const [activeDeathMessage, setActiveDeathMessage] = useState(""); // Track gameOver overlay cleanly
 
           // Holds the dynamically generated 10-chapter structure
           const [fullBook, setFullBook] = useState([]);
@@ -717,7 +761,7 @@
           function initAudioContext() {
             if (!synthCtxRef.current) {
               synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              synthCtx = synthCtxRef.current; // Sync compat global pointer
+              window.synthCtx = synthCtxRef.current; // Sync window compat global pointer safely
             }
             if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') {
               synthCtxRef.current.resume();
@@ -915,7 +959,7 @@
             if (melodyIntervalRef.current) clearInterval(melodyIntervalRef.current);
             if (!synthCtxRef.current) {
               synthCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              synthCtx = synthCtxRef.current; 
+              window.synthCtx = synthCtxRef.current; 
             }
             const track = SYNTH_TRACKS[currentTrack];
             const stepDuration = 60 / track.tempo / 2; 
@@ -1038,6 +1082,7 @@
           const startGameWithData = (finalSetup) => {
             setTurnCount(0);
             setCurrentPageIndex(0);
+            setActiveDeathMessage("");
             setGameState('loading');
             setLoadingMsg("Summoning a cohesive 30-Page Book...");
             setErrorMsg("");
@@ -1107,34 +1152,8 @@
 
                 // --- ROBUST CHAPTER & PAGE SANITIZER ---
                 const sanitizedChapters = nodeData.chapters.map((ch, turnIdx) => {
-                  let pages = ch.pages;
-                  
-                  // Enforce pages is always an array of strings
-                  if (!pages || !Array.isArray(pages)) {
-                    const rawText = ch.storyText || (typeof ch.pages === 'string' ? ch.pages : '') || `Adventurevania Chapter ${turnIdx + 1}!`;
-                    const paragraphs = rawText.split('\n\n').map(p => p.trim()).filter(Boolean);
-                    if (paragraphs.length >= 3) {
-                      pages = paragraphs.slice(0, 3);
-                    } else {
-                      const sentences = rawText.match(/[^.!?]+[.!?]+/g) || [rawText];
-                      const size = Math.ceil(sentences.length / 3);
-                      pages = [
-                        sentences.slice(0, size).join(' ').trim(),
-                        sentences.slice(size, size * 2).join(' ').trim(),
-                        sentences.slice(size * 2).join(' ').trim()
-                      ].filter(Boolean);
-                    }
-                  }
-
-                  // Make sure we have exactly 3 pages
-                  pages = pages.map(p => p.trim()).filter(Boolean);
-                  if (pages.length < 3) {
-                    while (pages.length < 3) {
-                      pages.push("You look around carefully, searching for clues on how to proceed...");
-                    }
-                  } else if (pages.length > 3) {
-                    pages = pages.slice(0, 3);
-                  }
+                  const fallbackText = `Chapter ${turnIdx + 1} begins. You venture further into ${sett.name}.`;
+                  let pages = splitStoryIntoPages(ch.pages || ch.storyText, fallbackText);
 
                   // Ensure question exists
                   let question = ch.question ? ch.question.trim() : "What is the best way to bypass this challenge?";
@@ -1204,16 +1223,8 @@
 
           const handleChoice = (choice) => {
             if (choice.isGameOver || choice.isCorrect === false) {
-              const currentChapter = fullBook[turnCount];
-              const updatedChapter = {
-                ...currentChapter,
-                pages: [...currentChapter.pages.slice(0, 2), currentChapter.pages[2] + "\n\n" + (choice.gameOverMessage || "You made a grave mistake!")],
-                choices: []
-              };
-              let newBook = [...fullBook];
-              newBook[turnCount] = updatedChapter;
-              setFullBook(newBook);
-              setCurrentPageIndex(2); // Jump to last page to see death message
+              setActiveDeathMessage(choice.gameOverMessage || "You made a grave mistake!");
+              setCurrentPageIndex(2); // Jump to last page of the chapter to read the custom overlay
               setGameState('gameover');
             } else {
               if (turnCount + 1 >= fullBook.length || turnCount + 1 >= 10) {
@@ -1222,6 +1233,7 @@
               } else {
                  setTurnCount(turnCount + 1);
                  setCurrentPageIndex(0);
+                 setActiveDeathMessage(""); // Clear out the error/death message block
               }
             }
           };
@@ -1317,7 +1329,11 @@
               
               {/* Bottom Progress Bar */}
               <div className="w-full p-6 flex flex-col items-center justify-center border-t-4 border-red-950 bg-stone-950 shrink-0">
-                <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-4">{loadingMsg}</h2>
+                <h2 className="font-pixel text-[10px] md:text-xs text-orange-400 leading-relaxed text-center mb-1">{loadingMsg}</h2>
+                {/* Vetted Waiting Instruction Note */}
+                <p className="font-terminal text-yellow-500 text-lg md:text-xl mb-4 text-center animate-pulse">
+                  This could take several scary minutes.
+                </p>
                 <div className="w-full max-w-md h-6 bg-black pixel-border relative overflow-hidden">
                   <div className="absolute top-0 left-0 h-full bg-orange-600 transition-all duration-500" style={{width: `${Math.min(loadingProgress, 99)}%`}}></div>
                 </div>
@@ -1364,18 +1380,19 @@
                           <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
 
                           <div className="w-full">
-                             <InteractiveText text={currentChapter.pages[currentPageIndex]} />
+                             {/* Safely inject death overlay strictly on page 3 without mutatively breaking fullBook choices array structure */}
+                             <InteractiveText text={currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? "\n\n" + activeDeathMessage : "")} />
                           </div>
 
                           <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                            {isAtLastPage && currentChapter.question && (
+                            {isAtLastPage && currentChapter.question && !activeDeathMessage && (
                               <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
                                 <p className="font-pixel text-[11px] text-green-300 leading-loose">
                                   <span className="text-yellow-400">CHALLENGE:</span> {currentChapter.question}
                                 </p>
                               </div>
                             )}
-                            <button onClick={() => handleReadAloud(currentChapter.pages[currentPageIndex] + (isAtLastPage && currentChapter.question ? ". The challenge is: " + currentChapter.question : ""))} className="nes-btn shrink-0">
+                            <button onClick={() => handleReadAloud((currentChapter.pages[currentPageIndex] + (isAtLastPage && activeDeathMessage ? ". " + activeDeathMessage : "")) + (isAtLastPage && currentChapter.question && !activeDeathMessage ? ". The challenge is: " + currentChapter.question : ""))} className="nes-btn shrink-0">
                               {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
                             </button>
                           </div>
@@ -1433,8 +1450,9 @@
                     <div className="absolute bottom-0 left-0 right-0 bg-[#3e2723]/95 p-6 border-t-4 border-[#B71C1C] z-10 text-center flex flex-col items-center gap-4">
                        <h2 className="font-pixel text-2xl md:text-3xl text-red-500 flex items-center justify-center gap-4 animate-bounce">💀 GAME OVER 💀</h2>
                        <div className="flex flex-col md:flex-row gap-4">
-                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setTurnCount(0); setCurrentPageIndex(0); setGameState('story'); }}>Restart Adventure</button>
-                         <button className="nes-btn text-xs md:text-sm" onClick={() => setGameState('menu')}>Main Menu</button>
+                         {/* Clear out death overlay when restarting so choice cards are displayed instantly */}
+                         <button className="nes-btn text-xs md:text-sm green" onClick={() => { setTurnCount(0); setCurrentPageIndex(0); setActiveDeathMessage(""); setGameState('story'); }}>Restart Adventure</button>
+                         <button className="nes-btn text-xs md:text-sm" onClick={() => { setGameState('menu'); setActiveDeathMessage(""); }}>Main Menu</button>
                        </div>
                     </div>
                   )}
@@ -1443,7 +1461,7 @@
                     <div className="absolute bottom-0 left-0 right-0 bg-[#1b5e20]/95 p-8 border-t-4 border-yellow-500 z-10 text-center">
                        <h2 className="font-pixel text-3xl text-yellow-400 mb-6 flex items-center justify-center gap-4 animate-bounce">🏆 VICTORY! 🏆</h2>
                        <p className="font-terminal text-2xl text-white mb-6">You solved the mysteries and conquered Adventurevania!</p>
-                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Main Menu</button>
+                       <button className="nes-btn text-xl" onClick={() => setGameState('menu')}>Play Again</button>
                     </div>
                   )}
                 </div>
@@ -1501,7 +1519,8 @@
           const renderAudioPlayer = () => (
              <div className="absolute top-2 right-2 md:top-4 md:right-4 z-50 bg-black music-border p-2 md:p-3 flex flex-col gap-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] opacity-70 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 justify-between">
-                  <button onClick={() => { if(isMuted) { initAudioContext(); startSynthEngine(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
+                  {/* FIXED: Turning on the sound will no longer crash the game with undefined variable reference errors */}
+                  <button onClick={() => { initAudioContext(); if(isMuted) { startSynthEngine(); } setIsMuted(!isMuted); }} className="text-xl hover:scale-110 transition-transform focus:outline-none" title={isMuted ? "Unmute Music" : "Mute Music"}>
                     {isMuted ? '🔇' : '🔊'}
                   </button>
                   <input type="range" min="0" max="1" step="0.05" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} className="w-20 md:w-24 cursor-pointer" />
@@ -1537,6 +1556,7 @@
                         {confirmDialog.message}
                       </p>
                       <div className="flex gap-4 justify-center">
+                        {/* FIXED: Clicking YES now correctly restarts from turn 0 instantly without hanging */}
                         <button className="nes-btn green flex-1" onClick={() => {
                           if (confirmDialog.type === 'restart') {
                             setCurrentPageIndex(0);
@@ -1544,10 +1564,11 @@
                             setStoryHistory([]);
                             setCorrectAnswers(0);
                             setTotalQuestions(0);
+                            setActiveDeathMessage("");
                             setGameState('story');
-                            generateStoryNode(null, setupData, sessionSeed);
                           } else if (confirmDialog.type === 'quit') {
                             setGameState('menu');
+                            setActiveDeathMessage("");
                           }
                           setConfirmDialog(null);
                         }}>Yes</button>
