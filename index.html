@@ -116,7 +116,7 @@
       ::-webkit-scrollbar-thumb { background: #B71C1C; border: 2px solid #000; }
       
       body { 
-        background: linear-gradient(135deg, #180907 0%, #2D140F 40%, #4D1A0F 75%, #180907 100%); 
+        background: linear-gradient(to bottom, #4D1A0F 0%, #2D140F 50%, #180907 100%); 
         margin: 0; 
         overflow-x: hidden; 
       }
@@ -214,7 +214,7 @@
             { name: "Fraction Phantom", icon: "👻", desc: "Splits everything into pieces." },
             { name: "Count Misspell", icon: "🧛", desc: "Steals vowels in the night." },
             { name: "Sludge Monster", icon: "🧟", desc: "Pollutes rivers and habitats." },
-            { name: "The Negabor", icon: "👹", desc: "A moody green ogre who drains positive energy." },
+            { name: "Negabor", icon: "👹", desc: "A moody green ogre who drains positive energy." },
             { name: "Sir Gravity-Drop", icon: "🦇", desc: "Turns the world upside down." },
             { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
             { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
@@ -348,7 +348,7 @@
             let p1, p2, p3, q, choices;
 
             if (setup.readingLevel === 0) { // Toddler logic
-              p1 = `Chapter ${turn + 1}. The sky is dark. ${char.name} walks. It is scary.`;
+              p1 = `Ch ${turn + 1}. The sky is dark. ${char.name} walks. It is scary.`;
               p2 = `There is a big noise! The bad ${vill.name} is here.`;
               p3 = `Oh no! The bad ${vill.name} wants to stop you.`;
               q = `Who made the loud noise?`;
@@ -357,7 +357,7 @@
                 { text: `A little bug`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bug was quiet. You lose!" }
               ];
             } else { // Standard logic
-              p1 = `Chapter ${turn + 1}. With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}.`;
+              p1 = `Ch ${turn + 1}. With a sudden crash of lightning, ${char.name} moves forward into the ancient shadows of the ${sett.name}. The atmosphere is heavy with the trace of ${dil.name}.`;
               p2 = `The path ahead divides. Spooky winds whisper through the crumbling structures of the ${sett.name}. You must stay vigilant to proceed with your quest to ${plot.name}.`;
               p3 = `A sudden rustle behind the pillars! ${char.name} catches a glimpse of the terrifying ${vill.name} weaving complex puzzles in the twilight.`;
               q = `What primary force or dilemma was weighing heavily upon ${char.name} during this exploration?`;
@@ -1031,12 +1031,11 @@
             const plot = CATEGORIES.plots[finalSetup.plot];
             const dil = CATEGORIES.dilemmas[finalSetup.dilemma];
 
-            const wordCounts = ["40 to 50 words", "75 to 100 words", "100 to 120 words", "130 to 150 words"];
             const getReadingLevelInstruction = (level) => {
-              if (level === 0) return "Write like a kindergarten book. Sentences MUST be 3 to 5 words max. Use ONLY baby sight words like: big, red, run, fast, bad, see. NO BIG WORDS allowed.";
-              if (level === 1) return "Write for a 3rd grader. Use simple compound sentences and basic vocabulary.";
-              if (level === 2) return "Write for a 6th grader. Use descriptive words and standard formatting.";
-              return "Write for an 8th grader. Use highly advanced, dark, atmospheric, and spooky vocabulary.";
+              if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY baby sight words like: big, red, run, fast, see, cat. EXACTLY 30 words per page (exactly 90 words per chapter). No big words allowed.";
+              if (level === 1) return "Write for a standard primary grade. Use simple compound sentences. EXACTLY 100 words per page (exactly 300 words per chapter).";
+              if (level === 2) return "Write for a junior grade. Use descriptive words and standard formatting. EXACTLY 133 words per page (exactly 400 words per chapter).";
+              return "Write for an intermediate grade. Use highly advanced, dark, atmospheric, and spooky vocabulary. EXACTLY 166 words per page (exactly 500 words per chapter).";
             };
 
             let promptText = `
@@ -1135,6 +1134,7 @@
             } else {
               if (turnCount + 1 >= fullBook.length || turnCount + 1 >= 10) {
                  setGameState('victory');
+                 recordEngagement('Victory');
               } else {
                  setTurnCount(turnCount + 1);
                  setCurrentPageIndex(0);
