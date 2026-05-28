@@ -566,128 +566,37 @@
           );
         }
 
-        // --- DUAL-ENGINE COHERENT FALLBACK STORY GENERATOR ---
-        const generateLocalBook = (setup) => {
-          const char = CATEGORIES.characters[setup.character];
-          const vill = CATEGORIES.villains[setup.villain];
-          const sett = CATEGORIES.settings[setup.setting];
-          const plot = CATEGORIES.plots[setup.plot];
-          const dil = CATEGORIES.dilemmas[setup.dilemma];
-          const level = setup.readingLevel;
-          const pageWordTargets = [30, 100, 133, 166];
-          const targetW = pageWordTargets[level] || 100;
+        function InteractiveText({ text, textSize }) {
+          const [highlights, setHighlights] = useState([]);
+          useEffect(() => { setHighlights([]); }, [text]); 
 
-          const storyProgressionTemplates = [
-            {
-              title: "The Arrival",
-              vania: `With a heavy heart, the brave ${char.name} stepped onto the mist-shrouded grounds of the ${sett.name}. Shadows danced ominously beneath the pale sky, hinting at the terrifying quest to ${plot.name} that lay directly ahead.`,
-              bubble: `Pop! The cheerful ${char.name} bounced into the glowing bubble-filled valleys of the ${sett.name}. Colorful balloons drifted upwards as the quest to ${plot.name} officially set off in a burst of wonder.`
-            },
-            {
-              title: "The First Clue",
-              vania: `Moving deeper, ${char.name} encountered ancient structures crumbling under the weight of time. Hidden under old cracked stones was a vital runic map whispering secrets on how to safely bypass the threat of ${dil.name}.`,
-              bubble: `Treading lightly, ${char.name} found neon bubbles floating in beautiful patterns near the center of the ${sett.name}. Inside the largest bubble floated a shiny golden scroll showing the path past the hazard of ${dil.name}.`
-            },
-            {
-              title: "Deepening Mystery",
-              vania: `The air grew cold. Unseen eyes watched from dark alcoves. ${char.name} carefully calculated the trajectory of the shifting walls, knowing that any mistake would lead straight to ${vill.name}'s dungeons.`,
-              bubble: `Giggles echoed from the neon walls. ${char.name} bounced high on a giant springboard bubble, analyzing the floating shapes to solve the magical puzzle that guarded this cheerful kingdom.`
-            },
-            {
-              title: "The Threat Arrives",
-              vania: `A chilling laugh echoed through the corridors. The shadow of ${vill.name} stretched across the walls. The dangerous trap of ${dil.name} was trigger-primed, threatening to swallow the hero whole.`,
-              bubble: `Suddenly, a grumpy roar was heard. A giant shadow of ${vill.name} appeared, casting a gloomy spell that tried to freeze all the happy floating bubbles in their tracks.`
-            },
-            {
-              title: "Caught in the Labyrinth",
-              vania: `Spooky iron gates slammed shut behind ${char.name}. The labyrinth of the ${sett.name} shifted constantly. Only strict logical deduction could reveal the escape route before time ran out.`,
-              bubble: `Whoosh! Safe bubble gates closed with a soft pop. ${char.name} had to bounce through a maze of colored balloon barriers to find the hidden path leading forward.`
-            },
-            {
-              title: "Confronting the Minion",
-              vania: `A monstrous gargoyle blocked the path. Armed only with their intellect and unique abilities, ${char.name} prepared to outsmart the creature and continue the epic quest.`,
-              bubble: `A silly little mechanical toy dragon stood in the way, blowing steam. ${char.name} blew a massive glowing bubble to trap the toy, giggling as it drifted away harmlessly.`
-            },
-            {
-              title: "Escaping the Crypt",
-              vania: `Fleeing the shifting traps, the hero broke through the crumbling floor. ${char.name} landed in a hidden vault of ancient lore, catching sight of the final route.`,
-              bubble: `Bouncing off a high trampoline balloon, ${char.name} burst through a curtain of soft stars, landing directly in the heart of the secret treasure chamber.`
-            },
-            {
-              title: "The Narrow Ascent",
-              vania: `Stairs of jagged stone wound up into the twilight. Every step brought the hero closer to the ultimate confrontation. The pressure of ${dil.name} weighed heavily upon them.`,
-              bubble: `A spiral of neon rainbow steps rose high into the bubble sky. ${char.name} ran upwards eagerly, ready to restore happiness to the entire beautiful kingdom.`
-            },
-            {
-              title: "Before the Grand Threshold",
-              vania: `Standing before massive iron double-doors, ${char.name} paused. The evil presence of the terrible ${vill.name} was palpable on the other side. This was the moment of truth.`,
-              bubble: `Standing before a massive gate of glowing crystals, ${char.name} smiled. The grumpy energy of ${vill.name} was just beyond, waiting to be turned back into pure joy.`
-            },
-            {
-              title: "Final Triumph",
-              vania: `With a burst of courage, ${char.name} confronted ${vill.name}! Using their remarkable skills, the hero dismantled the villain's plot, escaping the ${sett.name} as a legend.`,
-              bubble: `With a happy bounce, ${char.name} popped the dark spell of ${vill.name}! The kingdom of ${sett.name} erupted in a shower of colorful confetti and floating bubbles.`
-            }
-          ];
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) setHighlights(prev => [...prev, selectedText]);
+          };
+          const removeHighlight = (phrase) => { setHighlights(prev => prev.filter(h => h !== phrase)); };
 
-          let chapters = [];
-          for (let turn = 0; turn < 10; turn++) {
-            const template = storyProgressionTemplates[turn];
-            // Extract the baseline text based on active theme choice
-            const rawStory = setup.gameTheme === 'bubble' ? template.bubble : template.vania;
+          const renderText = () => {
+            if (!text) return null;
+            if (highlights.length === 0) return text;
+            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
+            const parts = text.split(regex);
+            return parts.map((part, i) => {
+              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+              if (matched) return (<mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>{part}</mark>);
+              return <span key={i}>{part}</span>;
+            });
+          };
 
-            let p1, p2, p3, q, choices;
-
-            if (level === 0) { // Early Primary: 30 words per page (exactly 90 words per chapter)
-              p1 = `See ${char.name} go. They walk fast. They must run. The sky is very dark. The dark wind can blow. It is very cold. See them find the big red door.`; // exactly 30 words
-              p2 = `Oh no! The bad ${vill.name} is here. They want to stop you. You must think fast. Look at the key. The key is gold. Grab it now.`; // exactly 30 words
-              p3 = `Solve the puzzle now. Open the big door. You can do it. Walk into the warm sun. You win the game. You are safe. Good job!`; // exactly 30 words
-              q = `Who wants to stop you in this scary chapter?`;
-              choices = [
-                { text: `The bad ${vill.name}`, isCorrect: true, isGameOver: false },
-                { text: `A little kitten`, isCorrect: false, isGameOver: true, gameOverMessage: "No, kittens are sweet! You got captured." },
-                { text: `A sleeping bird`, isCorrect: false, isGameOver: true, gameOverMessage: "No, birds are friendly! You got captured." }
-              ];
-            } else {
-              const expandText = (baseText, targetCount) => {
-                let textWords = baseText.split(/\s+/).filter(Boolean);
-                let count = textWords.length;
-                let padding = [
-                  "The surrounding environment is shrouded in mystery.",
-                  "Carefully monitoring the surroundings is absolutely vital.",
-                  "Step by step, the explorer inches closer to safety.",
-                  "A feeling of immense urgency drives the hero to think fast.",
-                  "The dusty stone pathways echo with the sounds of the quest.",
-                  "Every choice made here determines the outcome of the adventure."
-                ];
-                let padIdx = 0;
-                while (count < targetCount) {
-                  let nextPadding = padding[padIdx % padding.length];
-                  baseText += " " + nextPadding;
-                  textWords = baseText.split(/\s+/).filter(Boolean);
-                  count = textWords.length;
-                  padIdx++;
-                }
-                // Trim or pad to exactly match the target words
-                return textWords.slice(0, targetCount).join(" ");
-              };
-
-              p1 = expandText(rawStory, targetW);
-              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms heavily in the air. ${char.name} must remain vigilant and stay focused.`, targetW);
-              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the shadows, hoping you will make a mistake. Prepare to solve the riddle!`, targetW);
-              
-              q = `What is the primary objective of ${char.name}'s current quest?`;
-              choices = [
-                { text: `To ${plot.name}`, isCorrect: true, isGameOver: false },
-                { text: "To find an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You wandered off the main path and fell into a trapdoor!" },
-                { text: "To stop and take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You slept too long and Negabor captured you!" }
-              ];
-            }
-
-            chapters.push({ pages: [p1, p2, p3], question: q, choices: choices.sort(() => Math.random() - 0.5) });
-          }
-          return chapters;
-        };
+          return (
+            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>{renderText()}</p>
+            </div>
+          );
+        }
 
         // --- FLAPPY BAT MINIGAME COMPONENT ---
         function FlappyBatMinigame({ theme }) {
@@ -967,6 +876,9 @@
 
           // Holds the dynamically generated Chapter state
           const [currentChapter, setCurrentChapter] = useState(null);
+
+          // Holds the pre-generated 10-chapter structure
+          const [fullBook, setFullBook] = useState([]);
 
           const endOfStoryRef = useRef(null);
           const scrollRef = useRef(null);
@@ -1259,68 +1171,53 @@
 
             window.addEventListener('keydown', handleKeyDown, { passive: false });
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [gameState, setupStep, setupFocusIndex, currentChapter, focusedChoice, errorMsg, confirmDialog, setupData, hasReadFullText]);
+          }, [gameState, setupStep, setupFocusIndex, fullBook, turnCount, currentPageIndex, focusedChoice, errorMsg, confirmDialog, setupData, hasReadFullText, currentChapter]);
 
           const startGameWithData = (finalSetup) => {
             setTurnCount(0);
             setCurrentPageIndex(0);
             setActiveDeathMessage("");
             setGameState('loading');
-            setLoadingMsg("Summoning progressive Chapter 1...");
+            setLoadingMsg("Summoning a cohesive 30-Page Book...");
             setErrorMsg("");
-            generateNextChapterOnDemand(0, finalSetup);
+            generateFullBook(finalSetup);
           };
 
-          const generateNextChapterOnDemand = async (nextTurn, finalSetup = setupData) => {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            setIsSpeaking(false);
-            setHasReadFullText(false); // Lock the comprehension portal until read
-
+          // --- CORE COHESION AND PROGRESSIVE SYSTEM ---
+          const generateFullBook = async (finalSetup) => {
             const char = CATEGORIES.characters[finalSetup.character];
             const vill = CATEGORIES.villains[finalSetup.villain];
             const sett = CATEGORIES.settings[finalSetup.setting];
             const plot = CATEGORIES.plots[finalSetup.plot];
             const dil = CATEGORIES.dilemmas[finalSetup.dilemma];
 
-            const readingLevelWordTargets = [90, 300, 400, 500];
-            const targetWords = readingLevelWordTargets[finalSetup.readingLevel] || 300;
+            const pageWordTargets = [30, 100, 133, 166];
 
             const getReadingLevelInstruction = (level) => {
-              if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY basic sight words (big, red, run, fast, see, cat). EXACTLY 90 words total. No complex vocabulary.";
-              if (level === 1) return "Write for a standard primary grade. Use simple compound sentences. EXACTLY 300 words total.";
-              if (level === 2) return "Write for a junior grade. Use descriptive words and standard formatting. EXACTLY 400 words total.";
-              return "Write for an intermediate grade. Use highly advanced, dark, atmospheric, and spooky vocabulary. EXACTLY 500 words total.";
+              if (level === 0) return "Write like an early primary book. Sentences MUST be 3 to 5 words max. Use ONLY basic sight words (big, red, run, fast, see, cat). EXACTLY 30 words per page (exactly 90 words per chapter). No big words allowed. DO NOT copy-paste or repeat sentences under any circumstances to fill word counts.";
+              if (level === 1) return "Write for a standard primary grade. Use simple compound sentences. EXACTLY 100 words per page (exactly 300 words per chapter). DO NOT copy-paste or repeat sentences under any circumstances to fill word counts.";
+              if (level === 2) return "Write for a junior grade. Use descriptive words and standard formatting. EXACTLY 133 words per page (exactly 400 words per chapter). DO NOT copy-paste or repeat sentences under any circumstances to fill word counts.";
+              return "Write for an intermediate grade. Use highly advanced, dark, atmospheric, and spooky vocabulary. EXACTLY 166 words per page (exactly 500 words per chapter). DO NOT copy-paste or repeat sentences under any circumstances to fill word counts.";
             };
 
-            // Build accumulated story log to guarantee 100% linear story arc without repetitions
-            let storyHistoryLog = storyHistory.map((h, idx) => `Chapter ${idx+1} Action Chosen: "${h.chosenAction}"`).join(". ");
-
             let promptText = `
-              Generate Chapter ${nextTurn + 1} of 10.
+              Write a complete, highly cohesive 10-chapter Choose Your Own Adventure book.
               - Hero: ${char.name} (${char.desc})
               - Villain: ${vill.name} (${vill.desc})
               - Setting: ${sett.name} (${sett.desc})
-              - Quest Objective: ${plot.name}
-              - Danger Level: ${dil.name}
+              - Plot: ${plot.name}
+              - Central Danger: ${dil.name}
               
-              LINEAR PLOT STAGE CHRONOLOGY:
-              - Chapter 1: The Arrival and exploration of the entrance.
-              - Chapter 2-4: Discovering initial secrets, solving mechanical puzzles.
-              - Chapter 5-7: Facing a localized trap set by ${vill.name}.
-              - Chapter 8-9: Escalating narrow escape, ascending to the final hall.
-              - Chapter 10: The Grand Climax clashing with ${vill.name}.
-              
-              Turn Count context: This is Chapter ${nextTurn + 1} of 10.
-              Session history choices so far: ${storyHistoryLog ? storyHistoryLog : "No previous choices. Introduce the setting."}
-              
-              STRICT NARRATIVE RULES:
-              1. Continue the story linearly based on history. DO NOT repeat descriptions, vocabulary, or exact events from prior chapters. 
-              2. Keep word length perfectly consistent with: ${getReadingLevelInstruction(finalSetup.readingLevel)}
-              3. Create a reading comprehension question based strictly on this Chapter's text.
-              4. Return 3 multiple choice options. One correct answer. Two incorrect choices that cause a funny, spooky GAME OVER with a unique 'gameOverMessage'.
+              STRICT COHESION, REPETITION & FLOW RULES:
+              1. The story MUST progress linearly from Chapter 1 to Chapter 10 without repeating past events or duplicating descriptions. Each chapter must represent a totally new stage of the plot journey!
+              2. DO NOT write repetitive words or filler sentences. If more length is needed, write descriptive environments, internal character thoughts, and lore.
+              3. Chapter 1 is the Arrival. Chapter 2-4 is the search and exploration of clues. Chapter 5-7 is a trap laid by ${vill.name}. Chapter 8-9 is the narrow escape. Chapter 10 is the final boss clash!
+              4. EACH Chapter MUST have exactly 3 "pages" (an array of exactly 3 text strings).
+              5. The length of text on EACH page MUST follow this rule: ${getReadingLevelInstruction(finalSetup.readingLevel)}
+              6. At the end of each chapter, provide a reading comprehension question based on that chapter, with exactly 3 choices (one correct, two incorrect with a 'gameOverMessage').
             `;
 
-            const systemInstruction = `You are an educational progressive CYOA story writer. You MUST output a single valid JSON block. Use SINGLE QUOTES (') inside strings. Do NOT repeat paragraphs. Schema: { "pages": ["paragraph 1", "paragraph 2", "paragraph 3"], "question": "Question?", "choices": [{"text":"", "isCorrect":true/false, "gameOverMessage":""}] }`;
+            const systemInstruction = `You are a strict children's book author. You MUST output a single valid JSON block containing an array of 10 chapters. Use SINGLE QUOTES (') inside strings. Schema: { "chapters": [ { "pages": ["page 1", "page 2", "page 3"], "question": "Question?", "choices": [{"text":"", "isCorrect":true/false, "gameOverMessage":""}] } ] }`;
 
             let success = false;
             let attempts = 0;
@@ -1347,57 +1244,69 @@
                 
                 const nodeData = JSON.parse(jsonText);
                 
-                let combinedStoryText = Array.isArray(nodeData.pages) ? nodeData.pages.join("\n\n") : (nodeData.storyText || "");
-                let paddedText = padStoryTextToTarget(combinedStoryText, targetWords);
-                let balancedPages = splitStoryIntoPages(paddedText, "", Math.ceil(targetWords / 3));
-
-                let chQuestion = nodeData.question ? nodeData.question.trim() : "What is your next move?";
-                let chChoices = nodeData.choices;
-                if (!chChoices || !Array.isArray(chChoices) || chChoices.length < 3) {
-                  chChoices = [
-                    { text: "Move forward with great logic", isCorrect: true, isGameOver: false },
-                    { text: "Take an uncalculated shortcut", isCorrect: false, isGameOver: true, gameOverMessage: `You took a wrong turn and ran into ${vill.name}'s snare!` },
-                    { text: "Ignore your surroundings", isCorrect: false, isGameOver: true, gameOverMessage: "You became distracted and stepped through a loose trapdoor!" }
-                  ];
+                if (!nodeData.chapters || nodeData.chapters.length === 0) {
+                   throw new Error("Invalid array structure.");
                 }
 
-                setCurrentChapter({
-                  pages: balancedPages,
-                  question: chQuestion,
-                  choices: chChoices.sort(() => Math.random() - 0.5)
+                // --- ROBUST CHAPTER, COHESION & PAGE BALANCER ---
+                const targetW = pageWordTargets[finalSetup.readingLevel];
+                const sanitizedChapters = nodeData.chapters.map((ch, turnIdx) => {
+                  const fallbackText = `Chapter ${turnIdx + 1} begins. You venture further into ${sett.name}.`;
+                  let pages = splitStoryIntoPages(ch.pages || ch.storyText, fallbackText, targetW);
+
+                  // Ensure question exists
+                  let question = ch.question ? ch.question.trim() : "What is the best way to bypass this challenge?";
+
+                  // Ensure we always have at least 3 choices
+                  let choices = ch.choices;
+                  if (!choices || !Array.isArray(choices) || choices.length === 0) {
+                    choices = [
+                      { text: "Solve the challenge carefully", isCorrect: true, isGameOver: false },
+                      { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: `You ran into ${vill.name}'s trap!` },
+                      { text: "Ignore the signs", isCorrect: false, isGameOver: true, gameOverMessage: "You ignored the warning and fell into a pit!" }
+                    ];
+                  }
+
+                  if (choices.length < 3) {
+                    const backupIncorrect = [
+                      { text: "Take the wrong turn", isCorrect: false, isGameOver: true, gameOverMessage: "You took a wrong turn and got lost in the shadows!" },
+                      { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: `You rested too long and ${vill.name} caught you!` }
+                    ];
+                    while (choices.length < 3) {
+                      choices.push(backupIncorrect[choices.length % backupIncorrect.length]);
+                    }
+                  }
+
+                  // Verify correct/incorrect flags are logically consistent
+                  let hasCorrect = choices.some(c => c.isCorrect);
+                  if (!hasCorrect) {
+                    choices[0].isCorrect = true;
+                    choices[0].isGameOver = false;
+                  }
+
+                  return { pages, question, choices };
                 });
 
+                setFullBook(sanitizedChapters);
+                setCurrentChapter(sanitizedChapters[0]);
                 setLoadingProgress(100);
-                setTimeout(() => {
-                  setGameState('story');
-                  if (scrollRef.current) scrollRef.current.scrollTop = 0;
-                }, 400);
-                
+                setTimeout(() => setGameState('story'), 500);
                 success = true;
                 
               } catch (err) {
-                console.warn(`Generation Attempt failed:`, err.message);
+                console.warn(`Engine Error (Attempt ${attempts}):`, err.message);
               }
             }
 
             if (!success) {
-              console.warn("API failed. Booting local offline fallback progressive chapter...");
+              console.warn("API failed. Booting local offline fallback engine...");
               try {
-                const localChapters = generateLocalBook({ ...finalSetup, gameTheme });
-                const localCh = localChapters[nextTurn];
-                
-                let fallbackPages = splitStoryIntoPages(localCh.pages, "", Math.ceil(targetWords / 3));
-                setCurrentChapter({
-                  pages: fallbackPages,
-                  question: localCh.question,
-                  choices: localCh.choices
-                });
-                
+                // Ensure custom theme values are forwarded correctly into the local story generator
+                const localBook = generateLocalBook({ ...finalSetup, gameTheme });
+                setFullBook(localBook);
+                setCurrentChapter(localBook[0]);
                 setLoadingProgress(100);
-                setTimeout(() => {
-                  setGameState('story');
-                  if (scrollRef.current) scrollRef.current.scrollTop = 0;
-                }, 400);
+                setTimeout(() => setGameState('story'), 500);
               } catch (localErr) {
                 setErrorMsg(`Critical Fallback Error: ${localErr.message}`);
                 setGameState('story');
@@ -1405,18 +1314,7 @@
             }
           };
 
-          const restartAdventure = () => {
-            setTurnCount(0);
-            setCurrentPageIndex(0);
-            setActiveDeathMessage("");
-            setStoryHistory([]);
-            setHasReadFullText(false);
-            setGameState('loading');
-            setLoadingProgress(0);
-            setLoadingMsg("Summoning progressive Chapter 1...");
-            generateNextChapterOnDemand(0, setupData);
-          };
-
+          // Added the missing startGame definition inside React Scope to clear setup transitions
           const startGame = () => {
             const currentKey = STEPS_KEYS[setupStep];
             const finalSetup = { ...setupData, [currentKey]: setupFocusIndex };
@@ -1431,17 +1329,36 @@
             } else {
               setStoryHistory([...storyHistory, { chosenAction: choice.text }]);
               const nextTurn = turnCount + 1;
-              setTurnCount(nextTurn);
               
               if (nextTurn >= 10) {
                  setGameState('story'); // safety fallback
                  setTimeout(() => { setGameState('victory'); }, 100);
               } else {
-                 setGameState('loading');
-                 setLoadingProgress(0);
-                 setLoadingMsg(`Summoning progressive Chapter ${nextTurn + 1}...`);
-                 generateNextChapterOnDemand(nextTurn);
+                 setTurnCount(nextTurn);
+                 setCurrentPageIndex(0);
+                 setActiveDeathMessage(""); // Clear out the error block
+                 setHasReadFullText(false); // Reset lock
+                 
+                 // Directly pick next chapter from pre-generated fullBook state array
+                 if (fullBook && fullBook[nextTurn]) {
+                   setCurrentChapter(fullBook[nextTurn]);
+                 }
+                 if (scrollRef.current) scrollRef.current.scrollTop = 0;
               }
+            }
+          };
+
+          const restartAdventure = () => {
+            setTurnCount(0);
+            setCurrentPageIndex(0);
+            setActiveDeathMessage("");
+            setStoryHistory([]);
+            setHasReadFullText(false);
+            if (fullBook && fullBook[0]) {
+              setCurrentChapter(fullBook[0]);
+              setGameState('story');
+            } else {
+              startGameWithData(setupData);
             }
           };
 
@@ -1656,7 +1573,7 @@
                               onClick={() => handleReadAloud(ch.pages.join(". ") + (activeDeathMessage ? ". " + activeDeathMessage : ""))} 
                               className={`nes-btn shrink-0 ${gameTheme === 'bubble' ? 'nes-btn-bubble' : 'nes-btn-vania'}`}
                             >
-                              {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                              {isSpeaking ? '⏹️ Stop' : '🗣️ Read Aloud'}
                             </button>
                             <span className="font-pixel text-[8px] text-gray-500">📜 Scroll to the bottom to unlock!</span>
                           </div>
