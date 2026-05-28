@@ -529,9 +529,9 @@
                 return textWords.slice(0, targetCount).join(" ");
               };
 
-              p1 = expandText(rawStory, targetW);
-              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms heavily in the air. ${char.name} must remain vigilant and stay focused.`, targetW);
-              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the shadows, hoping you will make a mistake. Prepare to solve the riddle!`, targetW);
+              p1 = expandText(rawStory, targetWords);
+              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms heavily in the air. ${char.name} must remain vigilant and stay focused.`, targetWords);
+              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the shadows, hoping you will make a mistake. Prepare to solve the riddle!`, targetWords);
               
               q = `What is the primary objective of ${char.name}'s current quest?`;
               choices = [
@@ -683,6 +683,165 @@
 
           return (
             <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
+          );
+        };
+
+        // --- INTERACTIVE TEXT HIGHLIGHTER ---
+        const InteractiveText = ({ text, textSize }) => {
+          const [highlights, setHighlights] = useState([]);
+          useEffect(() => { setHighlights([]); }, [text]); 
+
+          const handleSelection = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+            const selectedText = selection.toString().trim();
+            if (selectedText.length > 1 && !highlights.includes(selectedText)) setHighlights(prev => [...prev, selectedText]);
+          };
+          const removeHighlight = (phrase) => { setHighlights(prev => prev.filter(h => h !== phrase)); };
+
+          const renderText = () => {
+            if (!text) return null;
+            if (highlights.length === 0) return text;
+            const sorted = highlights.slice().sort((a, b) => b.length - a.length).map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${sorted.join('|')})`, 'gi');
+            const parts = text.split(regex);
+            return parts.map((part, i) => {
+              const matched = highlights.find(h => h.toLowerCase() === part.toLowerCase());
+              if (matched) return (<mark key={i} className="bg-amber-400 text-black px-1 rounded cursor-pointer" onClick={() => removeHighlight(matched)}>{part}</mark>);
+              return <span key={i}>{part}</span>;
+            });
+          };
+
+          return (
+            <div onMouseUp={handleSelection} onTouchEnd={handleSelection}>
+              <p className="font-terminal text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>{renderText()}</p>
+            </div>
+          );
+        };
+
+        // --- RETROBAT CONSTANT COMPONENT DECLARATION ---
+        const RetroBat = ({ style }) => {
+          const [wingFrame, setWingFrame] = useState(0);
+          useEffect(() => {
+            const frameTimer = setInterval(() => { setWingFrame(f => (f === 0 ? 1 : 0)); }, 100);
+            return () => clearInterval(frameTimer);
+          }, []);
+          return (
+            <div className="critter" style={style}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 16" className="w-24 h-12">
+                <rect x="14" y="5" width="4" height="6" fill="#1c0f0d" />
+                <rect x="15" y="3" width="2" height="2" fill="#1c0f0d" />
+                <rect x="15" y="6" width="1" height="1" fill="#ff2222" />
+                <rect x="17" y="6" width="1" height="1" fill="#ff2222" />
+                {wingFrame === 0 ? (
+                  <g>
+                    <rect x="10" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="10" width="2" height="3" fill="#3e2723" />
+                    <rect x="18" y="5" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="6" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="8" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="10" width="2" height="3" fill="#3e2723" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="10" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="6" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="2" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="0" y="0" width="2" height="2" fill="#3e2723" />
+                    <rect x="18" y="4" width="4" height="3" fill="#5d4037" />
+                    <rect x="22" y="2" width="4" height="4" fill="#5d4037" />
+                    <rect x="26" y="0" width="4" height="4" fill="#3e2723" />
+                    <rect x="30" y="0" width="2" height="2" fill="#3e2723" />
+                  </g>
+                )}
+              </svg>
+            </div>
+          );
+        };
+
+        // --- FLAPPY BAT MINIGAME COMPONENT ---
+        const FlappyBatMinigame = () => {
+          const canvasRef = useRef(null);
+          useEffect(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let animationFrameId;
+
+            let bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 };
+            let pipes = [];
+            let score = 0; let gameOver = false; let frameCount = 0;
+
+            const drawBat = (x, y, size) => {
+              ctx.fillStyle = '#ffb300'; ctx.fillRect(x, y + size/3, size, size/3);
+              if (Math.floor(frameCount / 8) % 2 === 0) {
+                ctx.fillRect(x - size/2, y, size/2, size/2); ctx.fillRect(x + size, y, size/2, size/2); 
+              } else {
+                ctx.fillRect(x - size/2, y + size/2, size/2, size/2); ctx.fillRect(x + size, y + size/2, size/2, size/2); 
+              }
+              ctx.fillStyle = '#ff2222'; ctx.fillRect(x + size - 4, y + size/3 + 2, 2, 2);
+            };
+
+            const update = () => {
+              if (gameOver) return;
+              bat.velocity += bat.gravity; bat.y += bat.velocity;
+              if (bat.y > canvas.height - bat.size || bat.y < 0) gameOver = true;
+              if (frameCount % 110 === 0) pipes.push({ x: canvas.width, topHeight: Math.random() * (canvas.height - 160) + 20, gap: 120, passed: false, width: 45 });
+              pipes.forEach(p => {
+                p.x -= 2.5;
+                if (bat.x < p.x + p.width && bat.x + bat.size > p.x) { if (bat.y < p.topHeight || bat.y + bat.size > p.topHeight + p.gap) gameOver = true; }
+                if (!p.passed && bat.x > p.x + p.width) { p.passed = true; score++; }
+              });
+              pipes = pipes.filter(p => p.x + p.width > 0);
+              frameCount++;
+            };
+
+            const draw = () => {
+              ctx.fillStyle = '#1c0f0d'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+              pipes.forEach(p => {
+                ctx.fillStyle = '#d84315'; ctx.fillRect(p.x, 0, p.width, p.topHeight); ctx.fillRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 3; ctx.strokeRect(p.x, 0, p.width, p.topHeight); ctx.strokeRect(p.x, p.topHeight + p.gap, p.width, canvas.height);
+              });
+              drawBat(bat.x, bat.y, bat.size);
+              ctx.fillStyle = 'white'; ctx.font = '16px "Press Start 2P", monospace'; ctx.fillText(`SCORE:${score}`, 10, 30);
+              if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ef4444'; ctx.textAlign = 'center'; ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+                ctx.fillStyle = 'white'; ctx.font = '10px "Press Start 2P", monospace'; ctx.fillText("Tap or Space to Restart", canvas.width/2, canvas.height/2 + 20); ctx.textAlign = 'left';
+              }
+            };
+
+            const loop = () => { update(); draw(); animationFrameId = window.requestAnimationFrame(loop); };
+            loop();
+
+            const handleInput = (e) => {
+              if (e.type === 'keydown' && e.code === 'Space') e.preventDefault();
+              if (e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
+              if (gameOver) { bat = { x: 50, y: 120, velocity: 0, gravity: 0.35, jump: -6.0, size: 16 }; pipes = []; score = 0; gameOver = false; frameCount = 0; } 
+              else { bat.velocity = bat.jump; }
+            };
+
+            window.addEventListener('keydown', handleInput, { passive: false });
+            canvas.addEventListener('touchstart', handleInput, { passive: false });
+            canvas.addEventListener('mousedown', handleInput);
+
+            return () => {
+              window.cancelAnimationFrame(animationFrameId);
+              window.removeEventListener('keydown', handleInput);
+              if (canvas) { canvas.removeEventListener('touchstart', handleInput); canvas.removeEventListener('mousedown', handleInput); }
+            };
+          }, []);
+
+          return (
+            <div className="flex flex-col items-center w-full max-w-full mx-auto h-full justify-center">
+              <p className="font-pixel text-[10px] text-amber-500 mb-4 animate-pulse text-center leading-relaxed">
+                Play Flappy Bat while the AI writes your book!
+              </p>
+              <canvas ref={canvasRef} width={480} height={280} className="pixel-border-vania cursor-pointer bg-black touch-none shadow-[0_0_20px_rgba(230,81,0,0.4)] max-w-full" />
+              <p className="font-terminal text-sm text-gray-400 mt-4 text-center">Spacebar, Up Arrow, or Tap to jump.</p>
+            </div>
           );
         };
 
@@ -1515,6 +1674,48 @@
                 <div className="w-full md:w-[40%] lg:w-[45%] h-64 md:h-full flex-shrink-0 border-b-4 md:border-b-0 md:border-l-4 border-red-950 relative order-1 md:order-2">
                     <SunsetPixelArt setting={setupData.setting} turn={turnCount} villain={setupData.villain} />
                 </div>
+              </div>
+            );
+          };
+
+          const renderStoryNode = (node, isHistory = false, chosenAction = null) => {
+            if (!node || !node.pages) return null;
+            const isAtLastPage = currentPageIndex === node.pages.length - 1;
+            const textToDisplay = isHistory ? node.pages.join('\n\n') : node.pages[currentPageIndex];
+            const showChallenge = isHistory || isAtLastPage;
+
+            return (
+              <div className={`mb-12 ${isHistory ? 'opacity-60' : 'animate-[fadeIn_0.5s_ease-in]'}`}>
+                <div className="pixel-border bg-black p-4 md:p-6 relative">
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-purple-600"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-purple-600"></div>
+
+                  <div className="w-full">
+                     <InteractiveText text={textToDisplay} />
+                  </div>
+
+                  <div className="mt-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    {showChallenge && node.question && (
+                      <div className="p-3 bg-purple-900 border-l-4 border-green-400 break-inside-avoid w-full">
+                        <p className="font-pixel text-[11px] text-green-300 leading-loose">
+                          <span className="text-yellow-400">CHALLENGE:</span> {node.question}
+                        </p>
+                      </div>
+                    )}
+                    {!isHistory && (
+                      <button onClick={() => handleReadAloud(textToDisplay + (showChallenge && node.question ? ". The challenge is: " + node.question : ""))} className="nes-btn shrink-0">
+                        {isSpeaking ? '⏹️ Stop Reading' : '🗣️ Read Aloud'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {isHistory && chosenAction && (
+                  <div className="flex items-center justify-end mt-4 text-green-500 font-pixel text-xs">
+                    <span className="bg-gray-900 px-4 py-2 pixel-border">You chose: {chosenAction}</span>
+                  </div>
+                )}
               </div>
             );
           };
