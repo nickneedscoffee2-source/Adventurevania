@@ -334,6 +334,7 @@
 
         const NOTE_FREQ = {
           "C2": 65.41, "D2": 73.42, "E2": 82.41, "F2": 87.31, "G2": 98.00, "A2": 110.00,
+          "C3": 130.81,
           "C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.00, "G#4": 415.30, "A4": 440.00, "B4": 493.88,
           "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99, "A5": 880.00,
           "C6": 1046.50
@@ -365,8 +366,8 @@
             { name: "Grammar Gargoyle", icon: "🗿", desc: "Turns bad sentences to stone." },
             { name: "Dr. Deforestation", icon: "🚜", desc: "Destroys the local ecosystems." },
             { name: "Map-Mangler", icon: "🌪️", desc: "Scrambles the continents." },
-            { name: "Multiplication Mummy", icon: "🏺", desc: "Traps you in tangles of times tables." },
-            { name: "Punc. Poltergeist", icon: "🎭", desc: "Ends sentences prematurely!" }
+            { name: "Multiplication Mummy", icon: "🏺", desc: "Locks treasure chests with times-table combos." },
+            { name: "Punc. Poltergeist", icon: "🚪", desc: "Slams escape cave doors ahead of time." }
           ],
           settings: [
             { name: "Haunted Library", icon: "🏛️", desc: "Books fly off the shelves here." },
@@ -677,10 +678,11 @@
                             className={`inline-block border-b-2 outline-none text-center font-pixel text-xs mx-1 px-1 w-24 md:w-32 transition-colors ${
                               isCorrect 
                                 ? 'bg-[#00FF00] border-[#00C800] text-black font-extrabold shadow-[0_0_10px_#00FF00]' 
-                                : (isBubble ? 'bg-[#FFF3F8] border-[#FF80AB] text-[#C2185B] focus:border-[#00E5FF]' : (isAdventure ? 'bg-[#F4ECD8] border-[#8D4F2A] text-[#3E2723] focus:border-[#D4AF37]' : 'bg-gray-900 border-purple-500 text-purple-300 focus:border-yellow-400'))
+                                : (isBubble ? 'bg-[#FFF3F8] border-[#FF80AB] text-[#C2185B] focus:border-[#00E5FF] placeholder-[#FF80AB]/50' : (isAdventure ? 'bg-[#F4ECD8] border-[#8D4F2A] text-[#3E2723] focus:border-[#D4AF37] placeholder-[#8D4F2A]/50' : 'bg-gray-900 border-purple-500 text-purple-300 focus:border-yellow-400 placeholder-purple-500/50'))
                             }`}
                             disabled={isCorrect}
-                            placeholder="..."
+                            placeholder={correctWord}
+                            title={`Type the word: ${correctWord}`}
                           />
                         </React.Fragment>
                       );
@@ -1039,13 +1041,13 @@
               ctx.fillStyle = '#000000'; ctx.fillRect(ogreX + 12, ogreY + 32, 16, 2);
             }
 
-            ctx.fillStyle = theme === 'bubble' ? 'rgba(255, 255, 255, 0.65)' : 'rgba(24, 9, 7, 0.65)';
+            ctx.fillStyle = theme === 'bubble' ? 'rgba(255, 255, 255, 0.65)' : (theme === 'adventure' ? 'rgba(24, 9, 7, 0.4)' : 'rgba(24, 9, 7, 0.65)');
             ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, h - 80); ctx.lineTo(w * 0.2, h - 120);
             ctx.lineTo(w * 0.4, h - 70); ctx.lineTo(w * 0.6, h - 105); ctx.lineTo(w * 0.8, h - 80);
             ctx.lineTo(w, h - 130); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
 
-            ctx.fillStyle = theme === 'bubble' ? '#E1F5FE' : '#100504'; ctx.fillRect(0, h - 40, w, 40);
-            ctx.fillStyle = theme === 'bubble' ? '#FFC2D9' : '#3e2723'; ctx.fillRect(0, h - 40, w, 4);
+            ctx.fillStyle = theme === 'bubble' ? '#E1F5FE' : (theme === 'adventure' ? '#0277BD' : '#100504'); ctx.fillRect(0, h - 40, w, 40);
+            ctx.fillStyle = theme === 'bubble' ? '#FFC2D9' : (theme === 'adventure' ? '#EEDFBE' : '#3e2723'); ctx.fillRect(0, h - 40, w, 4);
             ctx.fillStyle = '#000000';
 
             switch(setting) {
@@ -1113,9 +1115,10 @@
             <canvas ref={canvasRef} width={500} height={500} className="w-full h-full object-cover transition-opacity duration-1000" style={{ imageRendering: 'pixelated' }} />
           );
         }
+        window.SunsetPixelArt = SunsetPixelArt;
 
-        function generateLocalBook(setup) {
-          const configSet = setup.gameTheme === 'bubble' ? BUBBLE_CATEGORIES : (setup.gameTheme === 'adventure' ? ADVENTURE_CATEGORIES : ORIGINAL_CATEGORIES);
+        function generateLocalFallbackChapter(turnIndex, setup, gameTheme) {
+          const configSet = gameTheme === 'bubble' ? BUBBLE_CATEGORIES : (gameTheme === 'adventure' ? ADVENTURE_CATEGORIES : ORIGINAL_CATEGORIES);
           const char = configSet.characters[setup.character] || { name: "The Hero" };
           const vill = configSet.villains[setup.villain] || { name: "The Villain" };
           const sett = configSet.settings[setup.setting] || { name: "The Land" };
@@ -1126,7 +1129,6 @@
           const pageWordTargets = [90, 300, 400, 500];
           const targetW = pageWordTargets[level] || 300;
 
-          // Peter Brown "The Wild Robot" Inspired observative short-sentence local prose templates:
           const storyProgressionTemplates = [
             {
               title: "The Arrival",
@@ -1180,82 +1182,74 @@
             }
           ];
 
-          let chapters = [];
-          for (let turn = 0; turn < 10; turn++) {
-            const template = storyProgressionTemplates[turn];
-            const rawStory = setup.gameTheme === 'bubble' ? template.bubble : template.vania;
+          const template = storyProgressionTemplates[turnIndex % 10];
+          const rawStory = gameTheme === 'bubble' ? template.bubble : template.vania;
 
-            let p1, p2, p3, q, choices;
+          let p1, p2, p3, q, choices;
 
-            if (level === 0) { // Early Primary: 30 words per page (exactly 90 words per chapter)
-              p1 = `See ${char.name} go. __BLANK__ walk fast. They must run. The sky is very dark. The dark wind can blow. It is very cold. See them find the big red door.`; 
-              p2 = `Oh no! The bad ${vill.name} is here. They want to play. You must hide from __BLANK__. Look at the magic key.`; 
-              p3 = `Solve the puzzle now. Open the big door. You can do it. Walk into the warm sun. You win the game.`; 
-              q = `Who wants to play with you in this happy chapter?`;
-              choices = [
-                { text: `The bad ${vill.name}`, isCorrect: true, isGameOver: false },
-                { text: `A big scary shadow`, isCorrect: false, isGameOver: true, gameOverMessage: "You ran away in fear and fell over a sleeping flower!" },
-                { text: `A sleeping bird`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bird is sleeping! You woke it up and got tickled." }
+          if (level === 0) { // Early Primary: 30 words per page (exactly 90 words per chapter)
+            p1 = `See ${char.name} go. __BLANK__ walk fast. They must run. The sky is very dark. The dark wind can blow. It is very cold. See them find the big red door.`; 
+            p2 = `Oh no! The bad ${vill.name} is here. They want to play. You must hide from __BLANK__. Look at the magic key.`; 
+            p3 = `Solve the puzzle now. Open the big door. You can do it. Walk into the warm sun. You win the game.`; 
+            q = `Who wants to play with you in this happy chapter?`;
+            choices = [
+              { text: `The bad ${vill.name}`, isCorrect: true, isGameOver: false },
+              { text: `A big scary shadow`, isCorrect: false, isGameOver: true, gameOverMessage: "You ran away in fear and fell over a sleeping flower!" },
+              { text: `A sleeping bird`, isCorrect: false, isGameOver: true, gameOverMessage: "No, the bird is sleeping! You woke it up and got tickled." }
+            ];
+
+            return { 
+              pages: [p1, p2, p3], 
+              missingWords: ["They", "them"], 
+              question: q, 
+              choices: choices.sort(() => Math.random() - 0.5) 
+            };
+
+          } else {
+            const expandText = (baseText, targetCount) => {
+              let textWords = baseText.split(/\s+/).filter(Boolean);
+              let count = textWords.length;
+              let padding = [
+                "The surrounding environment is beautiful and full of mystery.",
+                "Carefully observing the landscape is absolutely vital to the mission.",
+                "Step by step, the brave explorer travels closer to safety.",
+                "A feeling of immense focus drives the hero to make wise choices.",
+                "The colorful pathways echo with the sounds of a joyful quest.",
+                "Every single decision made here determines the outcome of the adventure."
               ];
-              
-              // Fallback cloze blanks for Level 0
-              let word1 = "They";
-              let word2 = "them";
+              let padIdx = 0;
+              while (count < targetCount) {
+                let nextPadding = padding[padIdx % padding.length];
+                baseText += " " + nextPadding;
+                textWords = baseText.split(/\s+/).filter(Boolean);
+                count = textWords.length;
+                padIdx++;
+              }
+              return textWords.slice(0, targetCount).join(" ");
+            };
 
-              chapters.push({ 
-                pages: [p1, p2, p3], 
-                missingWords: [word1, word2], 
-                question: q, 
-                choices: choices.sort(() => Math.random() - 0.5) 
-              });
+            p1 = expandText(rawStory, Math.ceil(targetW / 3));
+            p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms. ${char.name} must remain vigilant and stay focused.`, Math.ceil(targetW / 3));
+            p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the distance, hoping you will make a mistake. Prepare to solve the riddle!`, Math.ceil(targetW / 3));
+            
+            q = `What is the primary objective of your current quest?`;
+            choices = [
+              { text: `To ${plot.name}`, isCorrect: true, isGameOver: false },
+              { text: "To find an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You wandered off the main path and got tangled in sticky cotton candy!" },
+              { text: "To stop and take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You slept too long and fell behind schedule!" }
+            ];
+            
+            // Fallback cloze blanks explicitly setting short pronouns for fallback
+            p1 = p1.replace(/hero/i, "__BLANK__");
+            p2 = p2.replace(/explorer/i, "__BLANK__");
 
-            } else {
-              const expandText = (baseText, targetCount) => {
-                let textWords = baseText.split(/\s+/).filter(Boolean);
-                let count = textWords.length;
-                let padding = [
-                  "The surrounding environment is beautiful and full of mystery.",
-                  "Carefully observing the landscape is absolutely vital to the mission.",
-                  "Step by step, the brave explorer travels closer to safety.",
-                  "A feeling of immense focus drives the hero to make wise choices.",
-                  "The colorful pathways echo with the sounds of a joyful quest.",
-                  "Every single decision made here determines the outcome of the adventure."
-                ];
-                let padIdx = 0;
-                while (count < targetCount) {
-                  let nextPadding = padding[padIdx % padding.length];
-                  baseText += " " + nextPadding;
-                  textWords = baseText.split(/\s+/).filter(Boolean);
-                  count = textWords.length;
-                  padIdx++;
-                }
-                return textWords.slice(0, targetCount).join(" ");
-              };
-
-              p1 = expandText(rawStory, Math.ceil(targetW / 3));
-              p2 = expandText(`The pathways split before you. The danger of ${dil.name} looms. ${char.name} must remain vigilant and stay focused.`, Math.ceil(targetW / 3));
-              p3 = expandText(`The moment of decision has arrived. ${vill.name} watches from the distance, hoping you will make a mistake. Prepare to solve the riddle!`, Math.ceil(targetW / 3));
-              
-              q = `What is the primary objective of your current quest?`;
-              choices = [
-                { text: `To ${plot.name}`, isCorrect: true, isGameOver: false },
-                { text: "To find an unrelated map", isCorrect: false, isGameOver: true, gameOverMessage: "You wandered off the main path and got tangled in sticky cotton candy!" },
-                { text: "To stop and take a nap", isCorrect: false, isGameOver: true, gameOverMessage: "You slept too long and fell behind schedule!" }
-              ];
-              
-              // Fallback cloze blanks
-              p1 = p1.replace(/hero/i, "__BLANK__");
-              p2 = p2.replace(/explorer/i, "__BLANK__");
-
-              chapters.push({ 
-                pages: [p1, p2, p3], 
-                missingWords: ["hero", "explorer"], 
-                question: q, 
-                choices: choices.sort(() => Math.random() - 0.5) 
-              });
-            }
+            return { 
+              pages: [p1, p2, p3], 
+              missingWords: ["they", "it"], 
+              question: q, 
+              choices: choices.sort(() => Math.random() - 0.5) 
+            };
           }
-          return chapters;
         }
 
         // --- EXPLICIT BINDINGS ON THE GLOBAL WINDOW CONTEXT ---
@@ -1290,13 +1284,12 @@
           const [hasReadFullText, setHasReadFullText] = useState(false);
           const [shootingStar, setShootingStar] = useState(null); 
 
-          const [fullBook, setFullBook] = useState([]);
+          const [fullBook, setFullBook] = useState([]); // Array of single generated chapters
           const [currentBlanks, setCurrentBlanks] = useState({});
 
           const scrollRef = useRef(null);
           const activeChapterRef = useRef(null);
           const melodyIntervalRef = useRef(null);
-          const endOfStoryRef = useRef(null); 
 
           const isMutedRef = useRef(isMuted);
           const currentTrackRef = useRef(currentTrack);
@@ -1390,10 +1383,12 @@
             setTurnCount(0);
             setActiveDeathMessage("");
             setCurrentBlanks({});
+            setStoryHistory([]);
+            setFullBook([]);
             setGameState('loading');
-            setLoadingMsg("Summoning a complete 10-Chapter Book...");
+            setLoadingMsg("Summoning Chapter 1...");
             setErrorMsg("");
-            generateFullBook(finalSetup);
+            generateNextChapter(0, finalSetup, []);
           };
 
           const startGame = () => {
@@ -1420,18 +1415,9 @@
             if (nextTurn >= 10) {
                setGameState('victory'); 
             } else {
-               setTurnCount(nextTurn);
-               setActiveDeathMessage(""); 
-               setHasReadFullText(false); 
-               // DO NOT CLEAR currentBlanks so past chapters keep their input.
-               setGameState('story');
-               setTimeout(() => {
-                  if (activeChapterRef.current) {
-                    // Scroll offset added so the floating menu doesn't block the new chapter title
-                    const y = activeChapterRef.current.getBoundingClientRect().top + window.scrollY - 80;
-                    if (scrollRef.current) scrollRef.current.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-               }, 100);
+               setGameState('loading');
+               setLoadingMsg(`Summoning Chapter ${nextTurn + 1}...`);
+               generateNextChapter(nextTurn, setupData, storyHistory);
             }
           };
 
@@ -1440,11 +1426,7 @@
             setActiveDeathMessage("");
             setCurrentBlanks({});
             setHasReadFullText(false);
-            if (fullBook && fullBook[0]) {
-              setGameState('story');
-            } else {
-              startGameWithData(setupData);
-            }
+            startGameWithData(setupData);
           };
 
           const handleReadAloudOuter = () => {
@@ -1465,13 +1447,13 @@
             window.speechSynthesis.speak(utterance);
           };
 
-          const generateFullBook = async (finalSetup) => {
+          const generateNextChapter = async (turnIndex, currentSetup, historyContext) => {
             const currentCatSet = gameTheme === 'bubble' ? BUBBLE_CATEGORIES : (gameTheme === 'adventure' ? ADVENTURE_CATEGORIES : ORIGINAL_CATEGORIES);
-            const char = currentCatSet.characters[finalSetup.character];
-            const vill = currentCatSet.villains[finalSetup.villain];
-            const sett = currentCatSet.settings[finalSetup.setting];
-            const plot = currentCatSet.plots[finalSetup.plot];
-            const dil = currentCatSet.dilemmas[finalSetup.dilemma];
+            const char = currentCatSet.characters[currentSetup.character] || currentCatSet.characters[0];
+            const vill = currentCatSet.villains[currentSetup.villain] || currentCatSet.villains[0];
+            const sett = currentCatSet.settings[currentSetup.setting] || currentCatSet.settings[0];
+            const plot = currentCatSet.plots[currentSetup.plot] || currentCatSet.plots[0];
+            const dil = currentCatSet.dilemmas[currentSetup.dilemma] || currentCatSet.dilemmas[0];
 
             const getReadingLevelInstruction = (level) => {
               if (level === 0) return "EARLY PRIMARY (Grades 1-2): Use short, plain sight-words. Sentences must be extremely simple and brief (3 to 6 words max). Target exactly 90 total words per chapter.";
@@ -1481,46 +1463,53 @@
             };
 
             const wordTargets = [90, 300, 400, 500];
-            const targetWords = wordTargets[finalSetup.readingLevel || 1];
+            const targetWords = wordTargets[currentSetup.readingLevel || 1];
+
+            let previousContext = "";
+            if (turnIndex > 0) {
+              const lastChoice = historyContext[turnIndex - 1]?.chosenAction || "proceeded forward";
+              previousContext = `In the previous chapter, the hero chose to: "${lastChoice}". Start this chapter dealing with the direct consequences of that action.`;
+            }
 
             let promptText = `
-              Generate a complete, highly cohesive 10-chapter Choose Your Own Adventure book.
+              You are writing a progressive 10-chapter Choose Your Own Adventure book.
+              Generate ONLY Chapter ${turnIndex + 1} of 10.
+              
+              STORY ELEMENTS:
               - Hero Character: ${char.name} (${char.desc})
               - Danger Threat Villain: ${vill.name} (${vill.desc})
               - Environmental Setting: ${sett.name} (${sett.desc})
               - Core Plot Objective: To ${plot.name}
               - Triggering Dilemma: Faced with ${dil.name}
               
+              ${previousContext}
+              
               STRICT STYLE, PROSE, AND LENGTH RULES:
-              1. WRITING STYLE: Write in the distinct literary voice of Peter Brown's "The Wild Robot" - brief, crisp, observant, clear-eyed, and atmospheric.
-              2. FRESH START: Do NOT start Chapter 1 with "With a heavy heart" or any other repetitive cliches. Each generation must feel completely unique and spontaneous.
-              3. NO REPETITIONS: Every chapter must represent a fresh sequence of plot events. Do not repeat words, paragraphs, or copy-paste ideas. Ensure each generation is completely new. NEVER reuse elements, names, or sentences from previous generations. Move the story forward along a traditional story arc (Introduction -> Rising Action -> Climax -> Resolution).
-              4. READING DIFFICULTY: ${getReadingLevelInstruction(finalSetup.readingLevel)}
-              5. WORD COUNT COMPLIANCE: The generated story text inside pages MUST have exactly ${targetWords} words total.
-              6. CLOZE INTERACTIVE GATES: In each chapter, replace exactly TWO PRONOUNS (e.g., he, she, it, they, him, her, them) with the exact text '__BLANK__'. Provide these exact two pronouns in the 'missingWords' array in order of appearance. Make sure the chosen words are ONLY short pronouns.
-              7. COMPREHENSION CYOA CHALLENGE: Provide exactly one reading comprehension question based strictly on the unique events of THAT specific chapter. Ensure readers have to read the text to answer.
-              8. CHOICES: Provide exactly 3 multiple choice options. One correct answer. Two incorrect choices that cause a GAME OVER. The incorrect choices must be derived from the actual story events of the chapter, not from generic options. The incorrect choice 'gameOverMessage' MUST explain exactly what happened to the hero because of their wrong choice (e.g. 'The multiplication mummy wrapped you up in bandages and trapped you!').
+              1. WRITING STYLE: Write completely fresh, unique text in the distinct literary voice of Peter Brown's "The Wild Robot" - brief, crisp, observant, clear-eyed, and atmospheric. Unique Randomness Timestamp: ${Date.now()}
+              2. PLOT PROGRESSION: Move the story forward along a traditional story arc (Introduction -> Rising Action -> Climax -> Resolution). NEVER reuse sentences, settings, or ideas from prior generations. 
+              3. READING DIFFICULTY: ${getReadingLevelInstruction(currentSetup.readingLevel)}
+              4. WORD COUNT COMPLIANCE: The generated story text inside pages MUST have exactly ${targetWords} words total.
+              5. CLOZE INTERACTIVE GATES: Replace exactly TWO PRONOUNS (e.g., he, she, it, they, him, her, them, his, hers, its) in the text with the exact string '__BLANK__'. Provide these exact two pronouns in the 'missingWords' array in order of appearance. The replaced words MUST only be short pronouns.
+              6. COMPREHENSION CYOA CHALLENGE: Provide exactly one reading comprehension question based strictly on the unique events of THIS newly generated chapter. Ensure readers have to read the text to answer.
+              7. CHOICES: Provide exactly 3 multiple choice options. One correct answer. Two incorrect choices that cause a GAME OVER. The incorrect choices must be derived from the actual story events of the chapter, not from generic options. The incorrect choice 'gameOverMessage' MUST explain exactly what happened to the hero because of their wrong choice.
             `;
 
             const systemInstruction = `You are a professional children's book author. You MUST output a single valid JSON block. Internal single quotes must be clean. Schema:
             {
-              "chapters": [
-                {
-                  "pages": ["Paragraph 1 with __BLANK__.", "Paragraph 2 with __BLANK__.", "Paragraph 3."],
-                  "missingWords": ["firstBlankWord", "secondBlankWord"],
-                  "question": "Comprehension question based strictly on this chapter?",
-                  "imagePrompt": "description",
-                  "choices": [
-                    {"text": "Correct choice", "isCorrect": true, "gameOverMessage": ""},
-                    {"text": "Wrong choice", "isCorrect": false, "gameOverMessage": "Silly, thematic explanation of how the player got captured."}
-                  ]
-                }
+              "pages": ["Paragraph 1 with __BLANK__.", "Paragraph 2 with __BLANK__.", "Paragraph 3."],
+              "missingWords": ["firstBlankWord", "secondBlankWord"],
+              "question": "Comprehension question based strictly on this chapter?",
+              "imagePrompt": "description",
+              "choices": [
+                {"text": "Correct choice", "isCorrect": true, "gameOverMessage": ""},
+                {"text": "Wrong choice", "isCorrect": false, "gameOverMessage": "Silly, thematic explanation of how the player got captured."}
               ]
             }
-            Return exactly 10 chapters. Ensure the story is continuous, does not repeat, and perfectly adheres to the requested reading difficulty.`;
+            Return exactly ONE chapter object. Ensure the story is continuous, does not repeat, and perfectly adheres to the requested reading difficulty.`;
 
             let success = false;
             let attempts = 0;
+            let parsedChapter = null;
 
             const apiKey = ""; 
             const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -1533,7 +1522,10 @@
                 const payload = {
                   contents: [{ parts: [{ text: promptText }] }],
                   systemInstruction: { parts: [{ text: systemInstruction }] },
-                  generationConfig: { responseMimeType: "application/json" }
+                  generationConfig: { 
+                    responseMimeType: "application/json",
+                    temperature: 0.9 // Added temperature for maximum creative variability
+                  }
                 };
 
                 const response = await fetchWithRetryLocal(GEMINI_URL, {
@@ -1542,63 +1534,54 @@
                   body: JSON.stringify(payload)
                 });
 
-                const nodeData = response;
+                const jsonText = response.candidates[0].content.parts[0].text;
+                const nodeData = JSON.parse(jsonText);
                 
-                if (!nodeData.chapters || nodeData.chapters.length < 10) {
-                   throw new Error("Invalid array structure or missing chapters.");
+                let combinedStoryText = Array.isArray(nodeData.pages) ? nodeData.pages.join("\n\n") : (nodeData.storyText || nodeData.pages || "");
+                let words = combinedStoryText.split(/\s+/).filter(Boolean);
+                let balancedPages;
+                if (words.length > 10) {
+                  let size = Math.ceil(words.length / 3);
+                  balancedPages = [
+                    words.slice(0, size).join(" "),
+                    words.slice(size, size * 2).join(" "),
+                    words.slice(size * 2).join(" ")
+                  ];
+                } else {
+                  balancedPages = [combinedStoryText, "The story continues...", "Prepare for the next challenge."];
                 }
 
-                const sanitizedChapters = nodeData.chapters.map((ch) => {
-                  let combinedStoryText = Array.isArray(ch.pages) ? ch.pages.join("\n\n") : (ch.storyText || "");
-                  let words = combinedStoryText.split(/\s+/).filter(Boolean);
-                  let balancedPages;
-                  if (words.length > 10) {
-                    let size = Math.ceil(words.length / 3);
-                    balancedPages = [
-                      words.slice(0, size).join(" "),
-                      words.slice(size, size * 2).join(" "),
-                      words.slice(size * 2).join(" ")
-                    ];
-                  } else {
-                    balancedPages = [combinedStoryText, "The story continues...", "Prepare for the next challenge."];
+                let question = nodeData.question ? nodeData.question.trim() : "What is the best way to bypass this challenge?";
+
+                let choices = nodeData.choices;
+                if (!choices || !Array.isArray(choices) || choices.length === 0) {
+                  choices = [
+                    { text: "Solve the challenge carefully", isCorrect: true, isGameOver: false },
+                    { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: `You ran into ${vill.name}'s trap!` },
+                    { text: "Ignore the signs", isCorrect: false, isGameOver: true, gameOverMessage: "You ignored the warning and fell into a pit!" }
+                  ];
+                }
+
+                if (choices.length < 3) {
+                  const backupIncorrect = [
+                    { text: "Take the wrong turn", isCorrect: false, isGameOver: true, gameOverMessage: "You took a wrong turn and got lost in the shadows!" },
+                    { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: `You rested too long and ${vill.name} caught you!` }
+                  ];
+                  while (choices.length < 3) {
+                    choices.push(backupIncorrect[choices.length % backupIncorrect.length]);
                   }
+                }
 
-                  let question = ch.question ? ch.question.trim() : "What is the best way to bypass this challenge?";
+                let hasCorrect = choices.some(c => c.isCorrect);
+                if (!hasCorrect) {
+                  choices[0].isCorrect = true;
+                  choices[0].isGameOver = false;
+                }
 
-                  let choices = ch.choices;
-                  if (!choices || !Array.isArray(choices) || choices.length === 0) {
-                    choices = [
-                      { text: "Solve the challenge carefully", isCorrect: true, isGameOver: false },
-                      { text: "Rush forward blindly", isCorrect: false, isGameOver: true, gameOverMessage: `You ran into ${vill.name}'s trap!` },
-                      { text: "Ignore the signs", isCorrect: false, isGameOver: true, gameOverMessage: "You ignored the warning and fell into a pit!" }
-                    ];
-                  }
+                let missingWords = nodeData.missingWords || [];
+                if (missingWords.length === 0) missingWords = [""];
 
-                  if (choices.length < 3) {
-                    const backupIncorrect = [
-                      { text: "Take the wrong turn", isCorrect: false, isGameOver: true, gameOverMessage: "You took a wrong turn and got lost in the shadows!" },
-                      { text: "Stop and rest too long", isCorrect: false, isGameOver: true, gameOverMessage: `You rested too long and ${vill.name} caught you!` }
-                    ];
-                    while (choices.length < 3) {
-                      choices.push(backupIncorrect[choices.length % backupIncorrect.length]);
-                    }
-                  }
-
-                  let hasCorrect = choices.some(c => c.isCorrect);
-                  if (!hasCorrect) {
-                    choices[0].isCorrect = true;
-                    choices[0].isGameOver = false;
-                  }
-
-                  let missingWords = ch.missingWords || [];
-                  if (missingWords.length === 0) missingWords = [""];
-
-                  return { pages: balancedPages, missingWords, question, imagePrompt: ch.imagePrompt, choices: choices.sort(() => Math.random() - 0.5) };
-                });
-
-                setFullBook(sanitizedChapters);
-                setLoadingProgress(100);
-                setTimeout(() => setGameState('story'), 500);
+                parsedChapter = { pages: balancedPages, missingWords, question, imagePrompt: nodeData.imagePrompt, choices: choices.sort(() => Math.random() - 0.5) };
                 success = true;
                 
               } catch (err) {
@@ -1609,16 +1592,24 @@
 
             if (!success) {
               console.warn("API failed. Booting local offline fallback engine...");
-              try {
-                const localBook = generateLocalBook({ ...finalSetup, gameTheme });
-                setFullBook(localBook);
-                setLoadingProgress(100);
-                setTimeout(() => setGameState('story'), 500);
-              } catch (localErr) {
-                setErrorMsg(`Critical Fallback Error: ${localErr.message}`);
-                setGameState('story');
-              }
+              parsedChapter = generateLocalFallbackChapter(turnIndex, currentSetup, gameTheme);
             }
+
+            setFullBook(prev => {
+              const updatedBook = [...prev];
+              updatedBook[turnIndex] = parsedChapter;
+              return updatedBook;
+            });
+            setTurnCount(turnIndex);
+            setHasReadFullText(false);
+            // DO NOT clear currentBlanks completely so past inputs remain filled, just ensure new chapter begins cleanly
+            setGameState('story');
+            setTimeout(() => {
+              if (activeChapterRef.current) {
+                const y = activeChapterRef.current.getBoundingClientRect().top + window.scrollY - 80;
+                if (scrollRef.current) scrollRef.current.scrollTo({ top: y, behavior: 'smooth' });
+              }
+            }, 100);
           };
 
           // --- SYNCHRONIZED RE-RENDER HOISTED FUNCTIONS ---
@@ -1675,7 +1666,7 @@
                   const increment = (100 - prev) * 0.03; 
                   return prev + increment;
                 });
-              }, 500);
+              }, 100);
             }
             return () => { if (interval) clearInterval(interval); };
           }, [gameState]);
