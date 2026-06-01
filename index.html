@@ -1290,6 +1290,7 @@
           const scrollRef = useRef(null);
           const activeChapterRef = useRef(null);
           const melodyIntervalRef = useRef(null);
+          const endOfStoryRef = useRef(null);
 
           const isMutedRef = useRef(isMuted);
           const currentTrackRef = useRef(currentTrack);
@@ -2130,7 +2131,7 @@
             const activeMenuImages = gameTheme === 'bubble' ? MENU_IMAGES_BUBBLE : (gameTheme === 'adventure' ? MENU_IMAGES_ADVENTURE : MENU_IMAGES_VANIA);
             
             let titleShadow = `text-[#FFE082] drop-shadow-[0_2px_8px_rgba(141,79,42,0.8)]`;
-            let subStyle = `text-[#3E2723] drop-shadow-[0_1px_3px_rgba(255,255,255,0.6)]`;
+            let subStyle = `text-orange-400 drop-shadow-[0_1px_3px_rgba(255,255,255,0.6)]`;
             let borderStyle = `pixel-border-bubble border-[#A55120]`;
 
             if (gameTheme === 'bubble') {
